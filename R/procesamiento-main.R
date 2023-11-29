@@ -180,8 +180,7 @@ agregar_variables = function(data){
 
   tallas = grep(pattern = "[1-9]", x = names(data), value = TRUE)
 
-  data_final$juv = apply(data_final[,tallas], 1, Porc_Juveniles, tallas = tallas, juvLim = 12)
-
+  data$juv = apply(data[,tallas], 1, Porc_Juveniles, tallas = tallas, juvLim = 12)
 
   data$dc = distancia_costa_vectorizado(lon = data$lon_inicial, lat = data$lat_inicial)
 
