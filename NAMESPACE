@@ -1,1 +1,6 @@
 exportPattern("^[[:alpha:]]+")
+# NAMESPACE
+import(stringi)
+import(tidyverse)
+import(lubridate)
+
