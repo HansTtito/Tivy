@@ -155,7 +155,7 @@ generar_data_final = function(data){
 
   max_col = grep(pattern = "max_", x = names(data), value = TRUE)
 
-  names_data_final = c("n","armador","embarcacion","n_cala","fecha_inicio","hora_cala",catch_col,"profundidad","prof_sd","lon_inicial","lat_inicial","muestra","zona_pesca","porc_especie_incidental","sps_incidental","moda_inci",min_col, max_col,"juv","enmalle",tallas,"depredadores_superiores","observaciones","coeficientes","fp","moda","dc","dc_cat","promedio")
+  names_data_final = c("n","armador","embarcacion","n_cala","ini_fecha","hora_cala",catch_col,"profundidad","prof_sd","lon_inicial","lat_inicial","muestra","zona_pesca","porc_especie_incidental","sps_incidental","moda_inci",min_col, max_col,"juv","enmalle",tallas,"depredadores_superiores","observaciones","coeficientes","fp","moda","dc","dc_cat","promedio")
 
 
   data_final = as.data.frame(matrix(NA, ncol = length(names_data_final)))
@@ -169,7 +169,6 @@ generar_data_final = function(data){
 
   return(data_final)
 
-
 }
 
 
@@ -180,7 +179,9 @@ agregar_variables = function(data){
 
   tallas = grep(pattern = "[1-9]", x = names(data), value = TRUE)
 
-  data$juv = apply(data[,tallas], 1, Porc_Juveniles, tallas = tallas, juvLim = 12)
+  data$juv = apply(data[,tallas], 1, Porc_Juveniles, tallas = as.numeric(tallas), juvLim = 12)
+
+  data$muestra = apply(data[,tallas], 1, sum, na.rm = TRUE)
 
   data$dc = distancia_costa_vectorizado(lon = data$lon_inicial, lat = data$lat_inicial)
 
@@ -191,5 +192,20 @@ agregar_variables = function(data){
                               dc >= 50 & dc < 100 ~ "50-100 mn"))
 
   return(data)
+
+}
+
+
+
+ponderacion_by_row = function(data, tallas, a, b, colCatch){
+
+  new_data = data[, c(names(data)[colCatch], as.character(tallas))]
+  pesos = mapply(`*`, new_data[, as.character(tallas)], Length_weight(Length = tallas, a = a, b = b))
+  FP = new_data[, 1]/apply(pesos, 1, sum, na.rm = TRUE)
+  tallas_ponderadas = new_data[, as.character(tallas)] * FP[[1]]
+  out = data[, setdiff(names(data), tallas)]
+  tallas_ponderadas = cbind(out, tallas_ponderadas)
+
+  return(tallas_ponderadas)
 
 }
