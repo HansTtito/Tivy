@@ -108,38 +108,46 @@ processing_tallas_2 = function(data_tallas)
 
 # Procesando data final ---------------------------------------------------
 
-processing_incidental_catch_tallas = function(data_total){
+merge_tallasfaenas_calas = function(data_calas, data_tallasfaenas){
 
-  tallas = grep(pattern = "[1-9]", x = names(data_total), value = TRUE)
+  tallas = grep(pattern = "[1-9]", x = names(data_tallasfaenas), value = TRUE)
 
-  catch_sps = data_total %>%
+  catch_sps = data_calas %>%
+    filter(!is.na(descripcion), descripcion != "") %>%
     mutate(catch = as.numeric(catch)) %>%
     group_by(codigo_faena, n_cala, descripcion) %>%
     reframe(catch = sum(catch)) %>%
-    spread(descripcion, catch)
-  names(catch_sps) = c(names(catch_sps)[c(1,2)],paste0("catch_",names(catch_sps)[-c(1,2)]))
+    spread(descripcion, catch, sep = "_")
 
-  min_sps = data_total  %>%
-    mutate(min_rango = apply(data_total[tallas], 1, min_range)) %>%
-    select(codigo_faena, n_cala, descripcion, min_rango) %>%
-    spread(descripcion, min_rango)
+  names(catch_sps) = gsub(pattern = "descripcion", replacement = "catch", x = names(catch_sps))
 
-  names(min_sps) = c(names(min_sps)[c(1,2)],paste0("min_",names(min_sps)[-c(1,2)]))
-
-  max_sps = data_total   %>%
-    mutate(max_rango = apply(data_total[tallas], 1, max_range)) %>%
-    select(codigo_faena, n_cala, descripcion, max_rango) %>%
-    spread(descripcion, max_rango)
-  names(max_sps) = c(names(max_sps)[c(1,2)],paste0("max_",names(max_sps)[-c(1,2)]))
+  min_sps = data_tallasfaenas %>%
+    filter(!is.na(descripcion), descripcion != "") %>%
+    mutate(min_rango = apply(data_tallasfaenas[tallas], 1, min_range)) %>%
+    spread(descripcion, min_rango, sep = "_") %>%
+    select("codigo_faena","n_cala", starts_with("descripcion_"))
 
 
-  data_final = data_total %>%
-    full_join(catch_sps, by = c("codigo_faena","n_cala")) %>%
-    full_join(min_sps, by = c("codigo_faena","n_cala"))%>%
-    full_join(max_sps, by = c("codigo_faena","n_cala")) %>%
-    filter(descripcion %in% c("ANCHOVETA"))
+  names(min_sps) = gsub(pattern = "descripcion", replacement = "min", x = names(min_sps))
 
-  return(data_final)
+  max_sps = data_tallasfaenas %>%
+    mutate(max_rango = apply(data_tallasfaenas[tallas], 1, max_range)) %>%
+    spread(descripcion, max_rango, sep = "_") %>%
+    select("codigo_faena","n_cala", starts_with("descripcion_"))
+
+  names(max_sps) = gsub(pattern = "descripcion", replacement = "max", x = names(max_sps))
+
+  min_max_sps = merge(min_sps, max_sps, by = c("codigo_faena","n_cala"), all = TRUE)
+
+  tallas_total = merge(data_tallasfaenas, min_max_sps, by = c("codigo_faena","n_cala"), all = TRUE)
+
+  total_data  = merge(catch_sps, tallas_total, by = c("codigo_faena","n_cala"), all = TRUE)
+
+  final_data = merge(data_calas %>% select(-grep(pattern = "catch", x = names(data_calas))), total_data, by = c("codigo_faena","n_cala","descripcion"), all = TRUE)
+
+  final_data = final_data[!duplicated(final_data[,c("codigo_faena","n_cala")]),]
+
+  return(final_data)
 
 }
 
@@ -175,7 +183,7 @@ generar_data_final = function(data){
 
 agregar_variables = function(data){
 
-  data$n = 1:nrow(data)
+  # data$n = 1:nrow(data)
 
   tallas = grep(pattern = "[1-9]", x = names(data), value = TRUE)
 
