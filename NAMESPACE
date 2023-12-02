@@ -3,4 +3,4 @@ exportPattern("^[[:alpha:]]+")
 import(stringi)
 import(tidyverse)
 import(lubridate)
-
+import(rvest)
