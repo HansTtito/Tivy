@@ -217,3 +217,27 @@ ponderacion_by_row = function(data, tallas, a, b, colCatch){
   return(tallas_ponderadas)
 
 }
+
+
+
+ponderacion_by_row_2 = function(data, tallas, a, b, colCatch){
+
+  new_data = data[, c(names(data)[colCatch], as.character(tallas))]
+
+  vector_pesos_talla = Length_weight(Length = tallas, a = a, b = b)
+
+  pesos = t(apply(new_data[, as.character(tallas)], 1, function(x) x * vector_pesos_talla))
+
+  pesos_row = if_else(apply(pesos, 1, sum, na.rm = TRUE) %in% 0, NA, apply(pesos, 1, sum, na.rm = TRUE))
+
+  FP = new_data[, 1]/pesos_row
+
+  tallas_ponderadas = new_data[, as.character(tallas)] * FP
+
+  out = data[, setdiff(names(data), as.character(tallas))]
+
+  tallas_ponderadas = cbind(out, tallas_ponderadas)
+
+  return(tallas_ponderadas)
+
+}
