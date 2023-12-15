@@ -1,4 +1,4 @@
-plot_mapa_peru = function(lineas_costa = 1, lineas_paralelas_costa = NULL, x_lim = c(-84,-69), y_lim = c(-20,0)) {
+plot_mapa_peru = function(lineas_costa = 1, lineas_paralelas_costa = NULL, add_linea_5_millas = FALSE, x_lim = c(-84,-69), y_lim = c(-20,0), col_linea_costa = "black", lwd_linea_costa = 1, lty_linea_costa = 1, col_paralelas_costa = "black", lwd_paralelas_costa = 1, lty_paralelas_costa = 1, col_5_millas = "black", lwd_5_millas = 1, lty_5_millas = 1, grados_lat_at = seq(-20,0, 5), grados_lat_label = paste0(seq(20,0,-5),"°S"), ylab = "Latitud", cex_lab_y = 1) {
 
   if(any(y_lim > 0 | y_lim < -20 )){
     stop("Solo permite valores entre 0 y -20")
@@ -41,21 +41,43 @@ plot_mapa_peru = function(lineas_costa = 1, lineas_paralelas_costa = NULL, x_lim
 
   step_interno = 5
   # paralelas = paraleas_costa_peru[by_dist_costa]
-  plot(NA, xlim = x_lim, ylim = y_lim, xlab = "", ylab= "Latitud", axes = FALSE)
-  axis(2, at = seq(-20,0, 5), labels = paste0(seq(20,0,-5),"°S"), las = 2)
+  plot(NA, xlim = x_lim, ylim = y_lim, xlab = "", ylab= ylab, axes = FALSE, cex.lab = cex_lab_y)
+  axis(2, at = grados_lat_at, labels = grados_lat_label, las = 2)
   box()
 
 
   for(i in 1:lineas_costa){
 
     resta_x <- ifelse(i == 1, 0, 5 * (i - 1))
-    lines(x = Shoreline_Peru$Long - resta_x, y = Shoreline_Peru$Lat)
+
+    lines(x = Shoreline_Peru$Long - resta_x, y = Shoreline_Peru$Lat, col = col_linea_costa, lwd = lwd_linea_costa, lty = lty_linea_costa)
+
     if(!is.null(lineas_paralelas_costa)){
       for(i in 1:length(lineas_paralelas_costa)){
-        lines(x = paraleas_costa_peru[[lineas_paralelas_costa[i]]]$lon - resta_x, y = paraleas_costa_peru[[lineas_paralelas_costa[i]]]$lat)
+
+        lines(x = paraleas_costa_peru[[lineas_paralelas_costa[i]]]$lon - resta_x, y = paraleas_costa_peru[[lineas_paralelas_costa[i]]]$lat, col = col_paralelas_costa, lwd = lwd_paralelas_costa, lty = lty_paralelas_costa)
+
       }
     }
 
+  }
+
+  if(is.logical(add_linea_5_millas)){
+
+    if(add_linea_5_millas){
+
+      for(i in 1:lineas_costa){
+
+        resta_x <- ifelse(i == 1, 0, 5 * (i - 1))
+
+        lines(x = linea_5_millas$X  - resta_x, y = linea_5_millas$Y, col = col_5_millas, lwd = lwd_5_millas, lty = lty_5_millas)
+
+      }
+
+    }
+
+  } else {
+    stop("Solo acepta TRUE o FALSE")
   }
 
 }
