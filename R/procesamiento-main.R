@@ -1,3 +1,6 @@
+
+
+
 # Calas -------------------------------------------------------------------
 
 processing_calas = function(data_calas){
@@ -58,7 +61,7 @@ processing_faenas = function(data_faenas) {
 processing_faenas_2 = function(data_faenas)
 {
 
-  data_faenas <- data_faenas %>% select(7, 2, 1, 3)
+  data_faenas <- data_faenas %>% select(8, 3, 2, 4)
   names(data_faenas) <- c("codigo_faena", "embarcacion", "armador",
                           "matricula")
   return(data_faenas)
@@ -241,3 +244,46 @@ ponderacion_by_row_2 = function(data, tallas, a, b, colCatch){
   return(tallas_ponderadas)
 
 }
+
+
+
+# checking data -----------------------------------------------------------
+
+check_datos <- function(tibble_obj, tipo_archivo) {
+
+  tipos_esperados <- switch(tipo_archivo,
+
+                            calas = c("numeric", "character", "numeric", "POSIXct", "POSIXct", "character", "character", "character", "character", "character", "character", "numeric", "character", "character", "POSIXct"),
+                            tallas_calas = c("numeric", "character", "numeric", "character", "numeric", "character", "numeric"),
+                            faenas = c("numeric", "character", "character", "character", "character", "POSIXct", "POSIXct", "character", "numeric", "character", "character", "POSIXct"),
+                            stop("Tipo de archivo no válido.")
+  )
+
+  tipos_columnas <- sapply(tibble_obj, function(col) {
+    if (all(is.na(col))) {
+      return("Solo NA")
+    } else {
+      col_no_na <- col[!is.na(col)]
+      if (length(unique(col_no_na)) == 1 && !is.na(unique(col_no_na))) {
+        return(class(col))
+      } else {
+        if ("POSIXct" %in% class(col)) {
+          return("POSIXct")
+        } else {
+          return(class(col))
+        }
+      }
+    }
+  })
+
+  columnas_no_coinciden <- names(tipos_columnas[tipos_columnas != tipos_esperados])
+
+  if (!identical(as.character(tipos_columnas), tipos_esperados)) {
+    mensaje_error <- paste("Error: Los tipos de datos no coinciden. Columnas problemáticas:\n", paste(columnas_no_coinciden, collapse = "\n "))
+    stop(mensaje_error)
+  } else {
+    print("Los tipos de datos son correctos.")
+  }
+}
+
+
