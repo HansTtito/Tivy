@@ -11,5 +11,4 @@ Depends:
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Remotes:
-  github: inSileco/graphicsutils
+Remotes: github: inSileco/graphicsutils
