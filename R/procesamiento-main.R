@@ -68,6 +68,15 @@ processing_faenas_2 = function(data_faenas)
 
 }
 
+processing_faenas_3 = function(data_faenas)
+{
+
+  data_faenas <- data_faenas %>% select(7, 2, 1, 3)
+  names(data_faenas) <- c("codigo_faena", "embarcacion", "armador",
+                          "matricula")
+  return(data_faenas)
+
+}
 
 
 # Tallas calas ------------------------------------------------------------
@@ -106,7 +115,6 @@ processing_tallas_2 = function(data_tallas)
   return(data_tallas)
 
 }
-
 
 
 # Procesando data final ---------------------------------------------------
