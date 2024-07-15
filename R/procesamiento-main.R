@@ -257,7 +257,7 @@ ponderacion_by_row_2 = function(data, tallas, a, b, colCatch){
 
 # checking data -----------------------------------------------------------
 
-check_datos <- function(tibble_obj, tipo_archivo) {
+check_datos_calas_tallas_faenas <- function(tibble_obj, tipo_archivo) {
 
   tipos_esperados <- switch(tipo_archivo,
 

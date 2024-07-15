@@ -27,8 +27,7 @@ distancia_costa_vectorizado <- function(lon, lat) {
 }
 
 
-# Define la función original
-distancia_costa_vectorizado <- function(lon, lat) {
+distancia_costa_vectorizado_paralelo <- function(lon, lat, nucleos = 4) {
   grados2mn  <- 60 * 180 / pi
   grados2rad <- pi / 180
 
@@ -36,14 +35,24 @@ distancia_costa_vectorizado <- function(lon, lat) {
   x_rad <- lon * grados2rad
   y_rad <- lat * grados2rad
 
-  distancias <- apply(cbind(x_rad, y_rad), 1, function(coords) {
+  # Función interna para calcular la distancia mínima a la costa
+  calc_distancia <- function(coords) {
     xy_rad <- sin(coords[2]) * sin(shore_rad$Lat)
     yx_rad <- cos(coords[2]) * cos(shore_rad$Lat) * cos(shore_rad$Long - coords[1])
     return(min(acos(xy_rad + yx_rad) * grados2mn))
-  })
+  }
 
-  return(distancias)
+  # Establecer el plan de paralelización
+  plan(multisession, workers = nucleos)
+
+  # Aplicar la función en paralelo
+  distancias <- future_lapply(1:length(x_rad), function(i) calc_distancia(c(x_rad[i], y_rad[i])))
+
+  plan(sequential)
+
+  return(unlist(distancias))
 }
+
 
 # Compila la función
 

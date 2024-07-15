@@ -7,3 +7,6 @@ import(rvest)
 import(readxl)
 import(pdftools)
 import(stringr)
+import(future)
+import(future.apply)
+
