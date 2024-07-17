@@ -29,7 +29,7 @@ calcular_dur_viaje_n_calas <- function(data) {
   data %>%
     mutate(fecha = as.Date(fecha_hora)) %>%
     reframe(
-      n_calas = contar_calas(num_calas),
+      n_calas = contar_calas(num_cala),
       duracion_viaje = as.numeric(difftime(max(fecha_hora), min(fecha_hora), units = 'hours')),
       fecha_zarpe = as.Date(min(fecha_hora)),
       fecha_arribo = as.Date(max(fecha_hora)),
