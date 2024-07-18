@@ -2,7 +2,7 @@
 
 check_data_sisesat <- function(data_sisesat) {
   # Definir las columnas requeridas
-  required_columns <- c("id_nave", "fecha_hora", "velocidad", "longitud_decimal", "latitud_decimal", "rumbo")
+  required_columns <- c("nave", "fecha_hora", "velocidad", "longitud_decimal", "latitud_decimal", "rumbo")
 
   # Encontrar las columnas que faltan
   missing_columns <- setdiff(required_columns, colnames(data_sisesat))
@@ -13,7 +13,7 @@ check_data_sisesat <- function(data_sisesat) {
   }
 
   # Verificar la columna fecha y hora
-  formato_fecha_hora <- all(grepl("^\\d{1,2}/\\d{2}/\\d{4} (\\d{2}:\\d{2}:\\d{2}|\\d{2}:\\d{2})$", data_sisesat$fecha_hora))
+  formato_fecha_hora <- all(grepl("^\\d{1,2}[/-]\\d{2}[/-]\\d{4} (\\d{1,2}:\\d{1,2}:\\d{1,2}|\\d{1,2}:\\d{1,2})$", data_sisesat$fecha_hora))
 
   if (!formato_fecha_hora) {
     stop("Error: La columna 'fecha_hora' debe estar en el formato %d/%m/%Y %H:%M:%S.")
@@ -42,7 +42,7 @@ check_data_sisesat <- function(data_sisesat) {
 
 identificar_viajes <- function(data_sisesat, tiempo_entre_emision = 40) {
   # Ordenar los datos por id_nave y fecha_hora
-  data_sisesat <- data_sisesat[order(data_sisesat$id_nave, data_sisesat$fecha_hora), ]
+  data_sisesat <- data_sisesat[order(data_sisesat$nave, data_sisesat$fecha_hora), ]
 
   # Inicializar el contador de viajes y el número de viaje para cada id_nave
   num_viaje <- 1
@@ -55,9 +55,9 @@ identificar_viajes <- function(data_sisesat, tiempo_entre_emision = 40) {
   # Iterar sobre cada fila de los datos
   for (i in 1:nrow(data_sisesat)) {
     # Si cambia el id_nave, reiniciar el contador de viaje para ese id_nave
-    if (!identical(data_sisesat$id_nave[i], ultimo_id_nave)) {
+    if (!identical(data_sisesat$nave[i], ultimo_id_nave)) {
       num_viaje_id_nave <- 1
-      ultimo_id_nave <- data_sisesat$id_nave[i]
+      ultimo_id_nave <- data_sisesat$nave[i]
     }
 
     # Si no es la primera fila y la diferencia es mayor a tiempo_entre_emision minutos, incrementar el número de viaje
@@ -108,7 +108,7 @@ identificar_viajes_paralelo <- function(data_sisesat, tiempo_entre_emision = 40,
   }
 
   # Aplicar la función a cada grupo de id_nave en paralelo
-  data_sisesat_split <- split(data_sisesat, data_sisesat$id_nave)
+  data_sisesat_split <- split(data_sisesat, data_sisesat$nave)
   data_sisesat_list <- future_lapply(data_sisesat_split, procesar_nave)
 
   plan(sequential)
@@ -140,7 +140,7 @@ evaluar_y_eliminar_viajes <- function(data_sisesat, tiempo_minimo_horas = 40) {
 
 identificar_calas <- function(data_sisesat, distancia_minima = 15, velocidad_maxima = 3) {
 
-  data_sisesat <- data_sisesat[order(data_sisesat$id_nave, data_sisesat$num_viaje, data_sisesat$fecha_hora), ]
+  data_sisesat <- data_sisesat[order(data_sisesat$nave, data_sisesat$num_viaje, data_sisesat$fecha_hora), ]
 
   calas <- rep(NA, nrow(data_sisesat))  # Inicializar vector para marcar calas con 0
 

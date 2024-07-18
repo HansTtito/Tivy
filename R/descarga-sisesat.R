@@ -1,6 +1,6 @@
 check_descarga_sisesat_data <- function(data) {
   # Definir los patrones para fecha y hora
-  pattern_date <- "^(\\d{1,2}/\\d{1,2}/\\d{4})$"
+  pattern_date <- "^(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})$"
   pattern_time <- "^(\\d{1,2}:\\d{2}:\\d{2})$"
 
   # Verificar las fechas de arribo
@@ -34,5 +34,14 @@ check_descarga_sisesat_data <- function(data) {
 estandarizar_hora <- function(horas) {
   # Verificar si cada elemento de horas está en formato HH:MM y añadir ":00" si es necesario
   horas <- ifelse(grepl("^\\d{1,2}:\\d{2}$", horas), paste0(horas, ":00"), horas)
+  return(horas)
+}
+
+
+
+# Función para estandarizar la hora
+estandarizar_fecha_hora <- function(horas) {
+  # Verificar si cada elemento de horas está en formato HH:MM y añadir ":00" si es necesario
+  horas <- ifelse(grepl("^(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}) \\d{1,2}:\\d{2}$", horas), paste0(horas, ":00"), horas)
   return(horas)
 }
