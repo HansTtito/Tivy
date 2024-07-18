@@ -20,21 +20,22 @@ check_data_sisesat <- function(data_sisesat) {
   }
 
   # Verificar tipo y signo de longitud_decimal y latitud_decimal
-  if (!all(is.numeric(data_sisesat$longitud_decimal) & data_sisesat$longitud_decimal < 0)) {
+  if (!all(is.numeric(data_sisesat$longitud_decimal) & data_sisesat$longitud_decimal < 0, na.rm = TRUE)) {
     stop("Error: La columna 'longitud_decimal' debe ser numérica y contener valores negativos.")
   }
-  if (!all(is.numeric(data_sisesat$latitud_decimal) & data_sisesat$latitud_decimal < 0)) {
+  if (!all(is.numeric(data_sisesat$latitud_decimal) & data_sisesat$latitud_decimal < 0, na.rm = TRUE)) {
     stop("Error: La columna 'latitud_decimal' debe ser numérica y contener valores negativos.")
   }
 
   # Verificar tipo y signo de rumbo
-  if (!all(is.numeric(data_sisesat$rumbo) & data_sisesat$rumbo >= 0)) {
+  if (!all(is.numeric(data_sisesat$rumbo) & data_sisesat$rumbo >= 0, na.rm = TRUE)) {
     stop("Error: La columna 'rumbo' debe ser numérica y contener valores positivos.")
   }
 
   # Si todo está correcto, devolver un mensaje de éxito
   return("Los datos son adecuados y cumplen con las especificaciones.")
 }
+
 
 
 ## Función para identificar viajes
