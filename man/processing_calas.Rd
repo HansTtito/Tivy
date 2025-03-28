@@ -9,7 +9,11 @@ processing_calas
 Permite el procesamiento de los datos de calas
 }
 \usage{
+
 processing_calas(data_calas)
+
+processing_calas(calas)
+
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
