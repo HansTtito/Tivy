@@ -28,8 +28,14 @@ calas_tallas = processing_tallas(data_tallas = tallas)
 
 # Merge de calas, tallas y faenas
 
-data_tallasfaenas = merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena', all = TRUE)
+data_tallasfaenas = merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
 
 data_total = merge_tallasfaenas_calas(data_calas = data_calas, data_tallasfaenas = data_tallasfaenas)
+
+data_total = agregar_variables(data = data_total)
+
+plot_mapa_peru()
+points(data_total$lon_final, data_total$lat_final, col = 'red', pch = 19)
+
 
 ```
