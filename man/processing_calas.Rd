@@ -12,12 +12,14 @@ Permite el procesamiento de los datos de calas
 
 processing_calas(data_calas)
 
-processing_calas(calas)
+processing_calas_2(data_calas)
 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
+  \item{data_calas}{
+
+  dataframe de calas proveniente de la bitácora de pesca de PRODUCE
 %%     ~~Describe \code{x} here~~
 }
 }
