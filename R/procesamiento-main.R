@@ -5,12 +5,13 @@
 
 processing_calas = function(data_calas){
 
-  data_calas <- data_calas %>% select(3,4,5,8,9,10,11,12,13,14,15,16,17,18)
+  data_calas <- data_calas %>%
+    dplyr::select(3,4,5,8,9,10,11,12,13,14,15,16,17,18)
 
   names(data_calas) <- c("codigo_faena", "n_cala", "fecha_inicio", "fecha_fin", "latitud_inicio", "longitud_inicio", "latitud_fin", "longitud_fin","tipo_arte", "descripcion","catch","estado","origen_cala","fecha_registro")
 
-  data_calas <- data_calas %>% mutate(
-    descripcion = stri_trim(descripcion),
+  data_calas <- data_calas %>% dplyr::mutate(
+    descripcion = stringi::stri_trim(descripcion),
     lat_inicial = lat_long(latitud_inicio),
     lon_inicial = lat_long(longitud_inicio),
     lat_final = lat_long(latitud_fin),
@@ -124,27 +125,27 @@ merge_tallasfaenas_calas = function(data_calas, data_tallasfaenas){
   tallas = grep(pattern = "[1-9]", x = names(data_tallasfaenas), value = TRUE)
 
   catch_sps = data_calas %>%
-    filter(!is.na(descripcion), descripcion != "") %>%
-    mutate(catch = as.numeric(catch)) %>%
-    group_by(codigo_faena, n_cala, descripcion) %>%
-    reframe(catch = sum(catch)) %>%
+    dplyr::filter(!is.na(descripcion), descripcion != "") %>%
+    dplyr::mutate(catch = as.numeric(catch)) %>%
+    dplyr::group_by(codigo_faena, n_cala, descripcion) %>%
+    dplyr::reframe(catch = sum(catch)) %>%
     spread(descripcion, catch, sep = "_")
 
   names(catch_sps) = gsub(pattern = "descripcion", replacement = "catch", x = names(catch_sps))
 
   min_sps = data_tallasfaenas %>%
-    filter(!is.na(descripcion), descripcion != "") %>%
-    mutate(min_rango = apply(data_tallasfaenas[tallas], 1, min_range)) %>%
+    dplyr::filter(!is.na(descripcion), descripcion != "") %>%
+    dplyr::mutate(min_rango = apply(data_tallasfaenas[tallas], 1, min_range)) %>%
     spread(descripcion, min_rango, sep = "_") %>%
-    select("codigo_faena","n_cala", starts_with("descripcion_"))
+    dplyr::select("codigo_faena","n_cala", starts_with("descripcion_"))
 
 
   names(min_sps) = gsub(pattern = "descripcion", replacement = "min", x = names(min_sps))
 
   max_sps = data_tallasfaenas %>%
-    mutate(max_rango = apply(data_tallasfaenas[tallas], 1, max_range)) %>%
+    dplyr::mutate(max_rango = apply(data_tallasfaenas[tallas], 1, max_range)) %>%
     spread(descripcion, max_rango, sep = "_") %>%
-    select("codigo_faena","n_cala", starts_with("descripcion_"))
+    dplyr::select("codigo_faena","n_cala", starts_with("descripcion_"))
 
   names(max_sps) = gsub(pattern = "descripcion", replacement = "max", x = names(max_sps))
 
