@@ -1,34 +1,31 @@
-#' Procesamiento de datos de faenas
+#' Procesamiento de datos de faenas pesqueras
 #'
 #' @description
-#' processing_faenas() Función para procesar datos de faenas pesqueras proveniente de las bitácoras de PRODUCE. Usa formato xlsx
+#' Procesa datos de faenas pesqueras provenientes de las bitácoras de PRODUCE,
+#' en formato CSV o XLSX. Devuelve un data frame limpio y estandarizado.
 #'
-#' @param data_faenas Un data frame con los datos de faenas a procesar
-#' @return Un data frame con los datos procesados
+#' @param data_faenas Data frame con los datos crudos de faenas.
+#' @param formato Formato del archivo de entrada: "xlsx" (por defecto) o "csv".
+#'
+#' @return Un data frame con columnas estandarizadas: codigo_faena, embarcacion, armador, matricula, fecha_inicio (opcional), fecha_fin (opcional).
 #' @export
-#' @rdname processing_faenas
+#'
 #' @examples
-#' data_faenas <- processing_faenas(data_faenas = faenas)
-processing_faenas = function(data_faenas) {
-  data_faenas <- data_faenas %>% dplyr::select(11, 4, 3, 7, 9, 10)
+#' procesar_faenas(data_faenas = faenas, formato = "xlsx")
+procesar_faenas <- function(data_faenas, formato = "xlsx") {
+  if (!formato %in% c("xlsx", "csv")) {
+    stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
+  }
 
-  names(data_faenas) <- c("codigo_faena", "embarcacion", "armador", "matricula", 'fecha_inicio', 'fecha_fin')
-
-  return(data_faenas)
-
-}
-
-#' @description
-#' processing_faenas_2() Función para procesar datos de faenas pesqueras proveniente de las bitácoras de PRODUCE. Usa formato csv
-#'
-#' @param data_faenas Un data frame con los datos de faenas a procesar
-#' @export
-#' @rdname processing_faenas
-processing_faenas_2 = function(data_faenas) {
-  data_faenas <- data_faenas %>% dplyr::select(8, 3, 2, 4, 6, 7)
-
-  names(data_faenas) <- c("codigo_faena", "embarcacion", "armador", "matricula")
+  if (formato == "xlsx") {
+    if (ncol(data_faenas) < 11) stop("Se esperan al menos 11 columnas en archivos XLSX.")
+    data_faenas <- data_faenas %>% dplyr::select(11, 4, 3, 7, 9, 10)
+    names(data_faenas) <- c("codigo_faena", "embarcacion", "armador", "matricula", "fecha_inicio", "fecha_fin")
+  } else if (formato == "csv") {
+    if (ncol(data_faenas) < 8) stop("Se esperan al menos 8 columnas en archivos CSV.")
+    data_faenas <- data_faenas %>% dplyr::select(8, 3, 2, 4)
+    names(data_faenas) <- c("codigo_faena", "embarcacion", "armador", "matricula")
+  }
 
   return(data_faenas)
-
 }

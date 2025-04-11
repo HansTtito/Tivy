@@ -1,48 +1,48 @@
 #' Procesamiento de datos de tallas de las calas
-#' @description
-#' processing_tallas() Función para procesar datos de tallas de las calas pesqueras proveniente de las bitácoras de PRODUCE. Usa formato xlsx
 #'
-#' @param data_tallas Un data frame con los datos de tallas de las calas a procesar
-#' @return Un data frame con los datos procesados
+#' @description
+#' Procesa datos de tallas provenientes de las bitácoras de PRODUCE en formato CSV o XLSX.
+#' Limpia las columnas relevantes y transforma el formato long a formato wide (filas por cala, columnas por talla).
+#'
+#' @param data_tallas Data frame con los datos de tallas.
+#' @param formato Formato de entrada: "xlsx" (por defecto) o "csv".
+#'
+#' @return Un data frame con tallas por cala (formato wide).
 #' @export
-#' @rdname processing_tallas
+#'
 #' @examples
-#' data_tallas_calas <- processing_tallas(data_tallas = faenas)
-processing_tallas = function(data_tallas) {
-  data_tallas <- data_tallas %>% dplyr::select(3, 4, 5, 8, 10)
+#' procesar_tallas(data_tallas = tallas, formato = "xlsx")
+procesar_tallas <- function(data_tallas, formato = "xlsx") {
+  if (!formato %in% c("xlsx", "csv")) {
+    stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
+  }
 
+  if (formato == "xlsx") {
+    if (ncol(data_tallas) < 10) stop("Se esperan al menos 10 columnas en archivos XLSX.")
+    data_tallas <- data_tallas %>% dplyr::select(3, 4, 5, 8, 10)
+  } else if (formato == "csv") {
+    if (ncol(data_tallas) < 6) stop("Se esperan al menos 6 columnas en archivos CSV.")
+    data_tallas <- data_tallas[, -c(1, 6)]
+  }
+
+  # Asignar nombres
   names(data_tallas) <- c("codigo_faena", "n_cala", "descripcion", "talla", "freq")
 
-  data_tallas = data_tallas %>% dplyr::mutate(descripcion = str_trim(descripcion))
-
-  data_tallas <- data_tallas %>% tidyr::spread(talla, freq)
-
-  return(data_tallas)
-
-}
-
-
-#' @description
-#' processing_tallas_2() Función para procesar datos de tallas de las calas pesqueras proveniente de las bitácoras de PRODUCE. Usa formato csv
-#'
-#' @param data_tallas Un data frame con los datos de tallas de las calas a procesar
-#' @export
-#' @rdname processing_tallas
-processing_tallas_2 = function(data_tallas) {
-  data_tallas = data_tallas[, -c(1, 6)]
-
-  names(data_tallas) <- c("codigo_faena", "n_cala", "descripcion", "talla", "freq")
-
-  data_tallas = data_tallas %>%
+  # Limpieza y conversión de columnas
+  data_tallas <- data_tallas %>%
     dplyr::mutate(
-      talla = as.numeric(talla),
-      freq = as.numeric(freq),
-      descripcion = str_trim(descripcion)
+      descripcion = stringr::str_trim(descripcion),
+      talla = suppressWarnings(as.numeric(talla)),
+      freq = suppressWarnings(as.numeric(freq))
     )
 
-  data_tallas <- data_tallas %>% tidyr::spread(talla, freq)
+  # Transformación long → wide
+  data_tallas <- tidyr::pivot_wider(
+    data_tallas,
+    names_from = talla,
+    values_from = freq,
+    values_fill = list(freq = 0)
+  )
 
   return(data_tallas)
-
 }
-
