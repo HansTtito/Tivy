@@ -11,13 +11,10 @@ Imports:
   tidyr,
   lubridate,
   stringi,
-  rvest,
-  readxl,
   pdftools,
   stringr,
   future,
-  future.apply,
-  furrr
+  future.apply
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
