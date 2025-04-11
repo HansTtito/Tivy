@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatial-functions.R
 \name{distancia_costa}
 \alias{distancia_costa}
-\title{Distancia a la Costa vectorizado}
+\title{Distancia a la costa vectorizado}
 \usage{
 distancia_costa(
   lon,
@@ -11,25 +11,53 @@ distancia_costa(
   devolver_indices = FALSE,
   tipo_distancia = "haversine",
   unidad = "mn",
-  ventana = 2,
+  ventana = 1,
   paralelo = FALSE,
   nucleos = 4
 )
 }
 \arguments{
-\item{lon}{Un vector con las longitudes}
+\item{lon}{Vector numérico con las longitudes de los puntos de interés.}
 
-\item{lat}{Un vector con las latitudes}
+\item{lat}{Vector numérico con las latitudes de los puntos de interés.}
 
-\item{linea_costa}{Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat}
+\item{linea_costa}{Data frame que representa la línea de costa, debe contener columnas llamadas \code{'Long'} y \code{'Lat'}.}
+
+\item{devolver_indices}{Lógico. Si es \code{TRUE}, devuelve también los índices de los puntos de la línea de costa más cercanos. Default \code{FALSE}.}
+
+\item{tipo_distancia}{Tipo de distancia geográfica a usar: \code{"haversine"}, \code{"euclidean"}, \code{"grid"} .}
+
+\item{unidad}{Unidad de medida para la distancia: \code{"mn"} (millas náuticas), \code{"km"}, etc.}
+
+\item{ventana}{Ventana de búsqueda en grados alrededor del punto para limitar los cálculos y mejorar eficiencia. Default \code{1}.}
+
+\item{paralelo}{Lógico. Si \code{TRUE}, realiza el cálculo en paralelo utilizando múltiples núcleos. Default \code{FALSE}.}
+
+\item{nucleos}{Número de núcleos a usar para procesamiento paralelo. Default \code{4}.}
 }
 \value{
-Un vector con las distancias a la costa
+Si \code{devolver_indices = FALSE}, devuelve un vector numérico con las distancias a la costa para cada punto.
+Si \code{devolver_indices = TRUE}, devuelve una lista con:
+\itemize{
+\item \code{distancia}: vector numérico con las distancias a la costa
+\item \code{indice}: vector de índices del punto más cercano en la línea de costa
+}
 }
 \description{
-Función que permite estimar la distancia entre puntos hacia una lista de puntos
+Estima la distancia entre un conjunto de puntos (lon, lat) y una línea de costa definida por coordenadas.
+Se puede ejecutar de forma secuencial o en paralelo, y retornar también los índices de los puntos costeros más cercanos.
 }
 \examples{
-data_calas = processing_calas(data_calas = calas)
-distancia_costa(lon = data_calas$lon_final, lat = data_calas$lat_final, linea_costa = Shoreline_Peru)
+\dontrun{
+data_calas <- processing_calas(data_calas = calas)
+distancia_costa(
+  lon = data_calas$lon_final,
+  lat = data_calas$lat_final,
+  linea_costa = Shoreline_Peru,
+  tipo_distancia = "haversine",
+  unidad = "mn",
+  paralelo = TRUE,
+  nucleos = 2
+)
+}
 }

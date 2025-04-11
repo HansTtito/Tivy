@@ -2,19 +2,30 @@
 % Please edit documentation in R/add-variables.R
 \name{agregar_variables}
 \alias{agregar_variables}
-\title{agregando variables a la base de datos}
+\title{Agrega variables de juveniles, muestra, distancia a la costa y su categoría}
 \usage{
-agregar_variables(data)
+agregar_variables(
+  data,
+  JuvLim = 12,
+  tipo_distancia = "haversine",
+  ventana = 0.5,
+  unidad = "mn"
+)
 }
 \arguments{
-\item{data}{Un data frame obtenido de merge_tallas_faenas_calas()}
+\item{data}{Data frame con tallas y coordenadas}
+
+\item{JuvLim}{Límite de talla para considerar juveniles (default = 12)}
+
+\item{tipo_distancia}{Tipo de cálculo de distancia ("haversine", etc.)}
+
+\item{ventana}{Ventana para suavizar línea de costa (default = 0.5)}
+
+\item{unidad}{Unidad de distancia ("mn", "km", etc.)}
 }
 \value{
-Un data frame con los datos consolidados de faenas, tallas y calas
+Data frame con nuevas variables: juv, muestra, dc y dc_cat
 }
 \description{
-agregar_variables() Función que permite agregar variables como la distancia a la costa, la cantidad de juveniles y la cantidad de muestras
-}
-\examples{
-data_total <- agregar_variables(data = data_total)
+Agrega variables de juveniles, muestra, distancia a la costa y su categoría
 }

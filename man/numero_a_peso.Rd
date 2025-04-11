@@ -2,29 +2,28 @@
 % Please edit documentation in R/statistics.R
 \name{numero_a_peso}
 \alias{numero_a_peso}
-\title{numero_a_peso}
+\title{Conversión de número de individuos a peso}
 \usage{
 numero_a_peso(data, tallas, a, b)
 }
 \arguments{
-\item{data}{Un data frame con las frecuencias de las tallas en número}
+\item{data}{Data frame donde las columnas con nombres iguales a las tallas contienen frecuencias.}
 
-\item{tallas}{Un vector numérico que representa las tallas muestreadas}
+\item{tallas}{Vector de tallas (que deben coincidir con los nombres de columnas del \code{data}).}
 
-\item{a}{Un valor numérico de la relación longitud - peso}
+\item{a}{Valor numérico del coeficiente de la relación longitud-peso.}
 
-\item{b}{Un valor numérico de la relación longitud - peso}
+\item{b}{Valor numérico del exponente de la relación longitud-peso.}
 }
 \value{
-El porcentaje de juveniles estimado
+Data frame con las mismas dimensiones pero expresadas en peso.
 }
 \description{
-Función para convertir las tallas en número a peso
+Convierte frecuencias numéricas de tallas en un data.frame a estimaciones de peso,
+usando la relación talla-peso.
 }
 \examples{
-data_tallas <- processing_tallas(data_tallas = tallas)
-tallas <- seq(from = 8, to = 15, by = 0.5)
-a <- 0.0012
-b <- 2.984
-data_peso <- numero_a_peso(data = data_tallas, tallas = tallas, a = a, b = b)
+data <- data.frame(id = 1:2, `8` = c(3,2), `9` = c(5,4), `10` = c(2,3))
+tallas <- c(8,9,10)
+numero_a_peso(data, tallas, a = 0.0012, b = 2.984)
 }

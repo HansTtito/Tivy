@@ -1,41 +1,74 @@
-#' agregando variables a la base de datos
+#' Agrega variables de juveniles, muestra, distancia a la costa y su categoría
 #'
-#' @description
-#' agregar_variables() Función que permite agregar variables como la distancia a la costa, la cantidad de juveniles y la cantidad de muestras
+#' @param data Data frame con tallas y coordenadas
+#' @param JuvLim Límite de talla para considerar juveniles (default = 12)
+#' @param tipo_distancia Tipo de cálculo de distancia ("haversine", etc.)
+#' @param ventana Ventana para suavizar línea de costa (default = 0.5)
+#' @param unidad Unidad de distancia ("mn", "km", etc.)
 #'
-#' @param data Un data frame obtenido de merge_tallas_faenas_calas()
-#' @return Un data frame con los datos consolidados de faenas, tallas y calas
-#' @export
-#' @rdname agregar_variables
-#' @examples
-#' data_total <- agregar_variables(data = data_total)
-agregar_variables = function(data) {
-  # data$n = 1:nrow(data)
+#' @return Data frame con nuevas variables: juv, muestra, dc y dc_cat
+agregar_variables <- function(data,
+                              JuvLim = 12,
+                              tipo_distancia = "haversine",
+                              ventana = 0.5,
+                              unidad = "mn") {
 
-  tallas = grep(pattern = "[1-9]",
-                x = names(data),
-                value = TRUE)
+  # Verificaciones básicas
+  stopifnot(is.data.frame(data))
+  required_cols <- c("lon_inicial", "lat_inicial")
+  if (!all(required_cols %in% names(data))) {
+    stop("Faltan columnas requeridas: lon_inicial y/o lat_inicial")
+  }
 
-  data$juv = apply(data[, tallas],
-                   1,
-                   porc_juveniles,
-                   tallas = as.numeric(tallas),
-                   juvLim = 12)
+  # Detectar columnas de tallas (números en los nombres)
+  tallas <- grep(pattern = "^[1-9][0-9]*$",
+                 x = names(data),
+                 value = TRUE)
 
-  data$muestra = apply(data[, tallas], 1, sum, na.rm = TRUE)
+  if (length(tallas) == 0) {
+    stop("No se encontraron columnas de tallas con nombres numéricos.")
+  }
 
-  data$dc = distancia_costa_vectorizado(lon = data$lon_inicial, lat = data$lat_inicial)
+  # Asegurar que columnas de tallas sean numéricas
+  data[tallas] <- lapply(data[tallas], as.numeric)
 
-  data = data %>%
+  # Calcular proporción de juveniles
+  data$juv <- apply(data[, tallas, drop = FALSE],
+                    1,
+                    porc_juveniles,
+                    tallas = as.numeric(tallas),
+                    juvLim = JuvLim)
+
+  # Total de individuos en la muestra
+  data$muestra <- rowSums(data[, tallas], na.rm = TRUE)
+
+  # Distancia a la costa usando Tivy
+  data$dc <- tryCatch(
+    Tivy::distancia_costa(
+      lon = data$lon_inicial,
+      lat = data$lat_inicial,
+      linea_costa = Shoreline_Peru,
+      tipo_distancia = tipo_distancia,
+      ventana = ventana,
+      unidad = unidad
+    ),
+    error = function(e) {
+      warning("Error en cálculo de distancia a costa: ", conditionMessage(e))
+      return(rep(NA_real_, nrow(data)))
+    }
+  )
+
+  # Categorías de distancia a la costa
+  data <- data %>%
     dplyr::mutate(
       dc_cat = dplyr::case_when(
-        dc >= 5  & dc < 15 ~ "05-15 mn",
-        dc >= 15 & dc < 30 ~ "15-30 mn",
-        dc >= 30 & dc < 50 ~ "30-50 mn",
-        dc >= 50 & dc < 100 ~ "50-100 mn"
+        !is.na(dc) & dc >= 5  & dc < 15  ~ "05-15 mn",
+        !is.na(dc) & dc >= 15 & dc < 30  ~ "15-30 mn",
+        !is.na(dc) & dc >= 30 & dc < 50  ~ "30-50 mn",
+        !is.na(dc) & dc >= 50 & dc < 100 ~ "50-100 mn",
+        TRUE                             ~ NA_character_
       )
     )
 
   return(data)
-
 }

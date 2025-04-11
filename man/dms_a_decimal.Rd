@@ -2,19 +2,31 @@
 % Please edit documentation in R/spatial-functions.R
 \name{dms_a_decimal}
 \alias{dms_a_decimal}
-\title{Convertir latitud y longitud a grados decimales}
+\title{Convertir latitud o longitud a grados decimales}
 \usage{
 dms_a_decimal(coordenadas, hemisferio = "S")
 }
 \arguments{
-\item{coordenadas}{Un vector con las longitudes o latitudes a convertir}
+\item{coordenadas}{Vector de caracteres. Cada elemento debe estar en formato \verb{"G° M' S\\""} o \code{"G M S"}, por ejemplo \verb{"39° 48' 36\\""} o \code{"39 48 36"}.}
+
+\item{hemisferio}{Caracter \code{"N"}, \code{"S"}, \code{"E"}, \code{"W"} o \code{"O"} que indica el hemisferio correspondiente:
+\code{"S"} y \code{"W"}/\code{"O"} generan valores negativos. Default: \code{"S"}.}
 }
 \value{
-Un vector con las longitudes o latitudes convertidas a decimales
+Un vector numérico con las coordenadas convertidas a grados decimales.
 }
 \description{
-Función que permite convertir longitud o latitude en grados a decimales.
+Convierte coordenadas expresadas en formato grados, minutos y segundos (DMS) a grados decimales.
+Por defecto, se asume que las coordenadas están en el hemisferio sur (latitudes negativas).
 }
 \examples{
-dms_a_decimal(calas$Longitud.Fin)
+# Convertir coordenadas del sur
+dms_a_decimal(c("39° 48' 36\""), hemisferio = "S")
+
+# Convertir coordenadas del oeste
+dms_a_decimal(c("73 15 0"), hemisferio = "O")
+
+# En un dataframe
+# dms_a_decimal(calas$Longitud.Fin)
+
 }

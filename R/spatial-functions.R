@@ -1,36 +1,50 @@
-#' Convertir latitud y longitud a grados decimales
-#' @description
-#' Función que permite convertir longitud o latitude en grados a decimales.
+#' Convertir latitud o longitud a grados decimales
 #'
-#' @param coordenadas Un vector con las longitudes o latitudes a convertir
-#' @return Un vector con las longitudes o latitudes convertidas a decimales
-#' @export
-#' @rdname dms_a_decimal
+#' @description
+#' Convierte coordenadas expresadas en formato grados, minutos y segundos (DMS) a grados decimales.
+#' Por defecto, se asume que las coordenadas están en el hemisferio sur (latitudes negativas).
+#'
+#' @param coordenadas Vector de caracteres. Cada elemento debe estar en formato `"G° M' S\""` o `"G M S"`, por ejemplo `"39° 48' 36\""` o `"39 48 36"`.
+#' @param hemisferio Caracter `"N"`, `"S"`, `"E"`, `"W"` o `"O"` que indica el hemisferio correspondiente:
+#' `"S"` y `"W"`/`"O"` generan valores negativos. Default: `"S"`.
+#'
+#' @return Un vector numérico con las coordenadas convertidas a grados decimales.
+#'
 #' @examples
-#' dms_a_decimal(calas$Longitud.Fin)
+#' # Convertir coordenadas del sur
+#' dms_a_decimal(c("39° 48' 36\""), hemisferio = "S")
+#'
+#' # Convertir coordenadas del oeste
+#' dms_a_decimal(c("73 15 0"), hemisferio = "O")
+#'
+#' # En un dataframe
+#' # dms_a_decimal(calas$Longitud.Fin)
+#'
+#' @export
 dms_a_decimal <- function(coordenadas, hemisferio = "S") {
   # Validación de entrada
   if (!is.character(coordenadas)) {
-    stop("Las coordenadas deben ser una cadena de texto")
+    stop("Las coordenadas deben ser una cadena de texto o un vector de caracteres.")
   }
 
-  # Determinar el signo según el hemisferio
+  if (!hemisferio %in% c("N", "S", "E", "W", "O")) {
+    stop("El hemisferio debe ser uno de: 'N', 'S', 'E', 'W' o 'O'.")
+  }
+
+  # Determinar el signo
   signo <- ifelse(hemisferio %in% c("S", "W", "O"), -1, 1)
 
-  # Intentar convertir usando tryCatch para manejar errores
   resultados <- tryCatch({
-    # Dividir la cadena en componentes
-    componentes <- str_split_fixed(coordenadas, " ", n = 3)
+    # Separar en grados, minutos, segundos
+    componentes <- stringr::str_split_fixed(coordenadas, " ", n = 3)
 
-    # Eliminar caracteres no numéricos y convertir a numérico
+    # Limpiar y convertir a numérico
     valores_numericos <- apply(componentes, 2, function(x) {
-      # Eliminar °, ', " y otros caracteres no numéricos
-      numeros <- gsub(pattern = "[°'\"]", replacement = "", x = x)
-      # Convertir a numérico
-      as.numeric(numeros)
+      numeros <- gsub(pattern = "[^0-9.]", replacement = "", x)
+      suppressWarnings(as.numeric(numeros))
     })
 
-    # Calcular el valor decimal
+    # Calcular valor decimal
     decimal <- signo * (valores_numericos[, 1] +
                           valores_numericos[, 2] / 60 +
                           valores_numericos[, 3] / 3600)
@@ -38,32 +52,57 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
     return(decimal)
   }, error = function(e) {
     warning("Error al procesar las coordenadas: ", e$message)
-    return(NA)
+    return(rep(NA_real_, length(coordenadas)))
   })
 
   return(resultados)
 }
 
 
-#' Distancia a la Costa vectorizado
-#' @description
-#' Función que permite estimar la distancia entre puntos hacia una lista de puntos
+
+#' Distancia a la costa vectorizado
 #'
-#' @param lon Un vector con las longitudes
-#' @param lat Un vector con las latitudes
-#' @param linea_costa Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat
-#' @return Un vector con las distancias a la costa
-#' @export
-#' @rdname distancia_costa
+#' @description
+#' Estima la distancia entre un conjunto de puntos (lon, lat) y una línea de costa definida por coordenadas.
+#' Se puede ejecutar de forma secuencial o en paralelo, y retornar también los índices de los puntos costeros más cercanos.
+#'
+#' @param lon Vector numérico con las longitudes de los puntos de interés.
+#' @param lat Vector numérico con las latitudes de los puntos de interés.
+#' @param linea_costa Data frame que representa la línea de costa, debe contener columnas llamadas `'Long'` y `'Lat'`.
+#' @param devolver_indices Lógico. Si es `TRUE`, devuelve también los índices de los puntos de la línea de costa más cercanos. Default `FALSE`.
+#' @param tipo_distancia Tipo de distancia geográfica a usar: `"haversine"`, `"euclidean"`, `"grid"` .
+#' @param unidad Unidad de medida para la distancia: `"mn"` (millas náuticas), `"km"`, etc.
+#' @param ventana Ventana de búsqueda en grados alrededor del punto para limitar los cálculos y mejorar eficiencia. Default `1`.
+#' @param paralelo Lógico. Si `TRUE`, realiza el cálculo en paralelo utilizando múltiples núcleos. Default `FALSE`.
+#' @param nucleos Número de núcleos a usar para procesamiento paralelo. Default `4`.
+#'
+#' @return Si `devolver_indices = FALSE`, devuelve un vector numérico con las distancias a la costa para cada punto.
+#'         Si `devolver_indices = TRUE`, devuelve una lista con:
+#'         \itemize{
+#'           \item \code{distancia}: vector numérico con las distancias a la costa
+#'           \item \code{indice}: vector de índices del punto más cercano en la línea de costa
+#'         }
+#'
 #' @examples
-#' data_calas = processing_calas(data_calas = calas)
-#' distancia_costa(lon = data_calas$lon_final, lat = data_calas$lat_final, linea_costa = Shoreline_Peru)
-# spatial-functions.R
+#' \dontrun{
+#' data_calas <- processing_calas(data_calas = calas)
+#' distancia_costa(
+#'   lon = data_calas$lon_final,
+#'   lat = data_calas$lat_final,
+#'   linea_costa = Shoreline_Peru,
+#'   tipo_distancia = "haversine",
+#'   unidad = "mn",
+#'   paralelo = TRUE,
+#'   nucleos = 2
+#' )
+#' }
+#' @export
+
 distancia_costa <- function(lon, lat, linea_costa,
                             devolver_indices = FALSE,
                             tipo_distancia = "haversine",
                             unidad = "mn",
-                            ventana = 2,
+                            ventana = 1,
                             paralelo = FALSE,
                             nucleos = 4) {
   # Verificar estructura de datos

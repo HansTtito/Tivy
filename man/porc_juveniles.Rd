@@ -2,25 +2,26 @@
 % Please edit documentation in R/statistics.R
 \name{porc_juveniles}
 \alias{porc_juveniles}
-\title{Porcentaje de Juveniles}
+\title{Porcentaje de juveniles}
 \usage{
 porc_juveniles(frecuencia, tallas, juvLim = 12)
 }
 \arguments{
-\item{frecuencia}{Un vector con las frecuencias de las tallas muestreadas en la captura}
+\item{frecuencia}{Un vector numérico con la frecuencia de tallas muestreadas.}
 
-\item{tallas}{Un vector numérico que representa las tallas muestreadas}
+\item{tallas}{Vector de tallas correspondiente a las frecuencias.}
 
-\item{juvLim}{Un valor numérico que representa la talla límite para considerar un individuo como juvenil}
+\item{juvLim}{Talla límite (por defecto 12 cm) para clasificar como juvenil.}
 }
 \value{
-El porcentaje de juveniles estimado
+Porcentaje de juveniles en la muestra.
 }
 \description{
-Función para estimar el porcentaje de juveniles
+Estima el porcentaje de individuos considerados juveniles en una muestra
+según una talla límite establecida.
 }
 \examples{
-frecuencia <- c(0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 10, 6, 3, 2, 0, 0, 0, 0, 0, 0, 0, 0)
-tallas <- seq(from = 5, to = 20, by = 0.5)
-juveniles <- porc_juveniles(frecuencia = frecuencia, tallas = tallas, juvLim = 12)
+frecuencia <- c(0, 1, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 10, 6, 3, 2)
+tallas <- seq(5, 20, by = 1)
+porc <- porc_juveniles(frecuencia, tallas, juvLim = 12)
 }
