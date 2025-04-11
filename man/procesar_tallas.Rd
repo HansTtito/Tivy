@@ -19,6 +19,5 @@ Procesa datos de tallas provenientes de las bitácoras de PRODUCE en formato CSV
 Limpia las columnas relevantes y transforma el formato long a formato wide (filas por cala, columnas por talla).
 }
 \examples{
-procesar_tallas(data_tallas = data_xlsx, formato = "xlsx")
-procesar_tallas(data_tallas = data_csv, formato = "csv")
+procesar_tallas(data_tallas = tallas, formato = "xlsx")
 }

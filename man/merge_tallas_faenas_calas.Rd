@@ -7,16 +7,21 @@
 merge_tallas_faenas_calas(data_calas, data_tallas_faenas)
 }
 \arguments{
-\item{data_calas}{Un data frame obtenido de processing_calas()}
+\item{data_calas}{Un data frame procesado con \code{processing_calas()} o \code{processing_calas_2()}.}
 
-\item{data_tallas_faenas}{Un data frame con los datos de tallas de las faenas a procesar}
+\item{data_tallas_faenas}{Un data frame con los datos de tallas por faena y cala.}
 }
 \value{
-Un data frame con los datos consolidados de faenas, tallas y calas
+Un data frame con los datos consolidados de faenas, tallas y calas.
 }
 \description{
-merge_tallas_faenas_calas() Función para juntar los archivos de faenas, tallas y calas
+\code{merge_tallas_faenas_calas()} es una función para unir los datos de faenas, tallas y calas, combinando las capturas por especie,
+los rangos de tallas (mínimo y máximo) y la información espacial y temporal de cada cala.
 }
 \examples{
+data_calas <- procesar_calas(data_calas = calas, formato = "xlsx")
+data_faenas <- procesar_faenas(data_faenas = faenas, formato = "xlsx")
+data_tallas <- procesar_tallas(data_tallas = tallas, formato = "xlsx")
+data_tallas_faenas <- merge(x = data_tallas, y = data_faenas, by = "codigo_faena", all = TRUE)
 data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallas_faenas)
 }

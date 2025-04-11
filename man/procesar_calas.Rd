@@ -19,6 +19,5 @@ Procesa datos de calas pesqueras provenientes de las bitácoras de PRODUCE,
 en formato CSV o XLSX. Devuelve un data frame limpio y estandarizado.
 }
 \examples{
-procesar_calas(data_calas = calas_xlsx, formato = "xlsx")
-procesar_calas(data_calas = calas_csv, formato = "csv")
+procesar_calas(data_calas = calas, formato = "xlsx")
 }
