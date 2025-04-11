@@ -19,23 +19,16 @@ Carga el paquete y usa sus funciones principales:
 
 library(Tivy)
 
-# Cargar de calas
-
-data_calas = processing_calas(data_calas = calas)
-data_faenas = processing_faenas(data_faenas = faenas)
-calas_tallas = processing_tallas(data_tallas = tallas)
-
+# Cargar de Archivos
+data_calas <- procesar_calas(data_calas = calas)
+data_faenas <- procesar_faenas(data_faenas = faenas)
+calas_tallas <- procesar_tallas(data_tallas = tallas)
 
 # Merge de calas, tallas y faenas
+data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
+data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
 
-data_tallasfaenas = merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
-
-data_total = merge_tallasfaenas_calas(data_calas = data_calas, data_tallasfaenas = data_tallasfaenas)
-
-data_total = agregar_variables(data = data_total)
-
-plot_mapa_peru()
-points(data_total$lon_final, data_total$lat_final, col = 'red', pch = 19)
-
+# Aplicación de la función
+resultados <- agregar_variables(data_total)
 
 ```
