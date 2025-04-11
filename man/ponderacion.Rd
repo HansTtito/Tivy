@@ -2,32 +2,33 @@
 % Please edit documentation in R/statistics.R
 \name{ponderacion}
 \alias{ponderacion}
-\title{Ponderación de la talla la captura}
+\title{Ponderación de tallas según captura total}
 \usage{
 ponderacion(frecuencia, captura, tallas, a, b)
 }
 \arguments{
-\item{frecuencia}{Un vector con las frecuencias de las tallas muestreadas en la captura}
+\item{frecuencia}{Un vector numérico con la frecuencia de tallas observadas en el muestreo.}
 
-\item{captura}{Un valor numérico que representa la captura}
+\item{captura}{Valor numérico con la captura total (en kg o toneladas, según el caso).}
 
-\item{tallas}{Un vector numérico que representa las tallas muestreadas}
+\item{tallas}{Un vector numérico con las tallas correspondientes a las frecuencias.}
 
-\item{a}{Un valor numérico de la relación longitud - peso}
+\item{a}{Valor numérico del coeficiente de la relación longitud-peso.}
 
-\item{b}{Un valor numérico de la relación longitud - peso}
+\item{b}{Valor numérico del exponente de la relación longitud-peso.}
 }
 \value{
-Un vector con las tallas ponderadas a la captura
+Un vector numérico con las frecuencias ponderadas.
 }
 \description{
-Función para ponderar las tallas en función de la captura.
+Calcula una ponderación de las tallas muestreadas en función de la captura total
+registrada. Esto permite escalar la frecuencia observada a la captura total.
 }
 \examples{
-frecuencia_tallas <- c(0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 10, 6, 3, 2, 0, 0, 0, 0, 0, 0, 0, 0)
-captura <- 100
-tallas <- seq(from = 5, to = 20, by = 0.5)
+frecuencia <- c(0, 1, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 10, 6, 3, 2)
+tallas <- seq(5, 20, by = 1)
+captura <- 1000
 a <- 0.0001
 b <- 2.984
-tallas_ponderadas <- ponderacion(frecuencia = frecuencia_tallas, captura = captura, tallas = tallas, a = a, b = b)
+ponderadas <- ponderacion(frecuencia, captura, tallas, a, b)
 }
