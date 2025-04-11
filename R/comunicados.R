@@ -36,10 +36,10 @@ extrae_data_comunicados <- function(vector_pdf_names) {
   # Procesar cada archivo PDF en vector_pdf_names
   for (file in vector_pdf_names) {
     # Leer el texto del archivo PDF
-    texto <- pdf_text(file)
+    texto <- pdftools::pdf_text(file)
 
     # Limpiar el texto
-    texto_limpio <- stringr::str_replace_all(texto, "\\s+", " ")
+    texto_limpio <- stringr::str_squish(texto)
 
     # Separar el texto en bloques
     bloques <- stringr::str_split(texto_limpio, "DISPONER LA SUSPENSIÓN PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA")[[1]]
