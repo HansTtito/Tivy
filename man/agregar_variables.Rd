@@ -13,19 +13,45 @@ agregar_variables(
 )
 }
 \arguments{
-\item{data}{Data frame con tallas y coordenadas}
+\item{data}{Un data frame que debe contener las coordenadas de latitud (\code{lat_inicial}) y longitud (\code{lon_inicial}),
+así como columnas con los tamaños de los individuos.}
 
-\item{JuvLim}{Límite de talla para considerar juveniles (default = 12)}
+\item{JuvLim}{Límite de talla para considerar juveniles (default = 12). Si la talla es menor que este valor,
+el individuo se considera juvenil.}
 
-\item{tipo_distancia}{Tipo de cálculo de distancia ("haversine", etc.)}
+\item{tipo_distancia}{Tipo de cálculo de distancia a la costa (opciones como "haversine", etc.),
+por defecto es "haversine".}
 
-\item{ventana}{Ventana para suavizar línea de costa (default = 0.5)}
+\item{ventana}{Ventana para suavizar la línea de costa, el valor por defecto es 0.5.}
 
-\item{unidad}{Unidad de distancia ("mn", "km", etc.)}
+\item{unidad}{Unidad de distancia utilizada para la medición de la distancia a la costa
+("mn", "km", etc.), por defecto es "mn".}
 }
 \value{
-Data frame con nuevas variables: juv, muestra, dc y dc_cat
+Un data frame con las siguientes nuevas variables:
+\itemize{
+\item \code{juv}: La proporción de juveniles en cada fila.
+\item \code{muestra}: El total de individuos en la muestra.
+\item \code{dc}: La distancia a la costa desde las coordenadas de latitud y longitud proporcionadas.
+\item \code{dc_cat}: La categoría de distancia a la costa (por ejemplo, "05-15 mn", "15-30 mn", etc.).
+}
 }
 \description{
-Agrega variables de juveniles, muestra, distancia a la costa y su categoría
+Esta función agrega nuevas variables a un conjunto de datos, incluyendo la proporción de juveniles,
+el total de individuos en la muestra, la distancia a la costa y la categoría de distancia a la costa.
+}
+\examples{
+\dontrun{
+# Procesamiento de datos
+data_calas <- procesar_calas(data_calas = calas)
+data_faenas <- procesar_faenas(data_faenas = faenas)
+calas_tallas <- procesar_tallas(data_tallas = tallas)
+
+# Merge de calas, tallas y faenas
+data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
+data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
+
+# Aplicación de la función
+resultados <- agregar_variables(data_total)
+}
 }
