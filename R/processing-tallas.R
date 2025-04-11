@@ -38,7 +38,7 @@ procesar_tallas <- function(data_tallas, formato = "xlsx") {
       freq = suppressWarnings(as.numeric(freq))
     )
   # Guardar orden deseado de las tallas
-  orden_tallas <- sort(unique(tidyr::na.omit(data_tallas$talla)))
+  orden_tallas <- sort(unique(na.omit(data_tallas$talla)))
   # Transformar a formato wide
   data_tallas <- tidyr::pivot_wider(
     data_tallas,
