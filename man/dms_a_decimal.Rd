@@ -7,24 +7,38 @@
 dms_a_decimal(coordenadas, hemisferio = "S")
 }
 \arguments{
-\item{coordenadas}{Vector de caracteres. Cada elemento debe estar en formato \verb{"G° M' S\\""} o \code{"G M S"}, por ejemplo \verb{"39° 48' 36\\""} o \code{"39 48 36"}.}
+\item{coordenadas}{Vector de caracteres. Cada elemento debe estar en formatos como:
+\itemize{
+\item Con símbolos: \verb{"G° M' S\\""}, \code{"G° M'"}, \code{"17°26'S"}
+\item Sin símbolos: \code{"G M S"}, \code{"G M"}, \code{"17 26 S"}
+\item El hemisferio puede estar incluido en la coordenada
+}}
 
-\item{hemisferio}{Caracter \code{"N"}, \code{"S"}, \code{"E"}, \code{"W"} o \code{"O"} que indica el hemisferio correspondiente:
-\code{"S"} y \code{"W"}/\code{"O"} generan valores negativos. Default: \code{"S"}.}
+\item{hemisferio}{Caracter \code{"N"}, \code{"S"}, \code{"E"}, \code{"W"} o \code{"O"} que indica el hemisferio correspondiente
+cuando no está especificado en la coordenada. \code{"S"} y \code{"W"}/\code{"O"} generan valores negativos. Default: \code{"S"}.}
 }
 \value{
 Un vector numérico con las coordenadas convertidas a grados decimales.
 }
 \description{
-Convierte coordenadas expresadas en formato grados, minutos y segundos (DMS) a grados decimales.
+Convierte coordenadas expresadas en formato grados, minutos y segundos (DMS) o grados y minutos (DM) a grados decimales.
 Por defecto, se asume que las coordenadas están en el hemisferio sur (latitudes negativas).
 }
 \examples{
-# Convertir coordenadas del sur
+# Convertir coordenadas del sur (formato completo)
 dms_a_decimal(c("39° 48' 36\""), hemisferio = "S")
 
-# Convertir coordenadas del oeste
+# Convertir coordenadas del oeste (formato completo sin símbolos)
 dms_a_decimal(c("73 15 0"), hemisferio = "O")
+
+# Convertir coordenadas con solo grados y minutos
+dms_a_decimal(c("39° 48'"), hemisferio = "S")
+dms_a_decimal(c("73 15"), hemisferio = "W")
+
+# Coordenadas con hemisferio incluido
+dms_a_decimal(c("17°26'S"))
+dms_a_decimal(c("73°15'W"))
+dms_a_decimal(c("39 48 N"))
 
 # En un dataframe
 # dms_a_decimal(calas$Longitud.Fin)
