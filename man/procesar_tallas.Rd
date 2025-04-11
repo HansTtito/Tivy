@@ -20,4 +20,5 @@ Limpia las columnas relevantes y transforma el formato long a formato wide (fila
 }
 \examples{
 procesar_tallas(data_tallas = tallas, formato = "xlsx")
+
 }

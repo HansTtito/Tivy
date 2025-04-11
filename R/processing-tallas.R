@@ -12,6 +12,11 @@
 #'
 #' @examples
 #' procesar_tallas(data_tallas = tallas, formato = "xlsx")
+#'
+#' @import dplyr
+#' @import stringr
+#' @import tidyr
+#' @import readxl
 procesar_tallas <- function(data_tallas, formato = "xlsx") {
   if (!formato %in% c("xlsx", "csv")) {
     stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
