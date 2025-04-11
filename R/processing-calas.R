@@ -9,6 +9,8 @@
 #'
 #' @return Un data frame con columnas estandarizadas y coordenadas en grados decimales.
 #' @export
+#' @importFrom dplyr select mutate %>%
+#' @importFrom stringi stri_trim
 #'
 #' @examples
 #' procesar_calas(data_calas = calas, formato = "xlsx")
@@ -16,7 +18,6 @@ procesar_calas <- function(data_calas, formato = "xlsx") {
   if (!formato %in% c("xlsx", "csv")) {
     stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
   }
-
   if (formato == "xlsx") {
     if (ncol(data_calas) < 18) stop("Se esperan al menos 18 columnas en archivos XLSX.")
     data_calas <- data_calas %>%
@@ -24,13 +25,11 @@ procesar_calas <- function(data_calas, formato = "xlsx") {
   } else if (formato == "csv") {
     data_calas <- data_calas[, -1]  # Eliminar primera columna extra
   }
-
   names(data_calas) <- c(
     "codigo_faena", "n_cala", "fecha_inicio", "fecha_fin",
     "latitud_inicio", "longitud_inicio", "latitud_fin", "longitud_fin",
     "tipo_arte", "descripcion", "catch", "estado", "origen_cala", "fecha_registro"
   )
-
   data_calas <- data_calas %>%
     dplyr::mutate(
       descripcion = stringi::stri_trim(descripcion),
@@ -39,6 +38,5 @@ procesar_calas <- function(data_calas, formato = "xlsx") {
       lat_final = dms_a_decimal(latitud_fin),
       lon_final = dms_a_decimal(longitud_fin)
     )
-
   return(data_calas)
 }

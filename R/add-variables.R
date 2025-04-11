@@ -35,41 +35,35 @@
 #' resultados <- agregar_variables(data_total)
 #' }
 #' @export
+#' @importFrom dplyr mutate case_when %>%
 agregar_variables <- function(data,
                               JuvLim = 12,
                               tipo_distancia = "haversine",
                               ventana = 0.5,
                               unidad = "mn") {
-
   # Verificaciones básicas
   stopifnot(is.data.frame(data))
   required_cols <- c("lon_inicial", "lat_inicial")
   if (!all(required_cols %in% names(data))) {
     stop("Faltan columnas requeridas: lon_inicial y/o lat_inicial")
   }
-
   # Detectar columnas de tallas (números en los nombres)
   tallas <- grep(pattern = "^[1-9][0-9]*$",
                  x = names(data),
                  value = TRUE)
-
   if (length(tallas) == 0) {
     stop("No se encontraron columnas de tallas con nombres numéricos.")
   }
-
   # Asegurar que columnas de tallas sean numéricas
   data[tallas] <- lapply(data[tallas], as.numeric)
-
   # Calcular proporción de juveniles
   data$juv <- apply(data[, tallas, drop = FALSE],
                     1,
                     porc_juveniles,
                     tallas = as.numeric(tallas),
                     juvLim = JuvLim)
-
   # Total de individuos en la muestra
   data$muestra <- rowSums(data[, tallas], na.rm = TRUE)
-
   # Distancia a la costa usando Tivy
   data$dc <- tryCatch(
     Tivy::distancia_costa(
@@ -85,7 +79,6 @@ agregar_variables <- function(data,
       return(rep(NA_real_, nrow(data)))
     }
   )
-
   # Categorías de distancia a la costa
   data <- data %>%
     dplyr::mutate(
@@ -97,6 +90,5 @@ agregar_variables <- function(data,
         TRUE                             ~ NA_character_
       )
     )
-
   return(data)
 }

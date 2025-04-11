@@ -9,6 +9,7 @@
 #'
 #' @return Un data frame con columnas estandarizadas: codigo_faena, embarcacion, armador, matricula, fecha_inicio (opcional), fecha_fin (opcional).
 #' @export
+#' @importFrom dplyr select %>%
 #'
 #' @examples
 #' procesar_faenas(data_faenas = faenas, formato = "xlsx")
@@ -16,7 +17,6 @@ procesar_faenas <- function(data_faenas, formato = "xlsx") {
   if (!formato %in% c("xlsx", "csv")) {
     stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
   }
-
   if (formato == "xlsx") {
     if (ncol(data_faenas) < 11) stop("Se esperan al menos 11 columnas en archivos XLSX.")
     data_faenas <- data_faenas %>% dplyr::select(11, 4, 3, 7, 9, 10)
@@ -26,6 +26,5 @@ procesar_faenas <- function(data_faenas, formato = "xlsx") {
     data_faenas <- data_faenas %>% dplyr::select(8, 3, 2, 4)
     names(data_faenas) <- c("codigo_faena", "embarcacion", "armador", "matricula")
   }
-
   return(data_faenas)
 }

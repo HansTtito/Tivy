@@ -9,6 +9,7 @@
 #' `"S"` y `"W"`/`"O"` generan valores negativos. Default: `"S"`.
 #'
 #' @return Un vector numérico con las coordenadas convertidas a grados decimales.
+#' @export
 #'
 #' @examples
 #' # Convertir coordenadas del sur
@@ -20,7 +21,7 @@
 #' # En un dataframe
 #' # dms_a_decimal(calas$Longitud.Fin)
 #'
-#' @export
+#' @importFrom stringr str_split_fixed
 dms_a_decimal <- function(coordenadas, hemisferio = "S") {
   # Validación de entrada
   if (!is.character(coordenadas)) {
@@ -83,6 +84,7 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
 #'           \item \code{indice}: vector de índices del punto más cercano en la línea de costa
 #'         }
 #'
+#' @export
 #' @examples
 #' \dontrun{
 #' data_calas <- processing_calas(data_calas = calas)
@@ -96,8 +98,9 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
 #'   nucleos = 2
 #' )
 #' }
-#' @export
-
+#'
+#' @importFrom future plan multisession
+#' @importFrom future.apply future_lapply
 distancia_costa <- function(lon, lat, linea_costa,
                             devolver_indices = FALSE,
                             tipo_distancia = "haversine",
@@ -137,7 +140,7 @@ distancia_costa <- function(lon, lat, linea_costa,
   apply_fun <- if (paralelo) future.apply::future_lapply else lapply
 
   resultados_lotes <- apply_fun(lotes_indices, function(indices_lote) {
-    Tivy:::calcular_distancias_vectorizado(
+    calcular_distancias_vectorizado(
       lon_validos[indices_lote],
       lat_validos[indices_lote],
       linea_costa$Long,
@@ -180,6 +183,8 @@ distancia_costa <- function(lon, lat, linea_costa,
 #' @examples
 #' data_calas = processing_calas(data_calas = calas)
 #' puntos_tierra(x_punto = data_calas$lon_final, y_punto = data_calas$lat_final, linea_costa = Shoreline_Peru)
+#' @importFrom future plan multisession sequential
+#' @importFrom future.apply future_lapply
 puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucleos = 4) {
   # Asegurarse de que linea_costa tenga los nombres de columnas correctos
   if (!"Long" %in% colnames(linea_costa) || !"Lat" %in% colnames(linea_costa)) {

@@ -15,8 +15,8 @@
 #' print(fechas_convertidas)
 #'
 #' @export
+#' @importFrom lubridate parse_date_time
 convertir_a_fecha <- function(vector_fecha) {
-
   # Lista de formatos de fecha posibles
   formatos_fecha <- c(
     "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d",
@@ -30,37 +30,26 @@ convertir_a_fecha <- function(vector_fecha) {
     "%d-%b-%Y %H:%M:%S", "%d-%b-%Y %H:%M", "%d-%b-%Y",
     "%d/%b/%Y %H:%M:%S", "%d/%b/%Y %H:%M", "%d/%b/%Y"
   )
-
   # Inicializar un vector para las fechas convertidas
   formatos_finales = Date()
-
   # Iterar sobre cada elemento del vector de fechas
   for(fecha in vector_fecha){
-
     # Inicializar un vector vacío para almacenar las fechas convertidas por formato
     dats = Date()
-
     # Intentar convertir la fecha con cada formato
     for(formato in formatos_fecha){
-
       intento <- tryCatch({
-        parse_date_time(fecha, orders = formato)
+        lubridate::parse_date_time(fecha, orders = formato)
       }, warning = function(w) {
         return(NA)
       }, error = function(e) {
         return(NA)
       })
-
       # Si la conversión es exitosa, agregar la fecha al vector dats
       dats = c(dats, intento[!is.na(intento)])
-
     }
-
     # Tomar la primera fecha válida encontrada
     formatos_finales = c(formatos_finales, dats[1])
-
   }
-
   return(formatos_finales)
-
 }

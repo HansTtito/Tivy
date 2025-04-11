@@ -13,15 +13,13 @@
 #' @examples
 #' procesar_tallas(data_tallas = tallas, formato = "xlsx")
 #'
-#' @import dplyr
-#' @import stringr
-#' @import tidyr
-#' @import readxl
+#' @importFrom dplyr select mutate %>%
+#' @importFrom stringr str_trim
+#' @importFrom tidyr pivot_wider
 procesar_tallas <- function(data_tallas, formato = "xlsx") {
   if (!formato %in% c("xlsx", "csv")) {
     stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
   }
-
   # Seleccionar columnas según formato
   if (formato == "xlsx") {
     if (ncol(data_tallas) < 10) stop("Se esperan al menos 10 columnas en archivos XLSX.")
@@ -30,10 +28,8 @@ procesar_tallas <- function(data_tallas, formato = "xlsx") {
     if (ncol(data_tallas) < 6) stop("Se esperan al menos 6 columnas en archivos CSV.")
     data_tallas <- data_tallas[, -c(1, 6)]
   }
-
   # Asignar nombres
   names(data_tallas) <- c("codigo_faena", "n_cala", "descripcion", "talla", "freq")
-
   # Limpieza y conversión
   data_tallas <- data_tallas %>%
     dplyr::mutate(
@@ -41,10 +37,8 @@ procesar_tallas <- function(data_tallas, formato = "xlsx") {
       talla = suppressWarnings(as.numeric(talla)),
       freq = suppressWarnings(as.numeric(freq))
     )
-
   # Guardar orden deseado de las tallas
-  orden_tallas <- sort(unique(na.omit(data_tallas$talla)))
-
+  orden_tallas <- sort(unique(tidyr::na.omit(data_tallas$talla)))
   # Transformar a formato wide
   data_tallas <- tidyr::pivot_wider(
     data_tallas,
@@ -52,12 +46,9 @@ procesar_tallas <- function(data_tallas, formato = "xlsx") {
     values_from = freq,
     values_fill = list(freq = 0)
   )
-
   # Reordenar columnas de tallas
   columnas_fijas <- c("codigo_faena", "n_cala", "descripcion")
   columnas_tallas_ordenadas <- as.character(orden_tallas)
-
   data_tallas <- data_tallas[, c(columnas_fijas, columnas_tallas_ordenadas)]
-
   return(data_tallas)
 }

@@ -28,6 +28,8 @@
 #' head(resultados)
 #'
 #' @export
+#' @importFrom pdftools pdf_text
+#' @importFrom stringr str_replace_all str_split str_extract_all
 extrae_data_comunicados <- function(vector_pdf_names) {
   todos_resultados <- list()
 
@@ -37,10 +39,10 @@ extrae_data_comunicados <- function(vector_pdf_names) {
     texto <- pdf_text(file)
 
     # Limpiar el texto
-    texto_limpio <- str_replace_all(texto, "\\s+", " ")
+    texto_limpio <- stringr::str_replace_all(texto, "\\s+", " ")
 
     # Separar el texto en bloques
-    bloques <- str_split(texto_limpio, "DISPONER LA SUSPENSIÓN PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA")[[1]]
+    bloques <- stringr::str_split(texto_limpio, "DISPONER LA SUSPENSIÓN PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA")[[1]]
 
     # Inicializar lista para almacenar los resultados de cada archivo PDF
     resultados <- list()
@@ -51,14 +53,14 @@ extrae_data_comunicados <- function(vector_pdf_names) {
 
       # Extraer las fechas y horas de inicio y fin
       pattern_fechas <- "(\\d{2}:\\d{2} horas del \\d{2} de \\w+ de \\d{4})"
-      fechas <- gsub("horas del ", "", str_extract_all(bloque, pattern_fechas)[[1]])
+      fechas <- gsub("horas del ", "", stringr::str_extract_all(bloque, pattern_fechas)[[1]])
       fechas_final <- as.POSIXct(fechas, format = "%H:%M %d de %B de %Y", tz = "America/Lima")
 
       # Extraer las coordenadas de latitud y longitud
-      pattern_coordenadas_lat <- "\\d{1,2}°\\d{1,2}['’][NS]"
-      pattern_coordenadas_lon <- "\\d{1,2}°\\d{1,2}['’][WE]"
-      data_posiciones_lat <- str_extract_all(bloque, pattern_coordenadas_lat)[[1]]
-      data_posiciones_lon <- str_extract_all(bloque, pattern_coordenadas_lon)[[1]]
+      pattern_coordenadas_lat <- "\\d{1,2}°\\d{1,2}[''][NS]"
+      pattern_coordenadas_lon <- "\\d{1,2}°\\d{1,2}[''][WE]"
+      data_posiciones_lat <- stringr::str_extract_all(bloque, pattern_coordenadas_lat)[[1]]
+      data_posiciones_lon <- stringr::str_extract_all(bloque, pattern_coordenadas_lon)[[1]]
 
       # Verificar si hay longitudes presentes
       if (length(data_posiciones_lon) == 0) {
@@ -66,7 +68,7 @@ extrae_data_comunicados <- function(vector_pdf_names) {
         pattern_millas <- "(?:entre las )?(\\d+) y (\\d+) millas náuticas|dentro de las (\\d+) millas náuticas"
 
         # Obtener todos los textos que contienen millas náuticas
-        textos_millas <- str_extract_all(bloque, pattern_millas)[[1]]
+        textos_millas <- stringr::str_extract_all(bloque, pattern_millas)[[1]]
 
         # Inicializar vectores para almacenar las millas de inicio y fin
         millas_inicio <- numeric()
@@ -74,7 +76,7 @@ extrae_data_comunicados <- function(vector_pdf_names) {
 
         # Procesar cada texto de millas náuticas
         for (texto_millas in textos_millas) {
-          numeros_millas <- as.numeric(str_extract_all(texto_millas, "\\d+")[[1]])
+          numeros_millas <- as.numeric(stringr::str_extract_all(texto_millas, "\\d+")[[1]])
 
           if (length(numeros_millas) > 0) {
             if (length(numeros_millas) == 1) {
