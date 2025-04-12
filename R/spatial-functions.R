@@ -523,8 +523,8 @@ puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucle
 #'        que pueden estar en formato de texto (como "12°30'S") o decimales.
 #' @param costa Un data frame que contiene la línea de costa para visualización.
 #'        Debe tener columnas 'Long' y 'Lat'. Por defecto utiliza Shoreline_Peru.
-#' @param titulo Título para el gráfico.
-#' @param colores Vector de colores para los polígonos.
+#' @param titulo Título para el gráfico. Default NULL
+#' @param colores Vector de colores para los polígonos. Default NULL
 #' @param mostrar_leyenda Lógico. Si es TRUE, muestra la leyenda. Default FALSE.
 #' @param etiquetas Vector de textos para etiquetar cada polígono en la leyenda.
 #' @param agregar_grid Lógico. Si es TRUE, agrega cuadrícula al gráfico. Default FALSE.
@@ -546,7 +546,7 @@ puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucle
 #' @export
 graficar_poligonos_ggplot <- function(datos,
                                       costa = Tivy::Shoreline_Peru,
-                                      titulo = "Zonas de suspensión pesquera",
+                                      titulo = NULL,
                                       colores = NULL,
                                       mostrar_leyenda = FALSE,
                                       etiquetas = NULL,
@@ -577,8 +577,8 @@ graficar_poligonos_ggplot <- function(datos,
 #'        que pueden estar en formato de texto (como "12°30'S") o decimales.
 #' @param costa Un data frame que contiene la línea de costa para visualización.
 #'        Debe tener columnas 'Long' y 'Lat'. Por defecto utiliza Shoreline_Peru.
-#' @param titulo Título para el gráfico.
-#' @param colores Vector de colores para los polígonos.
+#' @param titulo Título para el gráfico. Default NULL
+#' @param colores Vector de colores para los polígonos. Default NULL
 #' @param mostrar_leyenda Lógico. Si es TRUE, muestra la leyenda. Default FALSE.
 #' @param etiquetas Vector de textos para etiquetar cada polígono en la leyenda.
 #' @param capas_base Lógico. Si es TRUE, agrega múltiples mapas base. Default FALSE.
@@ -600,7 +600,7 @@ graficar_poligonos_ggplot <- function(datos,
 #' @export
 graficar_poligonos_leaflet <- function(datos,
                                        costa = Tivy::Shoreline_Peru,
-                                       titulo = "Zonas de suspensión pesquera",
+                                       titulo = NULL,
                                        colores = NULL,
                                        mostrar_leyenda = FALSE,
                                        etiquetas = NULL,

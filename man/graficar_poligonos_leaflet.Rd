@@ -7,7 +7,7 @@
 graficar_poligonos_leaflet(
   datos,
   costa = Tivy::Shoreline_Peru,
-  titulo = "Zonas de suspensión pesquera",
+  titulo = NULL,
   colores = NULL,
   mostrar_leyenda = FALSE,
   etiquetas = NULL,
