@@ -69,7 +69,7 @@ agregar_variables <- function(data,
     Tivy::distancia_costa(
       lon = data$lon_inicial,
       lat = data$lat_inicial,
-      linea_costa = Shoreline_Peru,
+      linea_costa = Tivy::Shoreline_Peru,
       tipo_distancia = tipo_distancia,
       ventana = ventana,
       unidad = unidad

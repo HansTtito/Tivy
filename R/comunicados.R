@@ -29,7 +29,7 @@
 #'
 #' @export
 #' @importFrom pdftools pdf_text
-#' @importFrom stringr str_squish str_split str_extract_all
+#' @importFrom stringr str_squish str_split str_extract_all str_extract
 extrae_data_comunicados <- function(vector_pdf_names) {
   # Validación de parámetros
   if (missing(vector_pdf_names)) {
@@ -75,8 +75,9 @@ extrae_data_comunicados <- function(vector_pdf_names) {
     LongitudFin = character(),
     MillasNauticasInicio = numeric(),
     MillasNauticasFin = numeric(),
-    comunicado = character(),
-    stringsAsFactors = FALSE
+    nombre_archivo = character(),
+    stringsAsFactors = FALSE,
+    comunicado = character()
   )
 
   # Procesar cada archivo PDF
@@ -121,6 +122,11 @@ extrae_data_comunicados <- function(vector_pdf_names) {
       next
     }
 
+    # Verificar si contiene la cadena de texto clave
+    if (!any(grepl("COMUNICADO N°", texto_limpio))) {
+      stop("El archivo '", file, "' no tiene título.")
+    }
+
     # Inicializar lista para resultados de este archivo
     resultados <- list()
 
@@ -132,6 +138,10 @@ extrae_data_comunicados <- function(vector_pdf_names) {
       tryCatch({
         pattern_fechas <- "(\\d{2}:\\d{2} horas del \\d{2} de \\w+ de \\d{4})"
         fechas_texto <- stringr::str_extract_all(bloque, pattern_fechas)[[1]]
+
+        comunicado <- stringr::str_extract(texto_limpio, "COMUNICADO\\s*N[°º]\\s*\\d+(?:\\s*[-–]\\s*\\d+)?(?:-[A-Z]+)?")
+
+
 
         if (length(fechas_texto) < 2) {
           warning("No se encontraron suficientes fechas en el bloque ", i, " del archivo '", file, "'.")
@@ -257,7 +267,8 @@ extrae_data_comunicados <- function(vector_pdf_names) {
                 LongitudFin = NA_character_,
                 MillasNauticasInicio = millas_inicio[ceiling(j/2)],
                 MillasNauticasFin = millas_fin[ceiling(j/2)],
-                comunicado = basename(file),
+                nombre_archivo = basename(file),
+                comunicado = comunicado,
                 stringsAsFactors = FALSE
               )
               resultados <- append(resultados, list(df))
@@ -275,7 +286,8 @@ extrae_data_comunicados <- function(vector_pdf_names) {
             LongitudFin = NA_character_,
             MillasNauticasInicio = millas_inicio[1],
             MillasNauticasFin = millas_fin[1],
-            comunicado = basename(file),
+            nombre_archivo = basename(file),
+            comunicado = comunicado,
             stringsAsFactors = FALSE
           )
           resultados <- append(resultados, list(df))
@@ -318,7 +330,8 @@ extrae_data_comunicados <- function(vector_pdf_names) {
               LongitudFin = data_posiciones_lon[j + 1],
               MillasNauticasInicio = NA_real_,
               MillasNauticasFin = NA_real_,
-              comunicado = basename(file),
+              nombre_archivo = basename(file),
+              comunicado = comunicado,
               stringsAsFactors = FALSE
             )
             resultados <- append(resultados, list(df))

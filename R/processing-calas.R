@@ -33,10 +33,10 @@ procesar_calas <- function(data_calas, formato = "xlsx") {
   data_calas <- data_calas %>%
     dplyr::mutate(
       descripcion = stringi::stri_trim(descripcion),
-      lat_inicial = dms_a_decimal(latitud_inicio),
-      lon_inicial = dms_a_decimal(longitud_inicio),
-      lat_final = dms_a_decimal(latitud_fin),
-      lon_final = dms_a_decimal(longitud_fin)
+      lat_inicial = Tivy::dms_a_decimal(latitud_inicio),
+      lon_inicial = Tivy::dms_a_decimal(longitud_inicio),
+      lat_final = Tivy::dms_a_decimal(latitud_fin),
+      lon_final = Tivy::dms_a_decimal(longitud_fin)
     )
   return(data_calas)
 }

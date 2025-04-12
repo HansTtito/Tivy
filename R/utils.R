@@ -157,3 +157,316 @@ calcular_distancias_vectorizado <- function(lon_punto, lat_punto, costa_lon, cos
 
   return(list(distancias = distancias_finales, indices = indices_finales))
 }
+
+
+
+# Función auxiliar para crear polígonos a partir de puntos
+crear_poligonos <- function(datos,
+                            lat_ini_col, lat_fin_col,
+                            lon_ini_col, lon_fin_col,
+                            millas_ini_col = NULL, millas_fin_col = NULL) {
+
+  # Inicializar lista para polígonos
+  poligonos <- list()
+
+  # Crear polígonos para cada fila
+  for (i in 1:nrow(datos)) {
+    lat_min <- min(datos[[lat_ini_col]][i], datos[[lat_fin_col]][i])
+    lat_max <- max(datos[[lat_ini_col]][i], datos[[lat_fin_col]][i])
+    lon_min <- min(datos[[lon_ini_col]][i], datos[[lon_fin_col]][i])
+    lon_max <- max(datos[[lon_ini_col]][i], datos[[lon_fin_col]][i])
+
+    # Si tenemos millas náuticas, ajustar longitudes
+    if (!is.null(millas_ini_col) && !is.null(millas_fin_col)) {
+      # Convertir millas a grados de longitud (aproximación)
+      # 1 minuto de longitud en ecuador ~ 1 milla náutica
+      # Ajustar según latitud
+      cos_lat <- cos(mean(c(lat_min, lat_max)) * pi/180)
+      millas_min <- datos[[millas_ini_col]][i]
+      millas_max <- datos[[millas_fin_col]][i]
+
+      # Convertir millas a grados (aproximado)
+      lon_offset_min <- millas_min / 60 / cos_lat
+      lon_offset_max <- millas_max / 60 / cos_lat
+
+      # Ajustar longitudes
+      lon_min <- lon_min - lon_offset_min
+      lon_max <- lon_min - lon_offset_max
+    }
+
+    # Crear coordenadas del polígono (rectángulo)
+    coords <- rbind(
+      c(lon_min, lat_min),  # Esquina inferior izquierda
+      c(lon_max, lat_min),  # Esquina inferior derecha
+      c(lon_max, lat_max),  # Esquina superior derecha
+      c(lon_min, lat_max),  # Esquina superior izquierda
+      c(lon_min, lat_min)   # Cerrar el polígono
+    )
+
+    # Crear geometría de polígono
+    poligono <- sf::st_polygon(list(coords))
+
+    # Añadir metadatos
+    atributos <- datos[i, ]
+
+    # Crear objeto sf
+    poligono_sf <- sf::st_sf(
+      geometry = sf::st_sfc(poligono, crs = 4326),
+      id = i,
+      fecha_inicio = if ("FechaHoraInicio" %in% names(datos)) datos$FechaHoraInicio[i] else NA,
+      fecha_fin = if ("FechaHoraFin" %in% names(datos)) datos$FechaHoraFin[i] else NA,
+      nombre_archivo = if ("nombre_archivo" %in% names(datos)) datos$nombre_archivo[i] else NA,
+      comunicado = if ("comunicado" %in% names(datos)) datos$comunicado[i] else paste("Polígono", i)
+    )
+
+    poligonos[[i]] <- poligono_sf
+  }
+
+  # Combinar todos los polígonos en un solo objeto sf
+  poligonos_sf <- do.call(rbind, poligonos)
+  return(poligonos_sf)
+}
+
+# Función auxiliar para calcular la longitud aproximada de la costa a una latitud dada
+calcular_longitud_costa <- function(costa, latitud) {
+  # Encontrar los puntos de costa más cercanos a la latitud dada
+  idx_cercanos <- which(abs(costa$Lat - latitud) < 0.1)
+
+  if (length(idx_cercanos) == 0) {
+    warning("No se encontraron puntos costeros cercanos a la latitud ", latitud, ". Usando aproximación.")
+    return(-75)  # Valor aproximado para la costa peruana
+  }
+
+  # Calcular la longitud promedio de estos puntos
+  longitud_costa <- mean(costa$Long[idx_cercanos])
+  return(longitud_costa)
+}
+
+
+# Función para gráfico estático con ggplot2
+graficar_estatico <- function(poligonos, costa, titulo, colores, mostrar_leyenda = TRUE,
+                              etiquetas = NULL, agregar_grid = TRUE, tema = ggplot2::theme_minimal()) {
+
+  p <- ggplot2::ggplot()
+
+  # Línea de costa
+  p <- p + ggplot2::geom_path(data = costa, ggplot2::aes(x = Long, y = Lat),
+                              color = "darkgrey", linewidth = 0.5)
+
+  if(is.null(colores)){
+    colores <- RColorBrewer::brewer.pal(n = length(poligonos), name = "Set3")
+  }
+
+  # Construir data.frame para todos los polígonos juntos
+  lista_df <- list()
+  for (i in seq_along(poligonos)) {
+    poligono <- poligonos[[i]]
+    color_idx <- (i - 1) %% length(colores) + 1
+
+    etiqueta <- if (!is.null(etiquetas) && length(etiquetas) >= i) {
+      etiquetas[i]
+    } else {
+      poligono$comunicado
+    }
+
+    coords_df <- as.data.frame(poligono$coords)
+    colnames(coords_df) <- c("Long", "Lat")
+    coords_df$grupo <- etiqueta
+
+    coords_df$id <- poligono$id
+
+    lista_df[[i]] <- coords_df
+  }
+
+  df_poligonos <- do.call(rbind, lista_df)
+
+  # Polígonos con relleno por comunicado
+  p <- p + ggplot2::geom_polygon(
+    data = df_poligonos,
+    ggplot2::aes(x = Long, y = Lat, fill = grupo, group = id),
+    alpha = 0.7,
+    color = "black"
+  )
+
+  # Colores
+  p <- p + ggplot2::scale_fill_manual(values = colores, name = "Comunicados")
+
+  # Etiquetas y tema
+  p <- p + ggplot2::labs(
+    title = titulo,
+    x = "Longitud",
+    y = "Latitud",
+    caption = "Fuente: PRODUCE"
+  ) + tema
+
+  # Cuadrícula
+  if (agregar_grid) {
+    p <- p + ggplot2::coord_quickmap() +
+      ggplot2::scale_x_continuous(breaks = seq(-82, -70, by = 2)) +
+      ggplot2::scale_y_continuous(breaks = seq(-20, -8, by = 2)) +
+      ggplot2::theme(panel.grid = ggplot2::element_line(color = "lightgrey", linetype = "dashed"))
+  } else {
+    p <- p + ggplot2::coord_quickmap()
+  }
+
+  # Leyenda
+  if (!mostrar_leyenda) {
+    p <- p + ggplot2::theme(legend.position = "none")
+  } else {
+    p <- p + ggplot2::theme(
+      legend.position = "right",
+      legend.background = ggplot2::element_rect(fill = "white", color = "grey80"),
+      legend.margin = ggplot2::margin(5, 5, 5, 5)
+    )
+  }
+
+  return(p)
+}
+
+
+# Función para gráfico interactivo con leaflet
+graficar_interactivo <- function(poligonos, costa, titulo, colores, mostrar_leyenda = TRUE,
+                                 etiquetas = NULL, capas_base = TRUE, minimap = TRUE) {
+
+  if(is.null(colores)){
+    colores <- RColorBrewer::brewer.pal(n = length(poligonos), name = "Set3")
+  }
+
+  # Crear el mapa base
+  mapa <- leaflet::leaflet() %>%
+    leaflet::addTiles(group = "OpenStreetMap")
+
+  # Añadir capas base adicionales si se solicita
+  if (capas_base) {
+    mapa <- mapa %>%
+      leaflet::addProviderTiles(leaflet::providers$Esri.OceanBasemap, group = "Océano") %>%
+      leaflet::addProviderTiles(leaflet::providers$CartoDB.Positron, group = "Simple") %>%
+      leaflet::addProviderTiles(leaflet::providers$Esri.WorldImagery, group = "Satélite") %>%
+      leaflet::addLayersControl(
+        baseGroups = c("OpenStreetMap", "Océano", "Simple", "Satélite"),
+        position = "topright"
+      )
+  }
+
+  # Añadir título
+  if (!is.null(titulo)) {
+    mapa <- mapa %>%
+      leaflet::addControl(
+        html = paste0("<h4>", titulo, "</h4>"),
+        position = "topleft"
+      )
+  }
+
+  # Añadir la línea de costa
+  mapa <- mapa %>%
+    leaflet::addPolylines(
+      data = costa,
+      lng = ~Long,
+      lat = ~Lat,
+      color = "darkgrey",
+      weight = 1.5,
+      opacity = 0.8,
+      group = "Línea de Costa"
+    )
+
+  # Crear grupo de capas para la leyenda
+  overlay_groups <- c()
+
+  # Añadir cada polígono
+  for (i in seq_along(poligonos)) {
+    poligono <- poligonos[[i]]
+    color_idx <- (i - 1) %% length(colores) + 1
+
+    # Si hay etiquetas, usarlas para la leyenda
+    etiqueta <- if (!is.null(etiquetas) && length(etiquetas) >= i) {
+      etiquetas[i]
+    } else {
+      # Extraer nombre del comunicado como etiqueta por defecto
+      poligono$comunicado
+    }
+
+    # Guardar para la leyenda
+    overlay_groups <- c(overlay_groups, etiqueta)
+
+    # Preparar popup más detallado
+    popup_content <- paste0(
+      "<div style='max-width: 300px;'>",
+      "<h4>", etiqueta, "</h4>",
+      "<strong>Comunicado: </strong>", poligono$comunicado, "<br>",
+      "<strong>Fecha inicio: </strong>", format(poligono$fecha_inicio, "%d/%m/%Y %H:%M"), "<br>",
+      "<strong>Fecha fin: </strong>", format(poligono$fecha_fin, "%d/%m/%Y %H:%M"), "<br>",
+      "<strong>Lat Ini: </strong>", poligono$Lat_Ini, "<br>",
+      "<strong>Lon Ini: </strong>", poligono$Long_Ini, "<br>",
+      "<strong>Lat Fin: </strong>", poligono$Lat_Fin, "<br>",
+      "<strong>Lon Fin: </strong>", poligono$Long_Fin, "<br>",
+      "<strong>Millas Nauticas Inicio: </strong>", poligono$MillasNauticasInicio, "<br>",
+      "<strong>Millas Nauticas Fin: </strong>", poligono$MillasNauticasFin, "<br>",
+      "</div>"
+    )
+
+    # Convertir coordenadas al formato que espera leaflet
+    leaflet_coords <- list(
+      lng = poligono$coords[, 1],
+      lat = poligono$coords[, 2]
+    )
+
+    mapa <- mapa %>%
+      leaflet::addPolygons(
+        lng = leaflet_coords$lng,
+        lat = leaflet_coords$lat,
+        fillColor = colores[color_idx],
+        fillOpacity = 0.7,
+        color = "black",
+        weight = 1,
+        popup = popup_content,
+        group = etiqueta,
+        label = etiqueta,
+        highlightOptions = leaflet::highlightOptions(
+          weight = 3,
+          color = "#666",
+          fillOpacity = 0.8,
+          bringToFront = TRUE
+        )
+      )
+  }
+
+  # Añadir control de capas para los polígonos si se solicita leyenda
+  if (mostrar_leyenda && length(overlay_groups) > 0) {
+    mapa <- mapa %>%
+      leaflet::addLayersControl(
+        baseGroups = if (capas_base) c("OpenStreetMap", "Océano", "Simple", "Satélite") else "OpenStreetMap",
+        overlayGroups = overlay_groups,
+        position = "topright",
+        options = leaflet::layersControlOptions(collapsed = FALSE)
+      )
+  }
+
+  # Añadir escala
+  mapa <- mapa %>%
+    leaflet::addScaleBar(position = "bottomleft", options = leaflet::scaleBarOptions(imperial = FALSE))
+
+  # Añadir minimapa si se solicita
+  if (minimap && requireNamespace("leaflet", quietly = TRUE)) {
+    mapa <- mapa %>%
+      leaflet::addMiniMap(
+        tiles = leaflet::providers$CartoDB.Positron,
+        toggleDisplay = TRUE,
+        position = "bottomright"
+      )
+  }
+
+  # Calcular los límites del mapa
+  all_longs <- unlist(lapply(poligonos, function(p) p$coords[, 1]))
+  all_lats <- unlist(lapply(poligonos, function(p) p$coords[, 2]))
+
+  # Ajustar vista a los límites de los datos (con un margen)
+  mapa <- mapa %>%
+    leaflet::fitBounds(
+      lng1 = min(all_longs) - 0.5,
+      lat1 = min(all_lats) - 0.5,
+      lng2 = max(all_longs) + 0.5,
+      lat2 = max(all_lats) + 0.5
+    )
+
+  return(mapa)
+}
