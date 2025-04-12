@@ -23,8 +23,7 @@ convertir_a_fecha <- function(vector_fecha) {
   }
 
   if (length(vector_fecha) == 0) {
-    warning("El vector de fechas está vacío.")
-    return(Date())
+    stop("El vector de fechas está vacío.")
   }
 
   # Convertir a character si es un factor
@@ -33,14 +32,6 @@ convertir_a_fecha <- function(vector_fecha) {
     warning("El vector de fechas ha sido convertido de factor a character.")
   }
 
-  # Verificar que sea de tipo character
-  if (!is.character(vector_fecha)) {
-    if (inherits(vector_fecha, "Date") || inherits(vector_fecha, "POSIXt")) {
-      return(as.Date(vector_fecha))
-    } else {
-      stop("El parámetro 'vector_fecha' debe ser un vector de caracteres, factor, Date o POSIXt.")
-    }
-  }
 
   # Lista de formatos de fecha posibles
   formatos_fecha <- c(
