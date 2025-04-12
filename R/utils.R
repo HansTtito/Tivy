@@ -1,5 +1,12 @@
-# Función para calcular distancia usando la fórmula de Haversine modificada
-# (con elipsoide WGS84)
+#' Calcular distancia usando la fórmula de Haversine con el elipsoide WGS84
+#'
+#' @param lon1 Longitud del punto de origen (en grados o radianes).
+#' @param lat1 Latitud del punto de origen (en grados o radianes).
+#' @param lon2 Vector de longitudes destino (en grados o radianes).
+#' @param lat2 Vector de latitudes destino (en grados o radianes).
+#' @param unidad Unidad de salida: "mn" para millas náuticas, "km" para kilómetros.
+#'
+#' @return Lista con la distancia mínima y el índice correspondiente.
 calcular_distancia_haversine_wgs84 <- function(lon1, lat1, lon2, lat2, unidad) {
   # Convertir grados a radianes (verificando si ya están en radianes)
   if (max(abs(lon1), abs(lat1), abs(lon2), abs(lat2)) > 2*pi) {
@@ -37,7 +44,17 @@ calcular_distancia_haversine_wgs84 <- function(lon1, lat1, lon2, lat2, unidad) {
   return(list(distancia = min_dist, indice = min_idx))
 }
 
-# Función para calcular distancia de Manhattan (city block)
+
+
+#' Calcular distancia tipo Manhattan (bloques de ciudad) entre coordenadas
+#'
+#' @param lon1 Longitud del punto de origen.
+#' @param lat1 Latitud del punto de origen.
+#' @param lon2 Vector de longitudes destino.
+#' @param lat2 Vector de latitudes destino.
+#' @param unidad Unidad de distancia: "mn" o "km".
+#'
+#' @return Lista con la distancia mínima y el índice correspondiente.
 calcular_distancia_manhattan <- function(lon1, lat1, lon2, lat2, unidad) {
   # Verificar si convertir a radianes
   if (max(abs(lon1), abs(lat1), abs(lon2), abs(lat2)) > 2*pi) {
@@ -65,7 +82,18 @@ calcular_distancia_manhattan <- function(lon1, lat1, lon2, lat2, unidad) {
   return(list(distancia = min_dist, indice = min_idx))
 }
 
-# Función para calcular distancia de cuadrícula (grid) con resolución específica
+
+
+#' Calcular distancia de cuadrícula con resolución fija
+#'
+#' @param lon1 Longitud del punto base.
+#' @param lat1 Latitud del punto base.
+#' @param lon2 Vector de longitudes de destino.
+#' @param lat2 Vector de latitudes de destino.
+#' @param resolucion Resolución de la cuadrícula (por defecto 0.25 grados).
+#' @param unidad Unidad de distancia: "mn" o "km".
+#'
+#' @return Lista con distancia mínima y su índice.
 calcular_distancia_grid <- function(lon1, lat1, lon2, lat2, resolucion = 0.25, unidad = "km") {
   # Redondear a la resolución de cuadrícula más cercana
   lon1_grid <- round(lon1 / resolucion) * resolucion
@@ -101,7 +129,18 @@ calcular_distancia_grid <- function(lon1, lat1, lon2, lat2, resolucion = 0.25, u
 }
 
 
-# Función principal: Vectorización por lotes para cada punto
+
+#' Calcular distancias entre múltiples puntos y una línea costera (vectorizado)
+#'
+#' @param lon_punto Vector de longitudes de puntos a comparar.
+#' @param lat_punto Vector de latitudes de puntos a comparar.
+#' @param costa_lon Vector de longitudes de la costa.
+#' @param costa_lat Vector de latitudes de la costa.
+#' @param tipo_distancia Tipo de distancia: "haversine", "manhattan" o "grid".
+#' @param ventana Tamaño de la ventana (en grados) para filtrar la costa. Si es 0, se usa toda la costa.
+#' @param unidad Unidad de distancia: "mn" o "km".
+#'
+#' @return Lista con vectores de distancias mínimas e índices correspondientes.
 calcular_distancias_vectorizado <- function(lon_punto, lat_punto, costa_lon, costa_lat, tipo_distancia, ventana, unidad) {
   n_puntos <- length(lon_punto)
   distancias_finales <- numeric(n_puntos)
@@ -160,7 +199,17 @@ calcular_distancias_vectorizado <- function(lon_punto, lat_punto, costa_lon, cos
 
 
 
-# Función auxiliar para crear polígonos a partir de puntos
+#' Crear polígonos a partir de coordenadas geográficas y millas
+#'
+#' @param datos Data frame con las columnas necesarias para construir los polígonos.
+#' @param lat_ini_col Nombre de la columna con la latitud inicial.
+#' @param lat_fin_col Nombre de la columna con la latitud final.
+#' @param lon_ini_col Nombre de la columna con la longitud inicial.
+#' @param lon_fin_col Nombre de la columna con la longitud final.
+#' @param millas_ini_col (Opcional) Columna con distancia mínima en millas náuticas.
+#' @param millas_fin_col (Opcional) Columna con distancia máxima en millas náuticas.
+#'
+#' @return Un objeto `sf` con geometría de tipo polígono y atributos asociados.
 crear_poligonos <- function(datos,
                             lat_ini_col, lat_fin_col,
                             lon_ini_col, lon_fin_col,
@@ -243,7 +292,21 @@ calcular_longitud_costa <- function(costa, latitud) {
 }
 
 
-# Función para gráfico estático con ggplot2
+#' Generar gráfico estático de polígonos en un mapa
+#'
+#' @description
+#' Crea un gráfico estático utilizando `ggplot2` que muestra polígonos geográficos sobre una base de línea de costa.
+#'
+#' @param poligonos Lista de polígonos. Cada polígono debe contener una matriz `coords` con columnas de longitud y latitud.
+#' @param costa Data frame con la línea de costa, con columnas `Long` y `Lat`.
+#' @param titulo Título principal del gráfico.
+#' @param colores Vector de colores para rellenar los polígonos. Si es `NULL`, se asignan colores automáticamente.
+#' @param mostrar_leyenda Lógico. Si `TRUE`, se muestra la leyenda.
+#' @param etiquetas Vector de etiquetas para los polígonos (opcional).
+#' @param agregar_grid Lógico. Si `TRUE`, agrega una cuadrícula geográfica al gráfico.
+#' @param tema Tema de `ggplot2` a utilizar. Por defecto, `theme_minimal()`.
+#'
+#' @return Un objeto `ggplot` listo para ser graficado.
 graficar_estatico <- function(poligonos, costa, titulo, colores, mostrar_leyenda = TRUE,
                               etiquetas = NULL, agregar_grid = TRUE, tema = ggplot2::theme_minimal()) {
 
@@ -324,7 +387,21 @@ graficar_estatico <- function(poligonos, costa, titulo, colores, mostrar_leyenda
 }
 
 
-# Función para gráfico interactivo con leaflet
+#' Generar gráfico interactivo de polígonos con leaflet
+#'
+#' @description
+#' Crea un mapa interactivo utilizando `leaflet`, mostrando polígonos con información emergente (popup).
+#'
+#' @param poligonos Lista de polígonos. Cada uno debe tener campos como `coords`, `comunicado`, fechas y coordenadas.
+#' @param costa Data frame con la línea de costa (columnas `Long` y `Lat`).
+#' @param titulo Título a mostrar en la parte superior del mapa.
+#' @param colores Vector de colores. Si `NULL`, se asignan automáticamente con `RColorBrewer::Set3`.
+#' @param mostrar_leyenda Lógico. Si `TRUE`, se muestra el control de capas (leyenda).
+#' @param etiquetas Vector opcional de nombres para mostrar en la leyenda y etiquetas del mapa.
+#' @param capas_base Lógico. Si `TRUE`, se incluyen capas base como mapas satelitales y oceánicos.
+#' @param minimap Lógico. Si `TRUE`, se muestra un minimapa en la esquina inferior derecha.
+#'
+#' @return Un objeto `leaflet` con el mapa interactivo.
 graficar_interactivo <- function(poligonos, costa, titulo, colores, mostrar_leyenda = TRUE,
                                  etiquetas = NULL, capas_base = TRUE, minimap = TRUE) {
 
@@ -470,3 +547,169 @@ graficar_interactivo <- function(poligonos, costa, titulo, colores, mostrar_leye
 
   return(mapa)
 }
+
+
+
+#' Preparar polígonos a partir de datos de coordenadas
+#'
+#' @description
+#' Función auxiliar para procesar datos y preparar polígonos.
+#'
+#' @param datos Un data frame con coordenadas.
+#' @param costa Un data frame con la línea de costa.
+#'
+#' @return Una lista de polígonos para visualización.
+#' @keywords internal
+preparar_poligonos <- function(datos, costa) {
+  # Validación de parámetros
+  if (missing(datos)) {
+    stop("El parámetro 'datos' es obligatorio.")
+  }
+
+  if (!is.data.frame(datos)) {
+    stop("'datos' debe ser un data.frame.")
+  }
+
+  if (!is.data.frame(costa) || !all(c("Long", "Lat") %in% names(costa))) {
+    stop("'costa' debe ser un data.frame con columnas 'Long' y 'Lat'.")
+  }
+
+  # Verificar si hay coordenadas para trabajar
+  if (nrow(datos) == 0) {
+    stop("El data frame 'datos' no contiene filas.")
+  }
+
+  # Preparar los datos para la visualización
+  datos_preparados <- datos
+
+  # Convertir coordenadas de texto a numéricas si es necesario
+  if (any(c("LatitudInicio", "LatitudFin") %in% names(datos))) {
+    if (!"lat_ini" %in% names(datos)) {
+      datos_preparados$lat_ini <- Tivy::dms_a_decimal(datos$LatitudInicio)
+    }
+    if (!"lat_fin" %in% names(datos)) {
+      datos_preparados$lat_fin <- Tivy::dms_a_decimal(datos$LatitudFin)
+    }
+  }
+
+  if (any(c("LongitudInicio", "LongitudFin") %in% names(datos))) {
+    if (!"lon_ini" %in% names(datos)) {
+      datos_preparados$lon_ini <- Tivy::dms_a_decimal(datos$LongitudInicio)
+    }
+    if (!"lon_fin" %in% names(datos)) {
+      datos_preparados$lon_fin <- Tivy::dms_a_decimal(datos$LongitudFin)
+    }
+  }
+
+  # Añadir columnas para longitudes específicas por esquina (inicializadas como NA)
+  datos_preparados$lon_ini_norte <- NA
+  datos_preparados$lon_fin_norte <- NA
+  datos_preparados$lon_ini_sur <- NA
+  datos_preparados$lon_fin_sur <- NA
+
+  # Manejar casos donde tenemos millas náuticas en lugar de longitudes
+  filas_con_millas <- !is.na(datos$MillasNauticasInicio) & !is.na(datos$MillasNauticasFin) &
+    (is.na(datos_preparados$lon_ini) | is.na(datos_preparados$lon_fin))
+
+  if (any(filas_con_millas)) {
+    for (i in which(filas_con_millas)) {
+      # Obtener latitudes decimales
+      lat_ini_dec <- datos_preparados$lat_ini[i]
+      lat_fin_dec <- datos_preparados$lat_fin[i]
+
+      # Calcular longitudes para cada esquina del polígono
+      # Para latitud inicial (límite norte)
+      lon_costa_lat_ini <- Tivy:::calcular_longitud_costa(costa, lat_ini_dec)
+      # Para latitud final (límite sur)
+      lon_costa_lat_fin <- Tivy:::calcular_longitud_costa(costa, lat_fin_dec)
+
+      # Calcular offsets en grados basados en millas náuticas
+      millas_ini <- datos$MillasNauticasInicio[i]
+      millas_fin <- datos$MillasNauticasFin[i]
+
+      # Factor de conversión ajustado por cada latitud
+      factor_lat_ini <- cos(lat_ini_dec * pi/180)
+      factor_lat_fin <- cos(lat_fin_dec * pi/180)
+
+      # Convertir millas a grados para cada latitud
+      offset_ini_lat_ini <- millas_ini / 60 / factor_lat_ini
+      offset_fin_lat_ini <- millas_fin / 60 / factor_lat_ini
+      offset_ini_lat_fin <- millas_ini / 60 / factor_lat_fin
+      offset_fin_lat_fin <- millas_fin / 60 / factor_lat_fin
+
+      # Almacenar las 4 longitudes específicas (una para cada esquina)
+      datos_preparados$lon_ini_norte[i] <- lon_costa_lat_ini - offset_fin_lat_ini  # Esquina noroeste (más lejos)
+      datos_preparados$lon_fin_norte[i] <- lon_costa_lat_ini - offset_ini_lat_ini  # Esquina noreste (más cerca)
+      datos_preparados$lon_ini_sur[i] <- lon_costa_lat_fin - offset_fin_lat_fin    # Esquina suroeste (más lejos)
+      datos_preparados$lon_fin_sur[i] <- lon_costa_lat_fin - offset_ini_lat_fin    # Esquina sureste (más cerca)
+
+      # Marcar las longitudes originales como NA para indicar que usamos longitudes específicas
+      datos_preparados$lon_ini[i] <- NA
+      datos_preparados$lon_fin[i] <- NA
+    }
+  }
+
+  # Crear lista para almacenar polígonos
+  poligonos <- list()
+
+  # Crear un polígono para cada fila
+  for (i in 1:nrow(datos_preparados)) {
+    # Verificar si tenemos longitudes específicas para esquinas (caso millas náuticas)
+    if (!is.na(datos_preparados$lat_ini[i]) && !is.na(datos_preparados$lat_fin[i]) &&
+        is.na(datos_preparados$lon_ini[i]) && !is.na(datos_preparados$lon_ini_norte[i])) {
+
+      # Crear coordenadas del polígono con longitudes específicas para cada esquina
+      coords <- rbind(
+        c(datos_preparados$lon_ini_norte[i], datos_preparados$lat_ini[i]),  # Esquina noroeste
+        c(datos_preparados$lon_fin_norte[i], datos_preparados$lat_ini[i]),  # Esquina noreste
+        c(datos_preparados$lon_fin_sur[i], datos_preparados$lat_fin[i]),    # Esquina sureste
+        c(datos_preparados$lon_ini_sur[i], datos_preparados$lat_fin[i]),    # Esquina suroeste
+        c(datos_preparados$lon_ini_norte[i], datos_preparados$lat_ini[i])   # Cerrar el polígono
+      )
+
+    } else if (!is.na(datos_preparados$lat_ini[i]) && !is.na(datos_preparados$lat_fin[i]) &&
+               !is.na(datos_preparados$lon_ini[i]) && !is.na(datos_preparados$lon_fin[i])) {
+
+      # Caso normal: crear polígono rectangular con las mismas longitudes por lado
+      coords <- rbind(
+        c(datos_preparados$lon_ini[i], datos_preparados$lat_ini[i]),  # Esquina noroeste
+        c(datos_preparados$lon_fin[i], datos_preparados$lat_ini[i]),  # Esquina noreste
+        c(datos_preparados$lon_fin[i], datos_preparados$lat_fin[i]),  # Esquina sureste
+        c(datos_preparados$lon_ini[i], datos_preparados$lat_fin[i]),  # Esquina suroeste
+        c(datos_preparados$lon_ini[i], datos_preparados$lat_ini[i])   # Cerrar el polígono
+      )
+
+    } else {
+      warning("Fila ", i, " contiene valores NA después del procesamiento. Se omitirá.")
+      next
+    }
+
+    # Crear objeto polígono
+    poligono <- list(
+      coords = coords,
+      id = i,
+      fecha_inicio = if ("FechaHoraInicio" %in% names(datos)) datos$FechaHoraInicio[i] else NA,
+      fecha_fin = if ("FechaHoraFin" %in% names(datos)) datos$FechaHoraFin[i] else NA,
+      nombre_archivo = if ("nombre_archivo" %in% names(datos)) datos$nombre_archivo[i] else NA,
+      Long_Ini = if ("LongitudInicio" %in% names(datos)) datos$LongitudInicio[i] else NA,
+      Lat_Ini = if ("LatitudInicio" %in% names(datos)) datos$LatitudInicio[i] else NA,
+      Long_Fin = if ("LongitudFin" %in% names(datos)) datos$LongitudFin[i] else NA,
+      Lat_Fin = if ("LatitudFin" %in% names(datos)) datos$LatitudFin[i] else NA,
+      MillasNauticasInicio = if ("MillasNauticasInicio" %in% names(datos)) datos$MillasNauticasInicio[i] else NA,
+      MillasNauticasFin = if ("MillasNauticasFin" %in% names(datos)) datos$MillasNauticasFin[i] else NA,
+      comunicado = if ("comunicado" %in% names(datos)) datos$comunicado[i] else paste("Polígono", i)
+    )
+
+    poligonos[[i]] <- poligono
+  }
+
+  # Filtrar polígonos NA
+  poligonos <- poligonos[!sapply(poligonos, is.null)]
+
+  if (length(poligonos) == 0) {
+    stop("No se pudieron crear polígonos válidos con los datos proporcionados.")
+  }
+
+  return(poligonos)
+}
+

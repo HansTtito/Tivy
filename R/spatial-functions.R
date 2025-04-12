@@ -620,170 +620,31 @@ graficar_poligonos_leaflet <- function(datos,
   ))
 }
 
-#' Preparar polígonos a partir de datos de coordenadas
+
+#' Graficar polígonos de suspensión pesquera
 #'
-#' @description
-#' Función auxiliar para procesar datos y preparar polígonos.
+#' Esta función permite graficar polígonos de suspensión pesquera utilizando
+#' un mapa base de la costa peruana. Dependiendo del parámetro `tipo`, puede
+#' generar un gráfico estático con `ggplot2` o un gráfico interactivo con `leaflet`.
 #'
-#' @param datos Un data frame con coordenadas.
-#' @param costa Un data frame con la línea de costa.
+#' @param datos Lista de polígonos con coordenadas y metadatos (como comunicado).
+#' @param costa Data frame con la línea de costa a graficar. Por defecto usa `Tivy::Shoreline_Peru`.
+#' @param tipo Tipo de gráfico a generar: `"estatico"` para ggplot2 o `"interactivo"` para leaflet.
+#' @param titulo Título del gráfico.
+#' @param colores Vector de colores a usar para diferenciar los polígonos (por comunicado u otra categoría).
+#' @param mostrar_leyenda Lógico. Si `TRUE`, se muestra la leyenda. Por defecto es `FALSE`.
+#' @param etiquetas Vector opcional de etiquetas personalizadas para cada polígono. Si no se especifica, se usa el nombre del comunicado.
+#' @param agregar_grid Lógico. Si `TRUE`, agrega una cuadrícula de referencia al gráfico estático.
+#' @param capas_base Lógico. Si `TRUE`, agrega capas base (como satélite o topografía) en el mapa interactivo.
+#' @param minimap Lógico. Si `TRUE`, agrega un minimapa en la esquina del mapa interactivo.
 #'
-#' @return Una lista de polígonos para visualización.
-#' @keywords internal
-preparar_poligonos <- function(datos, costa) {
-  # Validación de parámetros
-  if (missing(datos)) {
-    stop("El parámetro 'datos' es obligatorio.")
-  }
-
-  if (!is.data.frame(datos)) {
-    stop("'datos' debe ser un data.frame.")
-  }
-
-  if (!is.data.frame(costa) || !all(c("Long", "Lat") %in% names(costa))) {
-    stop("'costa' debe ser un data.frame con columnas 'Long' y 'Lat'.")
-  }
-
-  # Verificar si hay coordenadas para trabajar
-  if (nrow(datos) == 0) {
-    stop("El data frame 'datos' no contiene filas.")
-  }
-
-  # Preparar los datos para la visualización
-  datos_preparados <- datos
-
-  # Convertir coordenadas de texto a numéricas si es necesario
-  if (any(c("LatitudInicio", "LatitudFin") %in% names(datos))) {
-    if (!"lat_ini" %in% names(datos)) {
-      datos_preparados$lat_ini <- Tivy::dms_a_decimal(datos$LatitudInicio)
-    }
-    if (!"lat_fin" %in% names(datos)) {
-      datos_preparados$lat_fin <- Tivy::dms_a_decimal(datos$LatitudFin)
-    }
-  }
-
-  if (any(c("LongitudInicio", "LongitudFin") %in% names(datos))) {
-    if (!"lon_ini" %in% names(datos)) {
-      datos_preparados$lon_ini <- Tivy::dms_a_decimal(datos$LongitudInicio)
-    }
-    if (!"lon_fin" %in% names(datos)) {
-      datos_preparados$lon_fin <- Tivy::dms_a_decimal(datos$LongitudFin)
-    }
-  }
-
-  # Añadir columnas para longitudes específicas por esquina (inicializadas como NA)
-  datos_preparados$lon_ini_norte <- NA
-  datos_preparados$lon_fin_norte <- NA
-  datos_preparados$lon_ini_sur <- NA
-  datos_preparados$lon_fin_sur <- NA
-
-  # Manejar casos donde tenemos millas náuticas en lugar de longitudes
-  filas_con_millas <- !is.na(datos$MillasNauticasInicio) & !is.na(datos$MillasNauticasFin) &
-    (is.na(datos_preparados$lon_ini) | is.na(datos_preparados$lon_fin))
-
-  if (any(filas_con_millas)) {
-    for (i in which(filas_con_millas)) {
-      # Obtener latitudes decimales
-      lat_ini_dec <- datos_preparados$lat_ini[i]
-      lat_fin_dec <- datos_preparados$lat_fin[i]
-
-      # Calcular longitudes para cada esquina del polígono
-      # Para latitud inicial (límite norte)
-      lon_costa_lat_ini <- Tivy:::calcular_longitud_costa(costa, lat_ini_dec)
-      # Para latitud final (límite sur)
-      lon_costa_lat_fin <- Tivy:::calcular_longitud_costa(costa, lat_fin_dec)
-
-      # Calcular offsets en grados basados en millas náuticas
-      millas_ini <- datos$MillasNauticasInicio[i]
-      millas_fin <- datos$MillasNauticasFin[i]
-
-      # Factor de conversión ajustado por cada latitud
-      factor_lat_ini <- cos(lat_ini_dec * pi/180)
-      factor_lat_fin <- cos(lat_fin_dec * pi/180)
-
-      # Convertir millas a grados para cada latitud
-      offset_ini_lat_ini <- millas_ini / 60 / factor_lat_ini
-      offset_fin_lat_ini <- millas_fin / 60 / factor_lat_ini
-      offset_ini_lat_fin <- millas_ini / 60 / factor_lat_fin
-      offset_fin_lat_fin <- millas_fin / 60 / factor_lat_fin
-
-      # Almacenar las 4 longitudes específicas (una para cada esquina)
-      datos_preparados$lon_ini_norte[i] <- lon_costa_lat_ini - offset_fin_lat_ini  # Esquina noroeste (más lejos)
-      datos_preparados$lon_fin_norte[i] <- lon_costa_lat_ini - offset_ini_lat_ini  # Esquina noreste (más cerca)
-      datos_preparados$lon_ini_sur[i] <- lon_costa_lat_fin - offset_fin_lat_fin    # Esquina suroeste (más lejos)
-      datos_preparados$lon_fin_sur[i] <- lon_costa_lat_fin - offset_ini_lat_fin    # Esquina sureste (más cerca)
-
-      # Marcar las longitudes originales como NA para indicar que usamos longitudes específicas
-      datos_preparados$lon_ini[i] <- NA
-      datos_preparados$lon_fin[i] <- NA
-    }
-  }
-
-  # Crear lista para almacenar polígonos
-  poligonos <- list()
-
-  # Crear un polígono para cada fila
-  for (i in 1:nrow(datos_preparados)) {
-    # Verificar si tenemos longitudes específicas para esquinas (caso millas náuticas)
-    if (!is.na(datos_preparados$lat_ini[i]) && !is.na(datos_preparados$lat_fin[i]) &&
-        is.na(datos_preparados$lon_ini[i]) && !is.na(datos_preparados$lon_ini_norte[i])) {
-
-      # Crear coordenadas del polígono con longitudes específicas para cada esquina
-      coords <- rbind(
-        c(datos_preparados$lon_ini_norte[i], datos_preparados$lat_ini[i]),  # Esquina noroeste
-        c(datos_preparados$lon_fin_norte[i], datos_preparados$lat_ini[i]),  # Esquina noreste
-        c(datos_preparados$lon_fin_sur[i], datos_preparados$lat_fin[i]),    # Esquina sureste
-        c(datos_preparados$lon_ini_sur[i], datos_preparados$lat_fin[i]),    # Esquina suroeste
-        c(datos_preparados$lon_ini_norte[i], datos_preparados$lat_ini[i])   # Cerrar el polígono
-      )
-
-    } else if (!is.na(datos_preparados$lat_ini[i]) && !is.na(datos_preparados$lat_fin[i]) &&
-               !is.na(datos_preparados$lon_ini[i]) && !is.na(datos_preparados$lon_fin[i])) {
-
-      # Caso normal: crear polígono rectangular con las mismas longitudes por lado
-      coords <- rbind(
-        c(datos_preparados$lon_ini[i], datos_preparados$lat_ini[i]),  # Esquina noroeste
-        c(datos_preparados$lon_fin[i], datos_preparados$lat_ini[i]),  # Esquina noreste
-        c(datos_preparados$lon_fin[i], datos_preparados$lat_fin[i]),  # Esquina sureste
-        c(datos_preparados$lon_ini[i], datos_preparados$lat_fin[i]),  # Esquina suroeste
-        c(datos_preparados$lon_ini[i], datos_preparados$lat_ini[i])   # Cerrar el polígono
-      )
-
-    } else {
-      warning("Fila ", i, " contiene valores NA después del procesamiento. Se omitirá.")
-      next
-    }
-
-    # Crear objeto polígono
-    poligono <- list(
-      coords = coords,
-      id = i,
-      fecha_inicio = if ("FechaHoraInicio" %in% names(datos)) datos$FechaHoraInicio[i] else NA,
-      fecha_fin = if ("FechaHoraFin" %in% names(datos)) datos$FechaHoraFin[i] else NA,
-      nombre_archivo = if ("nombre_archivo" %in% names(datos)) datos$nombre_archivo[i] else NA,
-      Long_Ini = if ("LongitudInicio" %in% names(datos)) datos$LongitudInicio[i] else NA,
-      Lat_Ini = if ("LatitudInicio" %in% names(datos)) datos$LatitudInicio[i] else NA,
-      Long_Fin = if ("LongitudFin" %in% names(datos)) datos$LongitudFin[i] else NA,
-      Lat_Fin = if ("LatitudFin" %in% names(datos)) datos$LatitudFin[i] else NA,
-      MillasNauticasInicio = if ("MillasNauticasInicio" %in% names(datos)) datos$MillasNauticasInicio[i] else NA,
-      MillasNauticasFin = if ("MillasNauticasFin" %in% names(datos)) datos$MillasNauticasFin[i] else NA,
-      comunicado = if ("comunicado" %in% names(datos)) datos$comunicado[i] else paste("Polígono", i)
-    )
-
-    poligonos[[i]] <- poligono
-  }
-
-  # Filtrar polígonos NA
-  poligonos <- poligonos[!sapply(poligonos, is.null)]
-
-  if (length(poligonos) == 0) {
-    stop("No se pudieron crear polígonos válidos con los datos proporcionados.")
-  }
-
-  return(poligonos)
-}
-
-# También mantener la función original para compatibilidad
+#' @return Un objeto de clase `ggplot` si `tipo = "estatico"` o un objeto `leaflet` si `tipo = "interactivo"`.
+#'
+#' @examples
+#' # Crear mapa básico
+#' resultados <- extrae_data_comunicados(c("comunicado1.pdf", "comunicado2.pdf"))
+#' graficar_poligonos(datos = resultados, costa = Shoreline_Peru)
+#'
 #' @export
 graficar_poligonos <- function(datos,
                                costa = Tivy::Shoreline_Peru,
@@ -819,3 +680,4 @@ graficar_poligonos <- function(datos,
     ))
   }
 }
+
