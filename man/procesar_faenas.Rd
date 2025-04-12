@@ -2,7 +2,7 @@
 % Please edit documentation in R/processing-faenas.R
 \name{procesar_faenas}
 \alias{procesar_faenas}
-\title{Procesamiento de datos de faenas pesqueras}
+\title{Procesamiento de datos de faenas pesqueras, archivo sitrapesca de PRODUCE}
 \usage{
 procesar_faenas(data_faenas, formato = "xlsx")
 }

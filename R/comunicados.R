@@ -1,4 +1,4 @@
-#' Extrae datos de los comunicados en formato PDF
+#' Extrae datos de los comunicados emitidos por PRODUCE en formato PDF
 #'
 #' Esta función procesa archivos PDF que contienen comunicados y extrae información relevante, como fechas,
 #' horas, coordenadas de latitud y longitud, y millas náuticas. Si no se encuentran longitudes, la función
@@ -29,7 +29,7 @@
 #'
 #' @export
 #' @importFrom pdftools pdf_text
-#' @importFrom stringr str_replace_all str_split str_extract_all
+#' @importFrom stringr str_squish str_split str_extract_all
 extrae_data_comunicados <- function(vector_pdf_names) {
   todos_resultados <- list()
 

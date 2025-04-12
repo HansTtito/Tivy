@@ -17,6 +17,31 @@
 #' @export
 #' @importFrom lubridate parse_date_time
 convertir_a_fecha <- function(vector_fecha) {
+  # Validación de entrada
+  if (missing(vector_fecha)) {
+    stop("Se requiere proporcionar el parámetro 'vector_fecha'.")
+  }
+
+  if (length(vector_fecha) == 0) {
+    warning("El vector de fechas está vacío.")
+    return(Date())
+  }
+
+  # Convertir a character si es un factor
+  if (is.factor(vector_fecha)) {
+    vector_fecha <- as.character(vector_fecha)
+    warning("El vector de fechas ha sido convertido de factor a character.")
+  }
+
+  # Verificar que sea de tipo character
+  if (!is.character(vector_fecha)) {
+    if (inherits(vector_fecha, "Date") || inherits(vector_fecha, "POSIXt")) {
+      return(as.Date(vector_fecha))
+    } else {
+      stop("El parámetro 'vector_fecha' debe ser un vector de caracteres, factor, Date o POSIXt.")
+    }
+  }
+
   # Lista de formatos de fecha posibles
   formatos_fecha <- c(
     "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d",
@@ -30,26 +55,60 @@ convertir_a_fecha <- function(vector_fecha) {
     "%d-%b-%Y %H:%M:%S", "%d-%b-%Y %H:%M", "%d-%b-%Y",
     "%d/%b/%Y %H:%M:%S", "%d/%b/%Y %H:%M", "%d/%b/%Y"
   )
-  # Inicializar un vector para las fechas convertidas
-  formatos_finales = Date()
-  # Iterar sobre cada elemento del vector de fechas
-  for(fecha in vector_fecha){
-    # Inicializar un vector vacío para almacenar las fechas convertidas por formato
-    dats = Date()
-    # Intentar convertir la fecha con cada formato
-    for(formato in formatos_fecha){
-      intento <- tryCatch({
-        lubridate::parse_date_time(fecha, orders = formato)
-      }, warning = function(w) {
-        return(NA)
-      }, error = function(e) {
-        return(NA)
-      })
-      # Si la conversión es exitosa, agregar la fecha al vector dats
-      dats = c(dats, intento[!is.na(intento)])
+
+  # Inicializar vector para almacenar resultados
+  resultado <- vector("list", length(vector_fecha))
+
+  # Procesar cada elemento
+  for (i in seq_along(vector_fecha)) {
+    fecha_texto <- vector_fecha[i]
+
+    # Manejar valores NA o vacíos
+    if (is.na(fecha_texto) || fecha_texto == "") {
+      resultado[[i]] <- as.Date(NA)
+      next
     }
-    # Tomar la primera fecha válida encontrada
-    formatos_finales = c(formatos_finales, dats[1])
+
+    # Intentar convertir la fecha con cada formato
+    fecha_convertida <- NA
+    for (formato in formatos_fecha) {
+      intento <- tryCatch({
+        fecha_parseada <- lubridate::parse_date_time(fecha_texto, orders = formato, quiet = TRUE)
+        # Verificar que la fecha esté en un rango razonable (entre 1900 y 2100)
+        if (!is.na(fecha_parseada)) {
+          año <- as.numeric(format(fecha_parseada, "%Y"))
+          if (año >= 1900 && año <= 2100) {
+            fecha_parseada
+          } else {
+            NA
+          }
+        } else {
+          NA
+        }
+      }, warning = function(w) {
+        NA
+      }, error = function(e) {
+        NA
+      })
+
+      if (!is.na(intento)) {
+        fecha_convertida <- as.Date(intento)
+        break  # Usar el primer formato exitoso
+      }
+    }
+
+    resultado[[i]] <- fecha_convertida
   }
-  return(formatos_finales)
+
+  # Combinar resultados
+  fechas_finales <- do.call(c, resultado)
+
+  # Verificar si todas las conversiones fallaron
+  if (all(is.na(fechas_finales))) {
+    warning("No se pudo convertir ninguna fecha. Verifique el formato de los datos de entrada.")
+  } else if (any(is.na(fechas_finales))) {
+    warning("Algunas fechas no pudieron ser convertidas y se asignaron como NA.")
+  }
+
+  return(fechas_finales)
 }

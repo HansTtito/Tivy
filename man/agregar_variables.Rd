@@ -2,7 +2,7 @@
 % Please edit documentation in R/add-variables.R
 \name{agregar_variables}
 \alias{agregar_variables}
-\title{Agrega variables de juveniles, muestra, distancia a la costa y su categoría}
+\title{Agrega variables de juveniles, tamaño de muestra, distancia a la costa y su categoría}
 \usage{
 agregar_variables(
   data,

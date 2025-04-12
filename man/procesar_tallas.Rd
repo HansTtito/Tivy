@@ -2,7 +2,7 @@
 % Please edit documentation in R/processing-tallas.R
 \name{procesar_tallas}
 \alias{procesar_tallas}
-\title{Procesamiento de datos de tallas de las calas}
+\title{Procesamiento de datos de tallas de las calas, archivo sitrapesca de PRODUCE}
 \usage{
 procesar_tallas(data_tallas, formato = "xlsx")
 }

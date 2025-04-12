@@ -1,4 +1,4 @@
-#' Procesamiento de datos de calas pesqueras
+#' Procesamiento de datos de calas pesqueras, archivo sitrapesca de PRODUCE
 #'
 #' @description
 #' Procesa datos de calas pesqueras provenientes de las bitácoras de PRODUCE,

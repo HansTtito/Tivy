@@ -2,7 +2,7 @@
 % Please edit documentation in R/comunicados.R
 \name{extrae_data_comunicados}
 \alias{extrae_data_comunicados}
-\title{Extrae datos de los comunicados en formato PDF}
+\title{Extrae datos de los comunicados emitidos por PRODUCE en formato PDF}
 \usage{
 extrae_data_comunicados(vector_pdf_names)
 }

@@ -36,15 +36,41 @@
 #' @importFrom stringr str_split str_count str_detect str_extract
 dms_a_decimal <- function(coordenadas, hemisferio = "S") {
   # Validación de entrada
-  if (!is.character(coordenadas)) {
-    stop("Las coordenadas deben ser una cadena de texto o un vector de caracteres.")
+  if (missing(coordenadas)) {
+    stop("El parámetro 'coordenadas' es obligatorio.")
   }
+
+  if (length(coordenadas) == 0) {
+    warning("El vector de coordenadas está vacío.")
+    return(numeric(0))
+  }
+
+  # Convertir a character si es factor
+  if (is.factor(coordenadas)) {
+    coordenadas <- as.character(coordenadas)
+    warning("El vector de coordenadas ha sido convertido de factor a character.")
+  }
+
+  if (!is.character(coordenadas)) {
+    if (is.numeric(coordenadas)) {
+      warning("Las coordenadas proporcionadas ya son numéricas. Se devuelven sin cambios.")
+      return(coordenadas)
+    } else {
+      stop("Las coordenadas deben ser una cadena de texto o un vector de caracteres.")
+    }
+  }
+
   if (!hemisferio %in% c("N", "S", "E", "W", "O")) {
     stop("El hemisferio debe ser uno de: 'N', 'S', 'E', 'W' o 'O'.")
   }
 
   # Procesar cada coordenada
   resultados <- vapply(coordenadas, function(coord) {
+    # Manejar NA
+    if (is.na(coord) || coord == "") {
+      return(NA_real_)
+    }
+
     tryCatch({
       # Detectar si la coordenada incluye el hemisferio
       hemisferio_local <- hemisferio
@@ -75,7 +101,34 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
       componentes <- unlist(strsplit(coord_limpia, " "))
       # Filtrar componentes no numéricos
       componentes_num <- componentes[grepl("^[0-9]+(\\.[0-9]+)?$", componentes)]
-      partes <- as.numeric(componentes_num)
+
+      # Verificar si hay componentes numéricos
+      if (length(componentes_num) == 0) {
+        warning(paste("No se encontraron componentes numéricos en la coordenada:", coord_original))
+        return(NA_real_)
+      }
+
+      # Convertir a numérico con validación
+      partes <- suppressWarnings(as.numeric(componentes_num))
+
+      # Verificar si algún valor es NA después de la conversión
+      if (any(is.na(partes))) {
+        warning(paste("Error al convertir a numérico algún componente de la coordenada:", coord_original))
+        return(NA_real_)
+      }
+
+      # Validar rangos de las partes
+      if (length(partes) >= 1 && (is.na(partes[1]) || partes[1] < 0 || partes[1] > 180)) {
+        warning(paste("Grados fuera de rango (0-180) en la coordenada:", coord_original))
+      }
+
+      if (length(partes) >= 2 && (is.na(partes[2]) || partes[2] < 0 || partes[2] >= 60)) {
+        warning(paste("Minutos fuera de rango (0-59) en la coordenada:", coord_original))
+      }
+
+      if (length(partes) >= 3 && (is.na(partes[3]) || partes[3] < 0 || partes[3] >= 60)) {
+        warning(paste("Segundos fuera de rango (0-59) en la coordenada:", coord_original))
+      }
 
       # Calcular según el número de componentes
       if (length(partes) == 3) {
@@ -90,6 +143,11 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
       } else {
         warning(paste("Formato no reconocido para la coordenada:", coord_original))
         return(NA_real_)
+      }
+
+      # Validar el resultado final
+      if (abs(decimal) > 180) {
+        warning(paste("La coordenada decimal calculada está fuera de rango (-180 a 180):", decimal))
       }
 
       return(decimal)
@@ -154,21 +212,75 @@ distancia_costa <- function(lon, lat, linea_costa,
                             ventana = 1,
                             paralelo = FALSE,
                             nucleos = 4) {
-  # Verificar estructura de datos
+  # Validación de parámetros
+  if (missing(lon) || missing(lat) || missing(linea_costa)) {
+    stop("Los parámetros 'lon', 'lat' y 'linea_costa' son obligatorios.")
+  }
+
+  # Validar tipos de datos
+  if (!is.numeric(lon)) stop("El parámetro 'lon' debe ser numérico.")
+  if (!is.numeric(lat)) stop("El parámetro 'lat' debe ser numérico.")
+  if (!is.data.frame(linea_costa)) stop("El parámetro 'linea_costa' debe ser un data.frame.")
+  if (!is.logical(devolver_indices)) stop("El parámetro 'devolver_indices' debe ser lógico (TRUE/FALSE).")
+  if (!is.character(tipo_distancia)) stop("El parámetro 'tipo_distancia' debe ser un texto.")
+  if (!is.character(unidad)) stop("El parámetro 'unidad' debe ser un texto.")
+  if (!is.numeric(ventana)) stop("El parámetro 'ventana' debe ser numérico.")
+  if (!is.logical(paralelo)) stop("El parámetro 'paralelo' debe ser lógico (TRUE/FALSE).")
+  if (!is.numeric(nucleos) || nucleos < 1) stop("El parámetro 'nucleos' debe ser un número entero positivo.")
+
+  # Validar longitud de vectores
+  if (length(lon) != length(lat)) {
+    stop("Los vectores 'lon' y 'lat' deben tener la misma longitud.")
+  }
+
+  # Validar rangos de coordenadas
+  if (any(abs(lon) > 180, na.rm = TRUE)) {
+    warning("Se detectaron valores de longitud fuera del rango válido (-180 a 180).")
+  }
+  if (any(abs(lat) > 90, na.rm = TRUE)) {
+    warning("Se detectaron valores de latitud fuera del rango válido (-90 a 90).")
+  }
+
+  # Validar tipo_distancia
+  tipos_validos <- c("haversine", "euclidean", "grid")
+  if (!tipo_distancia %in% tipos_validos) {
+    stop("El parámetro 'tipo_distancia' debe ser uno de: ", paste(tipos_validos, collapse = ", "))
+  }
+
+  # Validar unidad
+  unidades_conocidas <- c("mn", "km", "m", "mi")
+  if (!unidad %in% unidades_conocidas) {
+    warning("La unidad '", unidad, "' no es una de las unidades comunes: ", paste(unidades_conocidas, collapse = ", "))
+  }
+
+  # Verificar estructura de linea_costa
   if (!all(c("Long", "Lat") %in% colnames(linea_costa))) {
     stop("linea_costa debe contener columnas 'Long' y 'Lat'")
   }
 
+  # Verificar que linea_costa tiene datos
+  if (nrow(linea_costa) == 0) {
+    stop("linea_costa está vacío")
+  }
+
+  # Verificar que linea_costa tiene coordenadas numéricas
+  if (!is.numeric(linea_costa$Long) || !is.numeric(linea_costa$Lat)) {
+    stop("Las columnas 'Long' y 'Lat' de linea_costa deben ser numéricas")
+  }
+
   # Manejo de valores NA
   validos <- !is.na(lon) & !is.na(lat)
+  if (sum(validos) == 0) {
+    warning("Todos los puntos de entrada contienen valores NA")
+    return(rep(NA, length(validos)))
+  }
+
   lon_validos <- lon[validos]
   lat_validos <- lat[validos]
 
-  # Salida temprana si no hay datos válidos
-  if (length(lon_validos) == 0) return(rep(NA, length(validos)))
-
   # Dividir puntos en lotes
   n_puntos <- length(lon_validos)
+  nucleos <- min(nucleos, n_puntos)  # Ajustar núcleos si hay menos puntos que núcleos
   tamanio_lote <- ceiling(n_puntos / nucleos)
   lotes_indices <- split(seq_len(n_puntos), ceiling(seq_len(n_puntos) / tamanio_lote))
 
@@ -179,39 +291,55 @@ distancia_costa <- function(lon, lat, linea_costa,
       paralelo <- FALSE
     } else {
       future::plan(future::multisession, workers = nucleos)
+      on.exit(future::plan(future::sequential), add = TRUE)  # Asegurar que se restaure el plan secuencial
     }
   }
 
   # Ejecutar en paralelo o secuencialmente
   apply_fun <- if (paralelo) future.apply::future_lapply else lapply
 
-  resultados_lotes <- apply_fun(lotes_indices, function(indices_lote) {
-    calcular_distancias_vectorizado(
-      lon_validos[indices_lote],
-      lat_validos[indices_lote],
-      linea_costa$Long,
-      linea_costa$Lat,
-      tipo_distancia,
-      ventana,
-      unidad
-    )
+  # Función de cálculo envuelta en tryCatch para manejar errores
+  resultados_lotes <- tryCatch({
+    apply_fun(lotes_indices, function(indices_lote) {
+      calcular_distancias_vectorizado(
+        lon_validos[indices_lote],
+        lat_validos[indices_lote],
+        linea_costa$Long,
+        linea_costa$Lat,
+        tipo_distancia,
+        ventana,
+        unidad
+      )
+    })
+  }, error = function(e) {
+    stop("Error en el cálculo de distancias: ", e$message)
   })
 
   # Combinar resultados
-  distancias <- unlist(lapply(resultados_lotes, `[[`, "distancias"))
-  indices <- unlist(lapply(resultados_lotes, `[[`, "indices"))
+  tryCatch({
+    distancias <- unlist(lapply(resultados_lotes, `[[`, "distancias"))
+    indices <- unlist(lapply(resultados_lotes, `[[`, "indices"))
 
-  # Resultados con NAs en las posiciones originales
-  resultado_final <- rep(NA_real_, length(validos))
-  resultado_final[validos] <- distancias
+    # Verificar resultados
+    if (length(distancias) != sum(validos)) {
+      warning("El número de distancias calculadas no coincide con el número de puntos válidos.")
+    }
 
-  if (devolver_indices) {
-    indices_final <- rep(NA_integer_, length(validos))
-    indices_final[validos] <- indices
-    return(list(distancia = resultado_final, indice = indices_final))
-  } else {
-    return(resultado_final)
-  }
+    # Resultados con NAs en las posiciones originales
+    resultado_final <- rep(NA_real_, length(validos))
+    resultado_final[validos] <- distancias
+
+    if (devolver_indices) {
+      indices_final <- rep(NA_integer_, length(validos))
+      indices_final[validos] <- indices
+      return(list(distancia = resultado_final, indice = indices_final))
+    } else {
+      return(resultado_final)
+    }
+  }, error = function(e) {
+    warning("Error al procesar los resultados: ", e$message)
+    return(rep(NA_real_, length(validos)))
+  })
 }
 
 
@@ -220,10 +348,12 @@ distancia_costa <- function(lon, lat, linea_costa,
 #' @description
 #' Función que permite estimar los puntos que están a la derecha o izquierda de la línea de costa
 #'
-#' @param lon Un vector con las longitudes
-#' @param lat Un vector con las latitudes
+#' @param x_punto Un vector con las longitudes
+#' @param y_punto Un vector con las latitudes
 #' @param linea_costa Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat
-#' @return Un vector con las distancias a la costa
+#' @param paralelo Lógico. Si `TRUE`, realiza el cálculo en paralelo utilizando múltiples núcleos. Default `FALSE`.
+#' @param nucleos Número de núcleos a usar para procesamiento paralelo. Default `4`.
+#' @return Un vector con clasificación "tierra" o "mar" para cada punto.
 #' @export
 #' @rdname puntos_tierra
 #' @examples
@@ -232,78 +362,151 @@ distancia_costa <- function(lon, lat, linea_costa,
 #' @importFrom future plan multisession sequential
 #' @importFrom future.apply future_lapply
 puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucleos = 4) {
+  # Validación de parámetros
+  if (missing(x_punto) || missing(y_punto) || missing(linea_costa)) {
+    stop("Los parámetros 'x_punto', 'y_punto' y 'linea_costa' son obligatorios.")
+  }
+
+  # Validar tipos de datos
+  if (!is.numeric(x_punto)) stop("El parámetro 'x_punto' debe ser numérico.")
+  if (!is.numeric(y_punto)) stop("El parámetro 'y_punto' debe ser numérico.")
+  if (!is.data.frame(linea_costa)) stop("El parámetro 'linea_costa' debe ser un data.frame.")
+  if (!is.logical(paralelo)) stop("El parámetro 'paralelo' debe ser lógico (TRUE/FALSE).")
+  if (!is.numeric(nucleos) || nucleos < 1) stop("El parámetro 'nucleos' debe ser un número entero positivo.")
+
+  # Validar longitud de vectores
+  if (length(x_punto) != length(y_punto)) {
+    stop("Los vectores 'x_punto' y 'y_punto' deben tener la misma longitud.")
+  }
+
+  # Validar rangos de coordenadas
+  if (any(abs(x_punto) > 180, na.rm = TRUE)) {
+    warning("Se detectaron valores de longitud fuera del rango válido (-180 a 180).")
+  }
+  if (any(abs(y_punto) > 90, na.rm = TRUE)) {
+    warning("Se detectaron valores de latitud fuera del rango válido (-90 a 90).")
+  }
+
   # Asegurarse de que linea_costa tenga los nombres de columnas correctos
   if (!"Long" %in% colnames(linea_costa) || !"Lat" %in% colnames(linea_costa)) {
     stop("linea_costa debe contener columnas 'Long' y 'Lat'")
   }
 
+  # Verificar que linea_costa tiene datos
+  if (nrow(linea_costa) == 0) {
+    stop("linea_costa está vacío")
+  }
+
+  # Verificar que linea_costa tiene coordenadas numéricas
+  if (!is.numeric(linea_costa$Long) || !is.numeric(linea_costa$Lat)) {
+    stop("Las columnas 'Long' y 'Lat' de linea_costa deben ser numéricas")
+  }
+
   # Limpiar datos de entrada
   idx_validos <- !is.na(x_punto) & !is.na(y_punto)
+  if (sum(idx_validos) == 0) {
+    warning("Todos los puntos de entrada contienen valores NA")
+    return(rep(NA_character_, length(x_punto)))
+  }
+
   x_validos <- x_punto[idx_validos]
   y_validos <- y_punto[idx_validos]
 
   # Preparar vectores de resultados del mismo tamaño que los originales
-  resultados <- rep(NA, length(x_punto))
-
-  # Si no hay puntos válidos, devolver resultado vacío
-  if (length(x_validos) == 0) {
-    return(resultados)
-  }
+  resultados <- rep(NA_character_, length(x_punto))
 
   # Constantes
   grados2rad <- pi / 180
 
   # Convertir a radianes
-  lon_rad <- x_validos * grados2rad
-  lat_rad <- y_validos * grados2rad
-  shore_lon_rad <- linea_costa$Long * grados2rad
-  shore_lat_rad <- linea_costa$Lat * grados2rad
+  tryCatch({
+    lon_rad <- x_validos * grados2rad
+    lat_rad <- y_validos * grados2rad
+    shore_lon_rad <- linea_costa$Long * grados2rad
+    shore_lat_rad <- linea_costa$Lat * grados2rad
+  }, error = function(e) {
+    stop("Error al convertir coordenadas a radianes: ", e$message)
+  })
 
   # Función para encontrar el índice del punto costero más cercano
   find_closest_shore <- function(i) {
-    # Fórmula del gran círculo para calcular distancias
-    xy_rad <- sin(lat_rad[i]) * sin(shore_lat_rad)
-    yx_rad <- cos(lat_rad[i]) * cos(shore_lat_rad) * cos(shore_lon_rad - lon_rad[i])
-    dist_rad <- acos(pmin(pmax(xy_rad + yx_rad, -1), 1))
+    tryCatch({
+      # Fórmula del gran círculo para calcular distancias
+      xy_rad <- sin(lat_rad[i]) * sin(shore_lat_rad)
+      yx_rad <- cos(lat_rad[i]) * cos(shore_lat_rad) * cos(shore_lon_rad - lon_rad[i])
 
-    # Devolver índice del punto más cercano
-    return(which.min(dist_rad))
+      # Asegurar que los valores están en el rango [-1, 1] para evitar NaN en acos
+      sum_rad <- xy_rad + yx_rad
+      sum_rad[sum_rad < -1] <- -1
+      sum_rad[sum_rad > 1] <- 1
+
+      dist_rad <- acos(sum_rad)
+
+      # Devolver índice del punto más cercano
+      return(which.min(dist_rad))
+    }, error = function(e) {
+      warning("Error al calcular el punto costero más cercano para el índice ", i, ": ", e$message)
+      return(NA_integer_)
+    })
   }
 
-  if (paralelo && requireNamespace("future", quietly = TRUE) &&
-      requireNamespace("future.apply", quietly = TRUE)) {
-    # Configurar paralelización
-    future::plan(future::multisession, workers = nucleos)
+  # Procesamiento paralelo o secuencial
+  if (paralelo) {
+    if (!requireNamespace("future", quietly = TRUE) ||
+        !requireNamespace("future.apply", quietly = TRUE)) {
+      warning("Paquetes 'future' y/o 'future.apply' no encontrados. Usando procesamiento secuencial.")
+      paralelo <- FALSE
+    }
+  }
 
-    # Calcular índices de los puntos más cercanos en paralelo
-    closest_indices <- future.apply::future_lapply(
-      1:length(x_validos),
-      function(i) find_closest_shore(i),
-      future.seed = TRUE
-    )
+  # Ajustar núcleos si hay menos puntos que núcleos
+  nucleos <- min(nucleos, length(x_validos))
 
-    # Restaurar plan secuencial
-    future::plan(future::sequential)
+  if (paralelo) {
+    tryCatch({
+      # Configurar paralelización
+      future::plan(future::multisession, workers = nucleos)
+      on.exit(future::plan(future::sequential), add = TRUE)  # Asegurar que se restaure el plan secuencial
 
-    # Desempaquetar resultado
-    closest_indices <- unlist(closest_indices)
+      # Calcular índices de los puntos más cercanos en paralelo
+      closest_indices <- future.apply::future_lapply(
+        1:length(x_validos),
+        function(i) find_closest_shore(i),
+        future.seed = TRUE
+      )
+
+      # Desempaquetar resultado
+      closest_indices <- unlist(closest_indices)
+    }, error = function(e) {
+      warning("Error en procesamiento paralelo: ", e$message, ". Cambiando a procesamiento secuencial.")
+      closest_indices <- sapply(1:length(x_validos), find_closest_shore)
+    })
   } else {
     # Versión secuencial
     closest_indices <- sapply(1:length(x_validos), find_closest_shore)
   }
 
   # Determinar si cada punto está en tierra o mar
-  for (i in 1:length(x_validos)) {
-    idx_costa <- closest_indices[i]
+  tryCatch({
+    for (i in 1:length(x_validos)) {
+      idx_costa <- closest_indices[i]
 
-    # Para la costa peruana (océano al oeste), determinar posición relativa
-    # Si el punto está al este de la costa (longitud mayor), está en tierra
-    resultados[idx_validos][i] <- ifelse(
-      x_validos[i] > linea_costa$Long[idx_costa],
-      "tierra",
-      "mar"
-    )
-  }
+      # Saltear puntos con índice NA
+      if (is.na(idx_costa)) {
+        next
+      }
+
+      # Para la costa peruana (océano al oeste), determinar posición relativa
+      # Si el punto está al este de la costa (longitud mayor), está en tierra
+      resultados[idx_validos][i] <- ifelse(
+        x_validos[i] > linea_costa$Long[idx_costa],
+        "tierra",
+        "mar"
+      )
+    }
+  }, error = function(e) {
+    warning("Error al determinar si los puntos están en tierra o mar: ", e$message)
+  })
 
   return(resultados)
 }

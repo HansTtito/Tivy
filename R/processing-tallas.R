@@ -1,4 +1,4 @@
-#' Procesamiento de datos de tallas de las calas
+#' Procesamiento de datos de tallas de las calas, archivo sitrapesca de PRODUCE
 #'
 #' @description
 #' Procesa datos de tallas provenientes de las bitácoras de PRODUCE en formato CSV o XLSX.

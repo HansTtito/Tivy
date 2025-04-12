@@ -1,4 +1,4 @@
-#' Agrega variables de juveniles, muestra, distancia a la costa y su categoría
+#' Agrega variables de juveniles, tamaño de muestra, distancia a la costa y su categoría
 #'
 #' Esta función agrega nuevas variables a un conjunto de datos, incluyendo la proporción de juveniles,
 #' el total de individuos en la muestra, la distancia a la costa y la categoría de distancia a la costa.

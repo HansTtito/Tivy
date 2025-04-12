@@ -2,7 +2,7 @@
 % Please edit documentation in R/processing-calas.R
 \name{procesar_calas}
 \alias{procesar_calas}
-\title{Procesamiento de datos de calas pesqueras}
+\title{Procesamiento de datos de calas pesqueras, archivo sitrapesca de PRODUCE}
 \usage{
 procesar_calas(data_calas, formato = "xlsx")
 }

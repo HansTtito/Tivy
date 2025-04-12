@@ -7,14 +7,18 @@
 puntos_tierra(x_punto, y_punto, linea_costa, paralelo = FALSE, nucleos = 4)
 }
 \arguments{
+\item{x_punto}{Un vector con las longitudes}
+
+\item{y_punto}{Un vector con las latitudes}
+
 \item{linea_costa}{Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat}
 
-\item{lon}{Un vector con las longitudes}
+\item{paralelo}{Lógico. Si \code{TRUE}, realiza el cálculo en paralelo utilizando múltiples núcleos. Default \code{FALSE}.}
 
-\item{lat}{Un vector con las latitudes}
+\item{nucleos}{Número de núcleos a usar para procesamiento paralelo. Default \code{4}.}
 }
 \value{
-Un vector con las distancias a la costa
+Un vector con clasificación "tierra" o "mar" para cada punto.
 }
 \description{
 Función que permite estimar los puntos que están a la derecha o izquierda de la línea de costa

@@ -1,4 +1,4 @@
-#' Procesamiento de datos de faenas pesqueras
+#' Procesamiento de datos de faenas pesqueras, archivo sitrapesca de PRODUCE
 #'
 #' @description
 #' Procesa datos de faenas pesqueras provenientes de las bitácoras de PRODUCE,
