@@ -45,6 +45,9 @@ pdf_files <- c(
 resultados <- extrae_data_comunicados(vector_pdf_names = pdf_files)
 print(resultados)
 
+
+# Visualización de las áreas cerradas
+
 graficar_poligonos_ggplot(resultados)
 
 graficar_poligonos_leaflet(datos = resultados)
