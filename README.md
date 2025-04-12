@@ -1,7 +1,7 @@
 # Tivy  
 ## Herramientas para el Análisis de Datos Pesqueros  
 
-Este paquete proporciona funciones para cargar, procesar y analizar datos pesqueros, incluyendo bitácoras de faenas, tallas y calas. También incluye herramientas para visualización y modelado estadístico.  
+Este paquete proporciona funciones para cargar, procesar y analizar datos pesqueros, incluyendo información de bitácoras de faenas, tallas y calas del Ministerio de Producción de Perú, así también los comunicados emitidos para cierres preventivos. También incluye herramientas para visualización y modelado estadístico.  
 
 ### 📦 Instalación  
 Puedes instalar el paquete desde GitHub con:  
