@@ -29,6 +29,24 @@ data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena
 data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
 
 # Aplicación de la función
-resultados <- agregar_variables(data_total)
+datos_final <- agregar_variables(data_total)
+
+head(datos_final)
+
+
+# Lectura de comunicados
+
+# Suponiendo que tengas una lista de archivos PDF
+pdf_files <- c(
+  "comunicado_1.pdf",
+  "comunicado_2.pdf"
+)
+
+resultados <- extrae_data_comunicados(vector_pdf_names = pdf_files)
+print(resultados)
+
+graficar_poligonos_ggplot(resultados)
+
+graficar_poligonos_leaflet(datos = resultados)
 
 ```
