@@ -276,16 +276,48 @@ crear_poligonos <- function(datos,
   return(poligonos_sf)
 }
 
-# Función auxiliar para calcular la longitud aproximada de la costa a una latitud dada
+#' Calcular la longitud aproximada de la costa en una latitud específica
+#'
+#' Esta función encuentra la longitud aproximada de una línea costera en una latitud dada,
+#' buscando puntos costeros cercanos y calculando su longitud promedio.
+#'
+#' @param costa Un dataframe que contiene datos de la línea costera con al menos dos columnas:
+#'        'Lat' (latitud) y 'Long' (longitud) en grados decimales.
+#' @param latitud Valor numérico que representa la latitud en grados decimales para la cual
+#'        se desea encontrar la longitud de la costa.
+#'
+#' @return Un valor numérico que representa la longitud promedio en grados decimales de los
+#'        puntos costeros cercanos a la latitud especificada. Si no se encuentran puntos cercanos,
+#'        devuelve -75 como aproximación para la costa peruana y muestra una advertencia.
+#'
+#' @details
+#' La función busca puntos costeros dentro de un rango de 0.1 grados de la latitud
+#' especificada. Este umbral puede necesitar ajustes dependiendo de la densidad de puntos en el dataset.
+#'
+#' @note
+#' - Requiere que el dataframe de entrada tenga la estructura correcta con columnas 'Lat' y 'Long'.
+#' - El valor predeterminado de -75 para la costa peruana solo es una aproximación general y
+#'   puede no ser adecuado para otras regiones.
+#' - Esta función no realiza interpolaciones y puede dar resultados inexactos en costas con
+#'   formas muy irregulares o bahías profundas.
+#' - Funciona mejor cuando los datos costeros tienen una distribución uniforme de puntos.
 calcular_longitud_costa <- function(costa, latitud) {
+  # Verificar que el dataframe costa contenga las columnas necesarias
+  if (!all(c("Lat", "Long") %in% names(costa))) {
+    stop("El dataframe 'costa' debe contener las columnas 'Lat' y 'Long'")
+  }
+
+  # Verificar que latitud sea un valor numérico
+  if (!is.numeric(latitud)) {
+    stop("El parámetro 'latitud' debe ser un valor numérico")
+  }
+
   # Encontrar los puntos de costa más cercanos a la latitud dada
   idx_cercanos <- which(abs(costa$Lat - latitud) < 0.1)
-
   if (length(idx_cercanos) == 0) {
     warning("No se encontraron puntos costeros cercanos a la latitud ", latitud, ". Usando aproximación.")
     return(-75)  # Valor aproximado para la costa peruana
   }
-
   # Calcular la longitud promedio de estos puntos
   longitud_costa <- mean(costa$Long[idx_cercanos])
   return(longitud_costa)

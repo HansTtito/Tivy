@@ -21,9 +21,9 @@ que pueden estar en formato de texto (como "12°30'S") o decimales.}
 \item{costa}{Un data frame que contiene la línea de costa para visualización.
 Debe tener columnas 'Long' y 'Lat'. Por defecto utiliza Shoreline_Peru.}
 
-\item{titulo}{Título para el gráfico.}
+\item{titulo}{Título para el gráfico. Default NULL}
 
-\item{colores}{Vector de colores para los polígonos.}
+\item{colores}{Vector de colores para los polígonos. Default NULL}
 
 \item{mostrar_leyenda}{Lógico. Si es TRUE, muestra la leyenda. Default FALSE.}
 
