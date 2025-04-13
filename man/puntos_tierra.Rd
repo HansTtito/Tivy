@@ -11,7 +11,7 @@ puntos_tierra(x_punto, y_punto, linea_costa, paralelo = FALSE, nucleos = 4)
 
 \item{y_punto}{Un vector con las latitudes}
 
-\item{linea_costa}{Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat}
+\item{linea_costa}{Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat. Default \code{Tivy::linea_costa_peru}.}
 
 \item{paralelo}{Lógico. Si \code{TRUE}, realiza el cálculo en paralelo utilizando múltiples núcleos. Default \code{FALSE}.}
 
@@ -25,5 +25,5 @@ Función que permite estimar los puntos que están a la derecha o izquierda de l
 }
 \examples{
 data_calas = processing_calas(data_calas = calas)
-puntos_tierra(x_punto = data_calas$lon_final, y_punto = data_calas$lat_final, linea_costa = Shoreline_Peru)
+puntos_tierra(x_punto = data_calas$lon_final, y_punto = data_calas$lat_final, linea_costa = Tivy::linea_costa_peru)
 }

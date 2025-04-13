@@ -13,7 +13,7 @@
 #' @importFrom stringi stri_trim
 #'
 #' @examples
-#' procesar_calas(data_calas = calas, formato = "xlsx")
+#' procesar_calas(data_calas = calas_bitacora, formato = "xlsx")
 procesar_calas <- function(data_calas, formato = "xlsx") {
   if (!formato %in% c("xlsx", "csv")) {
     stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")

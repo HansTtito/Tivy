@@ -41,6 +41,6 @@ dms_a_decimal(c("73°15'W"))
 dms_a_decimal(c("39 48 N"))
 
 # En un dataframe
-# dms_a_decimal(calas$Longitud.Fin)
+# dms_a_decimal(calas_bitacora$Longitud.Fin)
 
 }

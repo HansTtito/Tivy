@@ -12,7 +12,7 @@
 #' @importFrom dplyr select %>%
 #'
 #' @examples
-#' procesar_faenas(data_faenas = faenas, formato = "xlsx")
+#' procesar_faenas(data_faenas = faenas_bitacora, formato = "xlsx")
 procesar_faenas <- function(data_faenas, formato = "xlsx") {
   if (!formato %in% c("xlsx", "csv")) {
     stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")

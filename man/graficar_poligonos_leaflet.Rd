@@ -6,7 +6,7 @@
 \usage{
 graficar_poligonos_leaflet(
   datos,
-  costa = Tivy::Shoreline_Peru,
+  costa = Tivy::linea_costa_peru,
   titulo = NULL,
   colores = NULL,
   mostrar_leyenda = FALSE,
@@ -20,7 +20,7 @@ graficar_poligonos_leaflet(
 que pueden estar en formato de texto (como "12°30'S") o decimales.}
 
 \item{costa}{Un data frame que contiene la línea de costa para visualización.
-Debe tener columnas 'Long' y 'Lat'. Por defecto utiliza Shoreline_Peru.}
+Debe tener columnas 'Long' y 'Lat'. Default \code{Tivy::linea_costa_peru}.}
 
 \item{titulo}{Título para el gráfico. Default NULL}
 
@@ -44,7 +44,7 @@ utilizando leaflet. Devuelve un objeto leaflet que puede ser modificado posterio
 \examples{
 # Crear mapa básico
 resultados <- extrae_data_comunicados(c("comunicado1.pdf"))
-m <- graficar_poligonos_leaflet(datos = resultados, costa = Shoreline_Peru)
+m <- graficar_poligonos_leaflet(datos = resultados, costa = Tivy::linea_costa_peru)
 
 # Personalizar posteriormente
 m \%>\%

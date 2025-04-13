@@ -7,7 +7,7 @@
 distancia_costa(
   lon,
   lat,
-  linea_costa = Tivy::Shoreline_Peru,
+  linea_costa = Tivy::linea_costa_peru,
   devolver_indices = FALSE,
   tipo_distancia = "haversine",
   unidad = "mn",
@@ -21,7 +21,7 @@ distancia_costa(
 
 \item{lat}{Vector numérico con las latitudes de los puntos de interés.}
 
-\item{linea_costa}{Data frame que representa la línea de costa, debe contener columnas llamadas \code{'Long'} y \code{'Lat'}. Default \code{Tivy::Shoreline_Peru}.}
+\item{linea_costa}{Data frame que representa la línea de costa, debe contener columnas llamadas \code{'Long'} y \code{'Lat'}. Default \code{Tivy::linea_costa_peru}.}
 
 \item{devolver_indices}{Lógico. Si es \code{TRUE}, devuelve también los índices de los puntos de la línea de costa más cercanos. Default \code{FALSE}.}
 
@@ -49,11 +49,11 @@ Se puede ejecutar de forma secuencial o en paralelo, y retornar también los ín
 }
 \examples{
 \dontrun{
-data_calas <- processing_calas(data_calas = calas)
+data_calas <- procesar_calas(data_calas = calas_bitacora)
 distancia_costa(
   lon = data_calas$lon_final,
   lat = data_calas$lat_final,
-  linea_costa = Shoreline_Peru,
+  linea_costa = Tivy::linea_costa_peru,
   tipo_distancia = "haversine",
   unidad = "mn",
   paralelo = TRUE,

@@ -6,7 +6,7 @@
 \usage{
 graficar_poligonos(
   datos,
-  costa = Tivy::Shoreline_Peru,
+  costa = Tivy::linea_costa_peru,
   tipo = "estatico",
   titulo = "Zonas de suspensión pesquera",
   colores = NULL,
@@ -20,7 +20,7 @@ graficar_poligonos(
 \arguments{
 \item{datos}{Lista de polígonos con coordenadas y metadatos (como comunicado).}
 
-\item{costa}{Data frame con la línea de costa a graficar. Por defecto usa \code{Tivy::Shoreline_Peru}.}
+\item{costa}{Data frame con la línea de costa a graficar. Default \code{Tivy::linea_costa_peru}.}
 
 \item{tipo}{Tipo de gráfico a generar: \code{"estatico"} para ggplot2 o \code{"interactivo"} para leaflet.}
 
@@ -49,6 +49,6 @@ generar un gráfico estático con \code{ggplot2} o un gráfico interactivo con \
 \examples{
 # Crear mapa básico
 resultados <- extrae_data_comunicados(c("comunicado1.pdf", "comunicado2.pdf"))
-graficar_poligonos(datos = resultados, costa = Shoreline_Peru)
+graficar_poligonos(datos = resultados, costa = Tivy::linea_costa_peru)
 
 }

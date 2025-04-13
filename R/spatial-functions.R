@@ -31,7 +31,7 @@
 #' dms_a_decimal(c("39 48 N"))
 #'
 #' # En un dataframe
-#' # dms_a_decimal(calas$Longitud.Fin)
+#' # dms_a_decimal(calas_bitacora$Longitud.Fin)
 #'
 #' @importFrom stringr str_split str_count str_detect str_extract
 dms_a_decimal <- function(coordenadas, hemisferio = "S") {
@@ -173,7 +173,7 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
 #'
 #' @param lon Vector numérico con las longitudes de los puntos de interés.
 #' @param lat Vector numérico con las latitudes de los puntos de interés.
-#' @param linea_costa Data frame que representa la línea de costa, debe contener columnas llamadas `'Long'` y `'Lat'`. Default `Tivy::Shoreline_Peru`.
+#' @param linea_costa Data frame que representa la línea de costa, debe contener columnas llamadas `'Long'` y `'Lat'`. Default `Tivy::linea_costa_peru`.
 #' @param devolver_indices Lógico. Si es `TRUE`, devuelve también los índices de los puntos de la línea de costa más cercanos. Default `FALSE`.
 #' @param tipo_distancia Tipo de distancia geográfica a usar: `"haversine"`, `"euclidean"`, `"grid"` .
 #' @param unidad Unidad de medida para la distancia: `"mn"` (millas náuticas), `"km"`, etc.
@@ -191,11 +191,11 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
 #' @export
 #' @examples
 #' \dontrun{
-#' data_calas <- processing_calas(data_calas = calas)
+#' data_calas <- procesar_calas(data_calas = calas_bitacora)
 #' distancia_costa(
 #'   lon = data_calas$lon_final,
 #'   lat = data_calas$lat_final,
-#'   linea_costa = Shoreline_Peru,
+#'   linea_costa = Tivy::linea_costa_peru,
 #'   tipo_distancia = "haversine",
 #'   unidad = "mn",
 #'   paralelo = TRUE,
@@ -207,7 +207,7 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
 #' @importFrom future.apply future_lapply
 distancia_costa <- function(lon,
                             lat,
-                            linea_costa = Tivy::Shoreline_Peru,
+                            linea_costa = Tivy::linea_costa_peru,
                             devolver_indices = FALSE,
                             tipo_distancia = "haversine",
                             unidad = "mn",
@@ -352,7 +352,7 @@ distancia_costa <- function(lon,
 #'
 #' @param x_punto Un vector con las longitudes
 #' @param y_punto Un vector con las latitudes
-#' @param linea_costa Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat
+#' @param linea_costa Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat. Default `Tivy::linea_costa_peru`.
 #' @param paralelo Lógico. Si `TRUE`, realiza el cálculo en paralelo utilizando múltiples núcleos. Default `FALSE`.
 #' @param nucleos Número de núcleos a usar para procesamiento paralelo. Default `4`.
 #' @return Un vector con clasificación "tierra" o "mar" para cada punto.
@@ -360,7 +360,7 @@ distancia_costa <- function(lon,
 #' @rdname puntos_tierra
 #' @examples
 #' data_calas = processing_calas(data_calas = calas)
-#' puntos_tierra(x_punto = data_calas$lon_final, y_punto = data_calas$lat_final, linea_costa = Shoreline_Peru)
+#' puntos_tierra(x_punto = data_calas$lon_final, y_punto = data_calas$lat_final, linea_costa = Tivy::linea_costa_peru)
 #' @importFrom future plan multisession sequential
 #' @importFrom future.apply future_lapply
 puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucleos = 4) {
@@ -524,7 +524,7 @@ puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucle
 #' @param datos Un data frame con coordenadas de latitud y longitud de inicio y fin,
 #'        que pueden estar en formato de texto (como "12°30'S") o decimales.
 #' @param costa Un data frame que contiene la línea de costa para visualización.
-#'        Debe tener columnas 'Long' y 'Lat'. Por defecto utiliza Shoreline_Peru.
+#'        Debe tener columnas 'Long' y 'Lat'. Default `Tivy::linea_costa_peru`.
 #' @param titulo Título para el gráfico. Default NULL
 #' @param colores Vector de colores para los polígonos. Default NULL
 #' @param mostrar_leyenda Lógico. Si es TRUE, muestra la leyenda. Default FALSE.
@@ -537,7 +537,7 @@ puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucle
 #' @examples
 #' # Crear gráfico básico
 #' resultados <- extrae_data_comunicados(c("comunicado1.pdf"))
-#' g <- graficar_poligonos_ggplot(datos = resultados, costa = Shoreline_Peru)
+#' g <- graficar_poligonos_ggplot(datos = resultados, costa = Tivy::linea_costa_peru)
 #'
 #' # Personalizar posteriormente
 #' g +
@@ -547,7 +547,7 @@ puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucle
 #'
 #' @export
 graficar_poligonos_ggplot <- function(datos,
-                                      costa = Tivy::Shoreline_Peru,
+                                      costa = Tivy::linea_costa_peru,
                                       titulo = NULL,
                                       colores = NULL,
                                       mostrar_leyenda = FALSE,
@@ -578,7 +578,7 @@ graficar_poligonos_ggplot <- function(datos,
 #' @param datos Un data frame con coordenadas de latitud y longitud de inicio y fin,
 #'        que pueden estar en formato de texto (como "12°30'S") o decimales.
 #' @param costa Un data frame que contiene la línea de costa para visualización.
-#'        Debe tener columnas 'Long' y 'Lat'. Por defecto utiliza Shoreline_Peru.
+#'        Debe tener columnas 'Long' y 'Lat'. Default `Tivy::linea_costa_peru`.
 #' @param titulo Título para el gráfico. Default NULL
 #' @param colores Vector de colores para los polígonos. Default NULL
 #' @param mostrar_leyenda Lógico. Si es TRUE, muestra la leyenda. Default FALSE.
@@ -592,7 +592,7 @@ graficar_poligonos_ggplot <- function(datos,
 #' @examples
 #' # Crear mapa básico
 #' resultados <- extrae_data_comunicados(c("comunicado1.pdf"))
-#' m <- graficar_poligonos_leaflet(datos = resultados, costa = Shoreline_Peru)
+#' m <- graficar_poligonos_leaflet(datos = resultados, costa = Tivy::linea_costa_peru)
 #'
 #' # Personalizar posteriormente
 #' m %>%
@@ -601,7 +601,7 @@ graficar_poligonos_ggplot <- function(datos,
 #'
 #' @export
 graficar_poligonos_leaflet <- function(datos,
-                                       costa = Tivy::Shoreline_Peru,
+                                       costa = Tivy::linea_costa_peru,
                                        titulo = NULL,
                                        colores = NULL,
                                        mostrar_leyenda = FALSE,
@@ -630,7 +630,7 @@ graficar_poligonos_leaflet <- function(datos,
 #' generar un gráfico estático con `ggplot2` o un gráfico interactivo con `leaflet`.
 #'
 #' @param datos Lista de polígonos con coordenadas y metadatos (como comunicado).
-#' @param costa Data frame con la línea de costa a graficar. Por defecto usa `Tivy::Shoreline_Peru`.
+#' @param costa Data frame con la línea de costa a graficar. Default `Tivy::linea_costa_peru`.
 #' @param tipo Tipo de gráfico a generar: `"estatico"` para ggplot2 o `"interactivo"` para leaflet.
 #' @param titulo Título del gráfico.
 #' @param colores Vector de colores a usar para diferenciar los polígonos (por comunicado u otra categoría).
@@ -645,11 +645,11 @@ graficar_poligonos_leaflet <- function(datos,
 #' @examples
 #' # Crear mapa básico
 #' resultados <- extrae_data_comunicados(c("comunicado1.pdf", "comunicado2.pdf"))
-#' graficar_poligonos(datos = resultados, costa = Shoreline_Peru)
+#' graficar_poligonos(datos = resultados, costa = Tivy::linea_costa_peru)
 #'
 #' @export
 graficar_poligonos <- function(datos,
-                               costa = Tivy::Shoreline_Peru,
+                               costa = Tivy::linea_costa_peru,
                                tipo = "estatico",
                                titulo = "Zonas de suspensión pesquera",
                                colores = NULL,

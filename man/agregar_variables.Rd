@@ -43,9 +43,9 @@ el total de individuos en la muestra, la distancia a la costa y la categoría de
 \examples{
 \dontrun{
 # Procesamiento de datos
-data_calas <- procesar_calas(data_calas = calas)
-data_faenas <- procesar_faenas(data_faenas = faenas)
-calas_tallas <- procesar_tallas(data_tallas = tallas)
+data_calas <- procesar_calas(data_calas = calas_bitacora)
+data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
+calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
 
 # Merge de calas, tallas y faenas
 data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
