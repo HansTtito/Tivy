@@ -48,7 +48,7 @@ print(resultados)
 
 # Visualización de las áreas cerradas
 
-graficar_poligonos_ggplot(resultados)
+graficar_poligonos_ggplot(datos = resultados)
 
 graficar_poligonos_leaflet(datos = resultados)
 
