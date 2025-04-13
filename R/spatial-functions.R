@@ -173,7 +173,7 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
 #'
 #' @param lon Vector numérico con las longitudes de los puntos de interés.
 #' @param lat Vector numérico con las latitudes de los puntos de interés.
-#' @param linea_costa Data frame que representa la línea de costa, debe contener columnas llamadas `'Long'` y `'Lat'`.
+#' @param linea_costa Data frame que representa la línea de costa, debe contener columnas llamadas `'Long'` y `'Lat'`. Default `Tivy::Shoreline_Peru`.
 #' @param devolver_indices Lógico. Si es `TRUE`, devuelve también los índices de los puntos de la línea de costa más cercanos. Default `FALSE`.
 #' @param tipo_distancia Tipo de distancia geográfica a usar: `"haversine"`, `"euclidean"`, `"grid"` .
 #' @param unidad Unidad de medida para la distancia: `"mn"` (millas náuticas), `"km"`, etc.
@@ -205,7 +205,9 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
 #'
 #' @importFrom future plan multisession
 #' @importFrom future.apply future_lapply
-distancia_costa <- function(lon, lat, linea_costa,
+distancia_costa <- function(lon,
+                            lat,
+                            linea_costa = Tivy::Shoreline_Peru,
                             devolver_indices = FALSE,
                             tipo_distancia = "haversine",
                             unidad = "mn",
