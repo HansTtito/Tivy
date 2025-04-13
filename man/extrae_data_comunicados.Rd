@@ -7,7 +7,7 @@
 extrae_data_comunicados(vector_pdf_names)
 }
 \arguments{
-\item{vector_pdf_names}{Un vector de nombres de archivo PDF a procesar.}
+\item{vector_pdf_names}{Un vector de nombres de archivo PDF o URLs a procesar.}
 }
 \value{
 Un data.frame con la información extraída de los comunicados. El data.frame incluye las siguientes
@@ -31,9 +31,12 @@ procesará las millas náuticas. El resultado es un data.frame con las fechas de
 y otra información relacionada con el comunicado.
 }
 \examples{
-# Suponiendo que tengas una lista de archivos PDF
+# Con archivos locales
 pdf_files <- c("comunicado1.pdf", "comunicado2.pdf")
 resultados <- extrae_data_comunicados(pdf_files)
-head(resultados)
+
+# Con URLs
+pdf_urls <- c("https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf")
+resultados_url <- extrae_data_comunicados(pdf_urls)
 
 }

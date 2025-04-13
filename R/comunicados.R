@@ -5,7 +5,7 @@
 #' procesará las millas náuticas. El resultado es un data.frame con las fechas de inicio y fin, coordenadas
 #' y otra información relacionada con el comunicado.
 #'
-#' @param vector_pdf_names Un vector de nombres de archivo PDF a procesar.
+#' @param vector_pdf_names Un vector de nombres de archivo PDF o URLs a procesar.
 #'
 #' @return Un data.frame con la información extraída de los comunicados. El data.frame incluye las siguientes
 #' columnas:
@@ -22,14 +22,18 @@
 #' }
 #'
 #' @examples
-#' # Suponiendo que tengas una lista de archivos PDF
+#' # Con archivos locales
 #' pdf_files <- c("comunicado1.pdf", "comunicado2.pdf")
 #' resultados <- extrae_data_comunicados(pdf_files)
-#' head(resultados)
+#'
+#' # Con URLs
+#' pdf_urls <- c("https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf")
+#' resultados_url <- extrae_data_comunicados(pdf_urls)
 #'
 #' @export
 #' @importFrom pdftools pdf_text
 #' @importFrom stringr str_squish str_split str_extract_all str_extract
+#' @importFrom utils download.file
 extrae_data_comunicados <- function(vector_pdf_names) {
   # Validación de parámetros
   if (missing(vector_pdf_names)) {
@@ -45,19 +49,67 @@ extrae_data_comunicados <- function(vector_pdf_names) {
     stop("'vector_pdf_names' debe ser un vector de caracteres con nombres de archivos PDF.")
   }
 
+  # Crear una función auxiliar para verificar si es URL
+  is_url <- function(x) {
+    grepl("^(http|https|ftp)://", x, ignore.case = TRUE)
+  }
+
+  # Crear directorio temporal para archivos descargados
+  temp_dir <- tempdir()
+  temp_files <- character(length(vector_pdf_names))
+
+  # Procesar URLs y descargar archivos si es necesario
+  for (i in seq_along(vector_pdf_names)) {
+    if (is_url(vector_pdf_names[i])) {
+      # Es una URL, intentar descargar
+      file_name <- basename(vector_pdf_names[i])
+      temp_path <- file.path(temp_dir, file_name)
+
+      tryCatch({
+        download_result <- utils::download.file(
+          url = vector_pdf_names[i],
+          destfile = temp_path,
+          mode = "wb",  # Modo binario para PDFs
+          quiet = TRUE
+        )
+
+        if (download_result == 0) {
+          # Descarga exitosa, usar archivo temporal
+          temp_files[i] <- temp_path
+        } else {
+          warning("Error al descargar la URL: ", vector_pdf_names[i])
+          temp_files[i] <- NA_character_
+        }
+      }, error = function(e) {
+        warning("Error al descargar la URL '", vector_pdf_names[i], "': ", e$message)
+        temp_files[i] <- NA_character_
+      })
+    } else {
+      # Es un archivo local, usar la ruta tal cual
+      temp_files[i] <- vector_pdf_names[i]
+    }
+  }
+
+  # Eliminar URLs que no se pudieron descargar
+  temp_files <- temp_files[!is.na(temp_files)]
+
+  if (length(temp_files) == 0) {
+    stop("No se pudo acceder a ninguno de los archivos especificados. No se puede continuar.")
+  }
+
   # Verificar que los archivos existen
-  archivos_no_existentes <- vector_pdf_names[!file.exists(vector_pdf_names)]
+  archivos_no_existentes <- temp_files[!file.exists(temp_files)]
   if (length(archivos_no_existentes) > 0) {
     warning("Los siguientes archivos no existen: ", paste(archivos_no_existentes, collapse = ", "))
-    vector_pdf_names <- vector_pdf_names[file.exists(vector_pdf_names)]
+    temp_files <- temp_files[file.exists(temp_files)]
 
-    if (length(vector_pdf_names) == 0) {
+    if (length(temp_files) == 0) {
       stop("Ninguno de los archivos especificados existe. No se puede continuar.")
     }
   }
 
   # Verificar que los archivos son PDFs (extensión .pdf)
-  no_pdf <- vector_pdf_names[!grepl("\\.pdf$", vector_pdf_names, ignore.case = TRUE)]
+  no_pdf <- temp_files[!grepl("\\.pdf$", temp_files, ignore.case = TRUE)]
   if (length(no_pdf) > 0) {
     warning("Los siguientes archivos no tienen extensión .pdf: ", paste(no_pdf, collapse = ", "))
   }
@@ -81,7 +133,10 @@ extrae_data_comunicados <- function(vector_pdf_names) {
   )
 
   # Procesar cada archivo PDF
-  for (file in vector_pdf_names) {
+  for (file in temp_files) {
+    # Conservar nombre original para el campo nombre_archivo
+    original_name <- ifelse(is_url(file), basename(file), basename(file))
+
     # Leer el texto del archivo PDF con manejo de errores
     texto <- tryCatch({
       pdftools::pdf_text(file)
@@ -141,8 +196,6 @@ extrae_data_comunicados <- function(vector_pdf_names) {
 
         comunicado <- stringr::str_extract(texto_limpio, "COMUNICADO\\s*N[°º]\\s*\\d+(?:\\s*[-–]\\s*\\d+)?(?:-[A-Z]+)?")
 
-
-
         if (length(fechas_texto) < 2) {
           warning("No se encontraron suficientes fechas en el bloque ", i, " del archivo '", file, "'.")
           next
@@ -164,14 +217,14 @@ extrae_data_comunicados <- function(vector_pdf_names) {
       tryCatch({
         # Varios patrones para intentar capturar diferentes formatos de coordenadas
         patrones_lat <- c(
-          "\\d{1,2}°\\d{1,2}['´’][NS]",
-          "\\d{1,2}°\\d{1,2}['’][NS]",
+          "\\d{1,2}°\\d{1,2}['´'][NS]",
+          "\\d{1,2}°\\d{1,2}[''][NS]",
           "\\d{1,2}°\\d{1,2}['`][NS]"
         )
 
         patrones_lon <- c(
-          "\\d{1,2}°\\d{1,2}['´’][WEO]",
-          "\\d{1,2}°\\d{1,2}['’][WEO]",
+          "\\d{1,2}°\\d{1,2}['´'][WEO]",
+          "\\d{1,2}°\\d{1,2}[''][WEO]",
           "\\d{1,2}°\\d{1,2}['`][WEO]"
         )
 
@@ -267,7 +320,7 @@ extrae_data_comunicados <- function(vector_pdf_names) {
                 LongitudFin = NA_character_,
                 MillasNauticasInicio = millas_inicio[ceiling(j/2)],
                 MillasNauticasFin = millas_fin[ceiling(j/2)],
-                nombre_archivo = basename(file),
+                nombre_archivo = original_name,
                 comunicado = comunicado,
                 stringsAsFactors = FALSE
               )
@@ -286,7 +339,7 @@ extrae_data_comunicados <- function(vector_pdf_names) {
             LongitudFin = NA_character_,
             MillasNauticasInicio = millas_inicio[1],
             MillasNauticasFin = millas_fin[1],
-            nombre_archivo = basename(file),
+            nombre_archivo = original_name,
             comunicado = comunicado,
             stringsAsFactors = FALSE
           )
@@ -330,7 +383,7 @@ extrae_data_comunicados <- function(vector_pdf_names) {
               LongitudFin = data_posiciones_lon[j + 1],
               MillasNauticasInicio = NA_real_,
               MillasNauticasFin = NA_real_,
-              nombre_archivo = basename(file),
+              nombre_archivo = original_name,
               comunicado = comunicado,
               stringsAsFactors = FALSE
             )
