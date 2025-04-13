@@ -37,12 +37,12 @@ head(datos_final)
 # Lectura de comunicados
 
 # Suponiendo que tengas una lista de archivos PDF
-pdf_files <- c(
-  "comunicado_1.pdf",
-  "comunicado_2.pdf"
-)
 
-resultados <- extrae_data_comunicados(vector_pdf_names = pdf_files)
+pdf_urls <- c("https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+              "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+              "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf")
+
+resultados <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
 print(resultados)
 
 
