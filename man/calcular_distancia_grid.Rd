@@ -32,3 +32,4 @@ Lista con distancia mínima y su índice.
 \description{
 Calcular distancia de cuadrícula con resolución fija
 }
+\keyword{internal}

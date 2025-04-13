@@ -36,3 +36,4 @@ formas muy irregulares o bahías profundas.
 \item Funciona mejor cuando los datos costeros tienen una distribución uniforme de puntos.
 }
 }
+\keyword{internal}

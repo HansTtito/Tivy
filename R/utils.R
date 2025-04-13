@@ -7,6 +7,7 @@
 #' @param unidad Unidad de salida: "mn" para millas náuticas, "km" para kilómetros.
 #'
 #' @return Lista con la distancia mínima y el índice correspondiente.
+#' @keywords internal
 calcular_distancia_haversine_wgs84 <- function(lon1, lat1, lon2, lat2, unidad) {
   # Convertir grados a radianes (verificando si ya están en radianes)
   if (max(abs(lon1), abs(lat1), abs(lon2), abs(lat2)) > 2*pi) {
@@ -55,6 +56,7 @@ calcular_distancia_haversine_wgs84 <- function(lon1, lat1, lon2, lat2, unidad) {
 #' @param unidad Unidad de distancia: "mn" o "km".
 #'
 #' @return Lista con la distancia mínima y el índice correspondiente.
+#' @keywords internal
 calcular_distancia_manhattan <- function(lon1, lat1, lon2, lat2, unidad) {
   # Verificar si convertir a radianes
   if (max(abs(lon1), abs(lat1), abs(lon2), abs(lat2)) > 2*pi) {
@@ -94,6 +96,7 @@ calcular_distancia_manhattan <- function(lon1, lat1, lon2, lat2, unidad) {
 #' @param unidad Unidad de distancia: "mn" o "km".
 #'
 #' @return Lista con distancia mínima y su índice.
+#' @keywords internal
 calcular_distancia_grid <- function(lon1, lat1, lon2, lat2, resolucion = 0.25, unidad = "km") {
   # Redondear a la resolución de cuadrícula más cercana
   lon1_grid <- round(lon1 / resolucion) * resolucion
@@ -141,6 +144,7 @@ calcular_distancia_grid <- function(lon1, lat1, lon2, lat2, resolucion = 0.25, u
 #' @param unidad Unidad de distancia: "mn" o "km".
 #'
 #' @return Lista con vectores de distancias mínimas e índices correspondientes.
+#' @keywords internal
 calcular_distancias_vectorizado <- function(lon_punto, lat_punto, costa_lon, costa_lat, tipo_distancia, ventana, unidad) {
   n_puntos <- length(lon_punto)
   distancias_finales <- numeric(n_puntos)
@@ -223,6 +227,7 @@ calcular_distancias_vectorizado <- function(lon_punto, lat_punto, costa_lon, cos
 #' - Esta función no realiza interpolaciones y puede dar resultados inexactos en costas con
 #'   formas muy irregulares o bahías profundas.
 #' - Funciona mejor cuando los datos costeros tienen una distribución uniforme de puntos.
+#' @keywords internal
 calcular_longitud_costa <- function(costa, latitud) {
   # Verificar que el dataframe costa contenga las columnas necesarias
   if (!all(c("Lat", "Long") %in% names(costa))) {
@@ -261,6 +266,7 @@ calcular_longitud_costa <- function(costa, latitud) {
 #' @param tema Tema de `ggplot2` a utilizar. Por defecto, `theme_minimal()`.
 #'
 #' @return Un objeto `ggplot` listo para ser graficado.
+#' @keywords internal
 graficar_estatico <- function(poligonos, costa, titulo, colores, mostrar_leyenda = TRUE,
                               etiquetas = NULL, agregar_grid = TRUE, tema = ggplot2::theme_minimal()) {
 
@@ -356,6 +362,7 @@ graficar_estatico <- function(poligonos, costa, titulo, colores, mostrar_leyenda
 #' @param minimap Lógico. Si `TRUE`, se muestra un minimapa en la esquina inferior derecha.
 #'
 #' @return Un objeto `leaflet` con el mapa interactivo.
+#' @keywords internal
 graficar_interactivo <- function(poligonos, costa, titulo, colores, mostrar_leyenda = TRUE,
                                  etiquetas = NULL, capas_base = TRUE, minimap = TRUE) {
 
@@ -504,17 +511,234 @@ graficar_interactivo <- function(poligonos, costa, titulo, colores, mostrar_leye
 
 
 
+#' Encuentra la línea paralela más cercana a una distancia en millas náuticas
+#'
+#' @description
+#' Esta función busca dentro de una lista de líneas paralelas a la costa la que mejor
+#' se aproxima a una distancia específica en millas náuticas.
+#'
+#' @param millas Valor numérico que indica la distancia en millas náuticas que se desea encontrar.
+#' @param paralelas_costa Lista de data frames con líneas paralelas a diferentes distancias.
+#'        Cada elemento debe tener un nombre que indique la distancia (ej. "l5", "l10").
+#'
+#' @return Una lista con dos elementos:
+#' \itemize{
+#'   \item df: El data frame con la línea paralela más cercana a la distancia solicitada.
+#'   \item milla_real: El valor numérico de la milla realmente encontrada.
+#' }
+#'
+#' @examples
+#' # Asumiendo que paralelas_costa_peru es una lista de líneas a distintas distancias
+#' resultado <- encontrar_linea_paralela(7, paralelas_costa_peru)
+#' linea <- resultado$df
+#' milla_encontrada <- resultado$milla_real
+#'
+#' @keywords internal
+encontrar_linea_paralela <- function(millas, paralelas_costa) {
+  # Extraer los números de millas de los nombres de las listas
+  millas_disponibles <- as.numeric(gsub("l", "", names(paralelas_costa)))
+
+  # Encontrar la milla más cercana
+  idx_cercano <- which.min(abs(millas_disponibles - millas))
+  milla_cercana <- millas_disponibles[idx_cercano]
+
+  # Devolver el dataframe correspondiente
+  return(list(
+    df = paralelas_costa[[paste0("l", milla_cercana)]],
+    milla_real = milla_cercana
+  ))
+}
+
+
+#' Interpola un punto para una latitud específica en una línea paralela
+#'
+#' @description
+#' Esta función calcula la longitud correspondiente a una latitud específica en una línea
+#' paralela a la costa, interpolando entre los puntos existentes cuando sea necesario.
+#'
+#' @param linea Data frame que representa una línea paralela a la costa.
+#' @param latitud Valor numérico de la latitud para la cual se desea encontrar la longitud.
+#' @param nombre_lat Nombre de la columna que contiene las latitudes en el data frame.
+#' @param nombre_lon Nombre de la columna que contiene las longitudes en el data frame.
+#'
+#' @return Un vector con dos elementos:
+#' \itemize{
+#'   \item lon: Longitud interpolada para la latitud dada.
+#'   \item lat: La misma latitud proporcionada como entrada.
+#' }
+#'
+#' @details
+#' La función ordena la línea por latitud, busca los puntos que encierran la latitud
+#' deseada y realiza una interpolación lineal. En caso de no encontrar puntos adecuados
+#' para interpolar, devuelve el punto más cercano.
+#'
+#' @examples
+#' # Asumiendo que linea_5_millas es un data frame con columnas 'lat' y 'lon'
+#' punto <- interpolar_punto(linea_5_millas, -12.5, "lat", "lon")
+#' longitud <- punto["lon"]
+#'
+#' @keywords internal
+interpolar_punto <- function(linea, latitud, nombre_lat, nombre_lon) {
+  # Ordenar por latitud para asegurar interpolación correcta
+  linea <- linea[order(linea[[nombre_lat]]), ]
+
+  # Encontrar los puntos que encierran la latitud deseada
+  idx_inf <- max(which(linea[[nombre_lat]] <= latitud), na.rm = TRUE)
+  idx_sup <- min(which(linea[[nombre_lat]] >= latitud), na.rm = TRUE)
+
+  # Manejar casos especiales
+  if (length(idx_inf) == 0 || is.infinite(idx_inf)) {
+    # Si no hay puntos por debajo, usar el punto más cercano
+    idx_cercano <- which.min(abs(linea[[nombre_lat]] - latitud))
+    return(c(
+      lon = linea[[nombre_lon]][idx_cercano],
+      lat = linea[[nombre_lat]][idx_cercano]
+    ))
+  }
+
+  if (length(idx_sup) == 0 || is.infinite(idx_sup)) {
+    # Si no hay puntos por encima, usar el punto más cercano
+    idx_cercano <- which.min(abs(linea[[nombre_lat]] - latitud))
+    return(c(
+      lon = linea[[nombre_lon]][idx_cercano],
+      lat = linea[[nombre_lat]][idx_cercano]
+    ))
+  }
+
+  # Si la latitud coincide exactamente con un punto, usarlo directamente
+  if (idx_inf == idx_sup) {
+    return(c(
+      lon = linea[[nombre_lon]][idx_inf],
+      lat = linea[[nombre_lat]][idx_inf]
+    ))
+  }
+
+  # Interpolar entre los dos puntos
+  lat_inf <- linea[[nombre_lat]][idx_inf]
+  lat_sup <- linea[[nombre_lat]][idx_sup]
+  lon_inf <- linea[[nombre_lon]][idx_inf]
+  lon_sup <- linea[[nombre_lon]][idx_sup]
+
+  # Calcular proporción para interpolación
+  prop <- (latitud - lat_inf) / (lat_sup - lat_inf)
+  longitud <- lon_inf + prop * (lon_sup - lon_inf)
+
+  return(c(
+    lon = longitud,
+    lat = latitud
+  ))
+}
+
+
+
+#' Extrae todos los puntos de una línea paralela entre dos latitudes
+#'
+#' @description
+#' Esta función obtiene todos los puntos de una línea paralela a la costa que se encuentran
+#' entre dos latitudes dadas, incluyendo puntos interpolados en los límites exactos.
+#'
+#' @param linea Data frame que representa una línea paralela a la costa.
+#' @param lat_min Valor numérico de la latitud mínima (más al sur).
+#' @param lat_max Valor numérico de la latitud máxima (más al norte).
+#' @param nombre_lat Nombre de la columna que contiene las latitudes en el data frame.
+#' @param nombre_lon Nombre de la columna que contiene las longitudes en el data frame.
+#'
+#' @return Una matriz de puntos con columnas correspondientes a longitud y latitud.
+#'
+#' @details
+#' La función primero filtra los puntos que están dentro del rango de latitudes.
+#' Si es necesario, interpola puntos adicionales para los límites exactos de
+#' lat_min y lat_max. Si no hay suficientes puntos en el rango, crea un segmento
+#' recto entre los puntos interpolados en los límites.
+#'
+#' @examples
+#' # Asumiendo que linea_10_millas es un data frame con columnas 'lat' y 'lon'
+#' puntos <- extraer_puntos_entre_latitudes(linea_10_millas, -14.5, -12.0, "lat", "lon")
+#'
+#' @keywords internal
+extraer_puntos_entre_latitudes <- function(linea, lat_min, lat_max, nombre_lat, nombre_lon) {
+  # Ordenar por latitud
+  linea <- linea[order(linea[[nombre_lat]]), ]
+
+  # Filtrar puntos dentro del rango de latitudes
+  puntos_filtrados <- linea[linea[[nombre_lat]] >= lat_min & linea[[nombre_lat]] <= lat_max, ]
+
+  # Si no hay suficientes puntos dentro del rango, tendremos que interpolar
+  if (nrow(puntos_filtrados) < 2) {
+    # Interpolar puntos en los límites
+    punto_min <- Tivy:::interpolar_punto(linea, lat_min, nombre_lat, nombre_lon)
+    punto_max <- Tivy:::interpolar_punto(linea, lat_max, nombre_lat, nombre_lon)
+
+    # Crear matriz de puntos
+    puntos <- rbind(
+      punto_min,
+      punto_max
+    )
+    colnames(puntos) <- c(nombre_lon, nombre_lat)
+
+    return(puntos)
+  }
+
+  # Verificar si necesitamos añadir puntos interpolados en los límites exactos
+  primer_punto <- puntos_filtrados[1, ]
+  ultimo_punto <- puntos_filtrados[nrow(puntos_filtrados), ]
+
+  puntos_limite <- NULL
+
+  # Si el primer punto no está exactamente en lat_min, interpolar
+  if (abs(primer_punto[[nombre_lat]] - lat_min) > 0.0001) {
+    punto_min <- Tivy:::interpolar_punto(linea, lat_min, nombre_lat, nombre_lon)
+    puntos_limite <- rbind(puntos_limite, punto_min)
+  }
+
+  # Puntos del medio (los filtrados)
+  puntos_medio <- as.matrix(puntos_filtrados[, c(nombre_lon, nombre_lat)])
+
+  # Si el último punto no está exactamente en lat_max, interpolar
+  if (abs(ultimo_punto[[nombre_lat]] - lat_max) > 0.0001) {
+    punto_max <- Tivy:::interpolar_punto(linea, lat_max, nombre_lat, nombre_lon)
+    puntos_limite <- rbind(puntos_limite, punto_max)
+  }
+
+  # Combinar todos los puntos
+  if (!is.null(puntos_limite)) {
+    colnames(puntos_limite) <- c(nombre_lon, nombre_lat)
+
+    # Determinar qué puntos van antes y cuáles después
+    puntos_antes <- puntos_limite[puntos_limite[, 2] < primer_punto[[nombre_lat]], , drop = FALSE]
+    puntos_despues <- puntos_limite[puntos_limite[, 2] > ultimo_punto[[nombre_lat]], , drop = FALSE]
+
+    puntos <- rbind(
+      puntos_antes,
+      puntos_medio,
+      puntos_despues
+    )
+  } else {
+    puntos <- puntos_medio
+  }
+
+  return(puntos)
+}
+
+
 #' Preparar polígonos a partir de datos de coordenadas
 #'
 #' @description
-#' Función auxiliar para procesar datos y preparar polígonos.
+#' Función auxiliar para procesar datos y preparar polígonos usando líneas paralelas
+#' preexistentes. Los bordes este y oeste del polígono seguirán la forma de las líneas
+#' paralelas a la costa a las millas náuticas especificadas, mientras que los bordes
+#' norte y sur serán líneas rectas a las latitudes dadas.
 #'
 #' @param datos Un data frame con coordenadas.
 #' @param costa Un data frame con la línea de costa.
+#' @param paralelas_costa Lista de data frames con líneas paralelas a diferentes distancias de la costa.
+#'        Cada elemento de la lista debe tener un nombre que indique la distancia (ej. "l5", "l10").
+#' @param nombres_columnas Un vector con nombres de columnas en los data frames de paralelas_costa.
+#'        Debe contener: c("lat", "lon", "dc") donde "dc" es la distancia a la costa.
 #'
 #' @return Una lista de polígonos para visualización.
 #' @keywords internal
-preparar_poligonos <- function(datos, costa) {
+preparar_poligonos <- function(datos, costa, paralelas_costa = NULL, nombres_columnas = c("lat", "lon", "dc")) {
   # Validación de parámetros
   if (missing(datos)) {
     stop("El parámetro 'datos' es obligatorio.")
@@ -531,6 +755,37 @@ preparar_poligonos <- function(datos, costa) {
   # Verificar si hay coordenadas para trabajar
   if (nrow(datos) == 0) {
     stop("El data frame 'datos' no contiene filas.")
+  }
+
+  # Validar paralelas_costa si se proporcionó
+  if (!is.null(paralelas_costa)) {
+    if (!is.list(paralelas_costa)) {
+      stop("'paralelas_costa' debe ser una lista de data.frames.")
+    }
+
+    # Validar que cada elemento de la lista es un data.frame con las columnas necesarias
+    for (nombre in names(paralelas_costa)) {
+      df <- paralelas_costa[[nombre]]
+      if (!is.data.frame(df)) {
+        warning("El elemento '", nombre, "' en paralelas_costa no es un data.frame.")
+        next
+      }
+      if (!all(nombres_columnas %in% names(df))) {
+        warning("El elemento '", nombre, "' en paralelas_costa no tiene todas las columnas requeridas: ",
+                paste(nombres_columnas, collapse = ", "))
+      }
+    }
+
+    # Verificar que tenemos al menos un elemento válido
+    elementos_validos <- sapply(names(paralelas_costa), function(nombre) {
+      df <- paralelas_costa[[nombre]]
+      is.data.frame(df) && all(nombres_columnas %in% names(df))
+    })
+
+    if (!any(elementos_validos)) {
+      warning("Ningún elemento en paralelas_costa tiene el formato correcto. Se usará el método de aproximación original.")
+      paralelas_costa <- NULL
+    }
   }
 
   # Preparar los datos para la visualización
@@ -555,76 +810,144 @@ preparar_poligonos <- function(datos, costa) {
     }
   }
 
-  # Añadir columnas para longitudes específicas por esquina (inicializadas como NA)
-  datos_preparados$lon_ini_norte <- NA
-  datos_preparados$lon_fin_norte <- NA
-  datos_preparados$lon_ini_sur <- NA
-  datos_preparados$lon_fin_sur <- NA
-
-  # Manejar casos donde tenemos millas náuticas en lugar de longitudes
-  filas_con_millas <- !is.na(datos$MillasNauticasInicio) & !is.na(datos$MillasNauticasFin) &
-    (is.na(datos_preparados$lon_ini) | is.na(datos_preparados$lon_fin))
-
-  if (any(filas_con_millas)) {
-    for (i in which(filas_con_millas)) {
-      # Obtener latitudes decimales
-      lat_ini_dec <- datos_preparados$lat_ini[i]
-      lat_fin_dec <- datos_preparados$lat_fin[i]
-
-      # Calcular longitudes para cada esquina del polígono
-      # Para latitud inicial (límite norte)
-      lon_costa_lat_ini <- Tivy:::calcular_longitud_costa(costa, lat_ini_dec)
-      # Para latitud final (límite sur)
-      lon_costa_lat_fin <- Tivy:::calcular_longitud_costa(costa, lat_fin_dec)
-
-      # Calcular offsets en grados basados en millas náuticas
-      millas_ini <- datos$MillasNauticasInicio[i]
-      millas_fin <- datos$MillasNauticasFin[i]
-
-      # Factor de conversión ajustado por cada latitud
-      factor_lat_ini <- cos(lat_ini_dec * pi/180)
-      factor_lat_fin <- cos(lat_fin_dec * pi/180)
-
-      # Convertir millas a grados para cada latitud
-      offset_ini_lat_ini <- millas_ini / 60 / factor_lat_ini
-      offset_fin_lat_ini <- millas_fin / 60 / factor_lat_ini
-      offset_ini_lat_fin <- millas_ini / 60 / factor_lat_fin
-      offset_fin_lat_fin <- millas_fin / 60 / factor_lat_fin
-
-      # Almacenar las 4 longitudes específicas (una para cada esquina)
-      datos_preparados$lon_ini_norte[i] <- lon_costa_lat_ini - offset_fin_lat_ini  # Esquina noroeste (más lejos)
-      datos_preparados$lon_fin_norte[i] <- lon_costa_lat_ini - offset_ini_lat_ini  # Esquina noreste (más cerca)
-      datos_preparados$lon_ini_sur[i] <- lon_costa_lat_fin - offset_fin_lat_fin    # Esquina suroeste (más lejos)
-      datos_preparados$lon_fin_sur[i] <- lon_costa_lat_fin - offset_ini_lat_fin    # Esquina sureste (más cerca)
-
-      # Marcar las longitudes originales como NA para indicar que usamos longitudes específicas
-      datos_preparados$lon_ini[i] <- NA
-      datos_preparados$lon_fin[i] <- NA
-    }
-  }
-
   # Crear lista para almacenar polígonos
   poligonos <- list()
 
-  # Crear un polígono para cada fila
+  # Procesar cada fila para crear polígonos
   for (i in 1:nrow(datos_preparados)) {
-    # Verificar si tenemos longitudes específicas para esquinas (caso millas náuticas)
-    if (!is.na(datos_preparados$lat_ini[i]) && !is.na(datos_preparados$lat_fin[i]) &&
-        is.na(datos_preparados$lon_ini[i]) && !is.na(datos_preparados$lon_ini_norte[i])) {
+    # Verificar si tenemos millas náuticas en lugar de longitudes
+    if (!is.na(datos$MillasNauticasInicio[i]) && !is.na(datos$MillasNauticasFin[i]) &&
+        (is.na(datos_preparados$lon_ini[i]) || is.na(datos_preparados$lon_fin[i]))) {
 
-      # Crear coordenadas del polígono con longitudes específicas para cada esquina
+      # Obtener latitudes decimales y asegurarse de que están en orden correcto
+      lat_norte <- max(datos_preparados$lat_ini[i], datos_preparados$lat_fin[i])
+      lat_sur <- min(datos_preparados$lat_ini[i], datos_preparados$lat_fin[i])
+
+      # Obtener millas
+      millas_ini <- datos$MillasNauticasInicio[i]  # Más cerca de la costa
+      millas_fin <- datos$MillasNauticasFin[i]     # Más lejos de la costa
+
+      # Considerar usar paralelas_costa preexistentes
+      if (!is.null(paralelas_costa)) {
+        nombre_lat <- nombres_columnas[1] # Columna de latitud
+        nombre_lon <- nombres_columnas[2] # Columna de longitud
+
+        # Encontrar líneas paralelas para las millas inicial y final
+        linea_ini_info <- Tivy:::encontrar_linea_paralela(millas_ini, paralelas_costa)
+        linea_fin_info <- Tivy:::encontrar_linea_paralela(millas_fin, paralelas_costa)
+
+        linea_ini <- linea_ini_info$df  # Línea más cercana a la costa
+        linea_fin <- linea_fin_info$df  # Línea más alejada de la costa
+
+        # Si encontramos líneas para ambas millas
+        if (!is.null(linea_ini) && !is.null(linea_fin) &&
+            nrow(linea_ini) > 0 && nrow(linea_fin) > 0) {
+
+          # Interpolar puntos exactos en las esquinas
+          punto_ne <- Tivy:::interpolar_punto(linea_ini, lat_norte, nombre_lat, nombre_lon)
+          punto_se <- Tivy:::interpolar_punto(linea_ini, lat_sur, nombre_lat, nombre_lon)
+          punto_no <- Tivy:::interpolar_punto(linea_fin, lat_norte, nombre_lat, nombre_lon)
+          punto_so <- Tivy:::interpolar_punto(linea_fin, lat_sur, nombre_lat, nombre_lon)
+
+          # Extraer puntos de la línea oeste (más alejada) entre las latitudes
+          puntos_oeste <- Tivy:::extraer_puntos_entre_latitudes(
+            linea_fin, lat_sur, lat_norte, nombre_lat, nombre_lon
+          )
+
+          # Extraer puntos de la línea este (más cercana) entre las latitudes
+          puntos_este <- Tivy:::extraer_puntos_entre_latitudes(
+            linea_ini, lat_sur, lat_norte, nombre_lat, nombre_lon
+          )
+
+          # Crear coordenadas para el polígono completo
+          # 1. Comenzamos en la esquina noreste y avanzamos hacia el norte por el borde este
+          # 2. Luego vamos de norte a sur por el borde oeste
+          # 3. Volvemos al punto inicial para cerrar el polígono
+
+          # Ordenar los puntos oeste de norte a sur
+          puntos_oeste <- puntos_oeste[order(puntos_oeste[, 2], decreasing = TRUE), ]
+
+          # Ordenar los puntos este de sur a norte
+          puntos_este <- puntos_este[order(puntos_este[, 2]), ]
+
+          # Combinar todos los puntos para formar el polígono
+          coords <- rbind(
+            puntos_este,          # Borde este (de sur a norte)
+            puntos_oeste,         # Borde oeste (de norte a sur)
+            puntos_este[1, ]      # Cerrar el polígono volviendo al primer punto
+          )
+
+          # Crear objeto polígono
+          poligono <- list(
+            coords = coords,
+            id = i,
+            fecha_inicio = if ("FechaHoraInicio" %in% names(datos)) datos$FechaHoraInicio[i] else NA,
+            fecha_fin = if ("FechaHoraFin" %in% names(datos)) datos$FechaHoraFin[i] else NA,
+            nombre_archivo = if ("nombre_archivo" %in% names(datos)) datos$nombre_archivo[i] else NA,
+            Long_Ini = if ("LongitudInicio" %in% names(datos)) datos$LongitudInicio[i] else NA,
+            Lat_Ini = if ("LatitudInicio" %in% names(datos)) datos$LatitudInicio[i] else NA,
+            Long_Fin = if ("LongitudFin" %in% names(datos)) datos$LongitudFin[i] else NA,
+            Lat_Fin = if ("LatitudFin" %in% names(datos)) datos$LatitudFin[i] else NA,
+            MillasNauticasInicio = millas_ini,
+            MillasNauticasFin = millas_fin,
+            comunicado = if ("comunicado" %in% names(datos)) datos$comunicado[i] else paste("Polígono", i),
+            milla_ini_real = linea_ini_info$milla_real,
+            milla_fin_real = linea_fin_info$milla_real,
+            metodo = "detallado"
+          )
+
+          poligonos[[i]] <- poligono
+          next  # Continuar con la siguiente iteración
+        }
+      }
+
+      # Si llegamos aquí, es porque no pudimos crear un polígono detallado con líneas paralelas
+      # Caemos de nuevo al método original con aproximación
+      lon_costa_lat_norte <- Tivy:::calcular_longitud_costa(costa, lat_norte)
+      lon_costa_lat_sur <- Tivy:::calcular_longitud_costa(costa, lat_sur)
+
+      # Factor de conversión ajustado por cada latitud
+      factor_lat_norte <- cos(lat_norte * pi/180)
+      factor_lat_sur <- cos(lat_sur * pi/180)
+
+      # Convertir millas a grados para cada latitud
+      offset_ini_lat_norte <- millas_ini / 60 / factor_lat_norte
+      offset_fin_lat_norte <- millas_fin / 60 / factor_lat_norte
+      offset_ini_lat_sur <- millas_ini / 60 / factor_lat_sur
+      offset_fin_lat_sur <- millas_fin / 60 / factor_lat_sur
+
+      # Crear coordenadas del polígono con 4 esquinas (método original)
       coords <- rbind(
-        c(datos_preparados$lon_ini_norte[i], datos_preparados$lat_ini[i]),  # Esquina noroeste
-        c(datos_preparados$lon_fin_norte[i], datos_preparados$lat_ini[i]),  # Esquina noreste
-        c(datos_preparados$lon_fin_sur[i], datos_preparados$lat_fin[i]),    # Esquina sureste
-        c(datos_preparados$lon_ini_sur[i], datos_preparados$lat_fin[i]),    # Esquina suroeste
-        c(datos_preparados$lon_ini_norte[i], datos_preparados$lat_ini[i])   # Cerrar el polígono
+        c(lon_costa_lat_norte - offset_ini_lat_norte, lat_norte),  # Esquina noreste
+        c(lon_costa_lat_norte - offset_fin_lat_norte, lat_norte),  # Esquina noroeste
+        c(lon_costa_lat_sur - offset_fin_lat_sur, lat_sur),        # Esquina suroeste
+        c(lon_costa_lat_sur - offset_ini_lat_sur, lat_sur),        # Esquina sureste
+        c(lon_costa_lat_norte - offset_ini_lat_norte, lat_norte)   # Cerrar el polígono
       )
+
+      # Crear objeto polígono (método original)
+      poligono <- list(
+        coords = coords,
+        id = i,
+        fecha_inicio = if ("FechaHoraInicio" %in% names(datos)) datos$FechaHoraInicio[i] else NA,
+        fecha_fin = if ("FechaHoraFin" %in% names(datos)) datos$FechaHoraFin[i] else NA,
+        nombre_archivo = if ("nombre_archivo" %in% names(datos)) datos$nombre_archivo[i] else NA,
+        Long_Ini = if ("LongitudInicio" %in% names(datos)) datos$LongitudInicio[i] else NA,
+        Lat_Ini = if ("LatitudInicio" %in% names(datos)) datos$LatitudInicio[i] else NA,
+        Long_Fin = if ("LongitudFin" %in% names(datos)) datos$LongitudFin[i] else NA,
+        Lat_Fin = if ("LatitudFin" %in% names(datos)) datos$LatitudFin[i] else NA,
+        MillasNauticasInicio = millas_ini,
+        MillasNauticasFin = millas_fin,
+        comunicado = if ("comunicado" %in% names(datos)) datos$comunicado[i] else paste("Polígono", i),
+        metodo = "aproximado"
+      )
+
+      poligonos[[i]] <- poligono
 
     } else if (!is.na(datos_preparados$lat_ini[i]) && !is.na(datos_preparados$lat_fin[i]) &&
                !is.na(datos_preparados$lon_ini[i]) && !is.na(datos_preparados$lon_fin[i])) {
 
-      # Caso normal: crear polígono rectangular con las mismas longitudes por lado
+      # Caso con coordenadas explícitas: crear polígono rectangular
       coords <- rbind(
         c(datos_preparados$lon_ini[i], datos_preparados$lat_ini[i]),  # Esquina noroeste
         c(datos_preparados$lon_fin[i], datos_preparados$lat_ini[i]),  # Esquina noreste
@@ -633,28 +956,27 @@ preparar_poligonos <- function(datos, costa) {
         c(datos_preparados$lon_ini[i], datos_preparados$lat_ini[i])   # Cerrar el polígono
       )
 
+      # Crear objeto polígono
+      poligono <- list(
+        coords = coords,
+        id = i,
+        fecha_inicio = if ("FechaHoraInicio" %in% names(datos)) datos$FechaHoraInicio[i] else NA,
+        fecha_fin = if ("FechaHoraFin" %in% names(datos)) datos$FechaHoraFin[i] else NA,
+        nombre_archivo = if ("nombre_archivo" %in% names(datos)) datos$nombre_archivo[i] else NA,
+        Long_Ini = if ("LongitudInicio" %in% names(datos)) datos$LongitudInicio[i] else NA,
+        Lat_Ini = if ("LatitudInicio" %in% names(datos)) datos$LatitudInicio[i] else NA,
+        Long_Fin = if ("LongitudFin" %in% names(datos)) datos$LongitudFin[i] else NA,
+        Lat_Fin = if ("LatitudFin" %in% names(datos)) datos$LatitudFin[i] else NA,
+        MillasNauticasInicio = if ("MillasNauticasInicio" %in% names(datos)) datos$MillasNauticasInicio[i] else NA,
+        MillasNauticasFin = if ("MillasNauticasFin" %in% names(datos)) datos$MillasNauticasFin[i] else NA,
+        comunicado = if ("comunicado" %in% names(datos)) datos$comunicado[i] else paste("Polígono", i),
+        metodo = "explicito"
+      )
+
+      poligonos[[i]] <- poligono
     } else {
-      warning("Fila ", i, " contiene valores NA después del procesamiento. Se omitirá.")
-      next
+      warning("Fila ", i, " no tiene suficientes datos para crear un polígono válido.")
     }
-
-    # Crear objeto polígono
-    poligono <- list(
-      coords = coords,
-      id = i,
-      fecha_inicio = if ("FechaHoraInicio" %in% names(datos)) datos$FechaHoraInicio[i] else NA,
-      fecha_fin = if ("FechaHoraFin" %in% names(datos)) datos$FechaHoraFin[i] else NA,
-      nombre_archivo = if ("nombre_archivo" %in% names(datos)) datos$nombre_archivo[i] else NA,
-      Long_Ini = if ("LongitudInicio" %in% names(datos)) datos$LongitudInicio[i] else NA,
-      Lat_Ini = if ("LatitudInicio" %in% names(datos)) datos$LatitudInicio[i] else NA,
-      Long_Fin = if ("LongitudFin" %in% names(datos)) datos$LongitudFin[i] else NA,
-      Lat_Fin = if ("LatitudFin" %in% names(datos)) datos$LatitudFin[i] else NA,
-      MillasNauticasInicio = if ("MillasNauticasInicio" %in% names(datos)) datos$MillasNauticasInicio[i] else NA,
-      MillasNauticasFin = if ("MillasNauticasFin" %in% names(datos)) datos$MillasNauticasFin[i] else NA,
-      comunicado = if ("comunicado" %in% names(datos)) datos$comunicado[i] else paste("Polígono", i)
-    )
-
-    poligonos[[i]] <- poligono
   }
 
   # Filtrar polígonos NA
@@ -666,4 +988,3 @@ preparar_poligonos <- function(datos, costa) {
 
   return(poligonos)
 }
-

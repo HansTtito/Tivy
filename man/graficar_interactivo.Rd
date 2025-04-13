@@ -38,3 +38,4 @@ Un objeto \code{leaflet} con el mapa interactivo.
 \description{
 Crea un mapa interactivo utilizando \code{leaflet}, mostrando polígonos con información emergente (popup).
 }
+\keyword{internal}

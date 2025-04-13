@@ -23,3 +23,4 @@ Lista con la distancia mínima y el índice correspondiente.
 \description{
 Calcular distancia usando la fórmula de Haversine con el elipsoide WGS84
 }
+\keyword{internal}

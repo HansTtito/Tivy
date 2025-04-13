@@ -38,3 +38,4 @@ Un objeto \code{ggplot} listo para ser graficado.
 \description{
 Crea un gráfico estático utilizando \code{ggplot2} que muestra polígonos geográficos sobre una base de línea de costa.
 }
+\keyword{internal}

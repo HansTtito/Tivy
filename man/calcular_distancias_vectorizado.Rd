@@ -35,3 +35,4 @@ Lista con vectores de distancias mínimas e índices correspondientes.
 \description{
 Calcular distancias entre múltiples puntos y una línea costera (vectorizado)
 }
+\keyword{internal}

@@ -7,6 +7,7 @@
 graficar_poligonos(
   datos,
   costa = Tivy::linea_costa_peru,
+  paralelas = Tivy::paralelas_costa_peru,
   tipo = "estatico",
   titulo = "Zonas de suspensión pesquera",
   colores = NULL,
@@ -21,6 +22,8 @@ graficar_poligonos(
 \item{datos}{Lista de polígonos con coordenadas y metadatos (como comunicado).}
 
 \item{costa}{Data frame con la línea de costa a graficar. Default \code{Tivy::linea_costa_peru}.}
+
+\item{paralelas}{Un data frame que contiene las líneas paralelas a la costa. Default \code{Tivy::paralelas_costa_peru}.}
 
 \item{tipo}{Tipo de gráfico a generar: \code{"estatico"} para ggplot2 o \code{"interactivo"} para leaflet.}
 

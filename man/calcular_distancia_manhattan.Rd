@@ -23,3 +23,4 @@ Lista con la distancia mínima y el índice correspondiente.
 \description{
 Calcular distancia tipo Manhattan (bloques de ciudad) entre coordenadas
 }
+\keyword{internal}

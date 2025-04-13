@@ -7,6 +7,7 @@
 graficar_poligonos_ggplot(
   datos,
   costa = Tivy::linea_costa_peru,
+  paralelas = Tivy::paralelas_costa_peru,
   titulo = NULL,
   colores = NULL,
   mostrar_leyenda = FALSE,
@@ -20,6 +21,8 @@ que pueden estar en formato de texto (como "12°30'S") o decimales.}
 
 \item{costa}{Un data frame que contiene la línea de costa para visualización.
 Debe tener columnas 'Long' y 'Lat'. Default \code{Tivy::linea_costa_peru}.}
+
+\item{paralelas}{Un data frame que contiene las líneas paralelas a la costa. Default \code{Tivy::paralelas_costa_peru}.}
 
 \item{titulo}{Título para el gráfico. Default NULL}
 

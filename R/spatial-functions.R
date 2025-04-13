@@ -525,6 +525,7 @@ puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucle
 #'        que pueden estar en formato de texto (como "12°30'S") o decimales.
 #' @param costa Un data frame que contiene la línea de costa para visualización.
 #'        Debe tener columnas 'Long' y 'Lat'. Default `Tivy::linea_costa_peru`.
+#' @param paralelas Un data frame que contiene las líneas paralelas a la costa. Default `Tivy::paralelas_costa_peru`.
 #' @param titulo Título para el gráfico. Default NULL
 #' @param colores Vector de colores para los polígonos. Default NULL
 #' @param mostrar_leyenda Lógico. Si es TRUE, muestra la leyenda. Default FALSE.
@@ -548,6 +549,7 @@ puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucle
 #' @export
 graficar_poligonos_ggplot <- function(datos,
                                       costa = Tivy::linea_costa_peru,
+                                      paralelas = Tivy::paralelas_costa_peru,
                                       titulo = NULL,
                                       colores = NULL,
                                       mostrar_leyenda = FALSE,
@@ -555,7 +557,7 @@ graficar_poligonos_ggplot <- function(datos,
                                       agregar_grid = FALSE) {
 
   # Preparar los polígonos (todo el procesamiento de datos es el mismo)
-  poligonos <- preparar_poligonos(datos, costa)
+  poligonos <- preparar_poligonos(datos, costa, paralelas,)
 
   # Crear visualización estática con ggplot2
   return(Tivy:::graficar_estatico(
@@ -579,6 +581,7 @@ graficar_poligonos_ggplot <- function(datos,
 #'        que pueden estar en formato de texto (como "12°30'S") o decimales.
 #' @param costa Un data frame que contiene la línea de costa para visualización.
 #'        Debe tener columnas 'Long' y 'Lat'. Default `Tivy::linea_costa_peru`.
+#' @param paralelas Un data frame que contiene las líneas paralelas a la costa. Default `Tivy::paralelas_costa_peru`.
 #' @param titulo Título para el gráfico. Default NULL
 #' @param colores Vector de colores para los polígonos. Default NULL
 #' @param mostrar_leyenda Lógico. Si es TRUE, muestra la leyenda. Default FALSE.
@@ -602,6 +605,7 @@ graficar_poligonos_ggplot <- function(datos,
 #' @export
 graficar_poligonos_leaflet <- function(datos,
                                        costa = Tivy::linea_costa_peru,
+                                       paralelas = Tivy::paralelas_costa_peru,
                                        titulo = NULL,
                                        colores = NULL,
                                        mostrar_leyenda = FALSE,
@@ -610,7 +614,7 @@ graficar_poligonos_leaflet <- function(datos,
                                        minimap = FALSE) {
 
   # Preparar los polígonos (todo el procesamiento de datos es el mismo)
-  poligonos <- preparar_poligonos(datos, costa)
+  poligonos <- preparar_poligonos(datos, costa, paralelas)
 
   # Crear visualización interactiva con leaflet
   return(Tivy:::graficar_interactivo(
@@ -631,6 +635,7 @@ graficar_poligonos_leaflet <- function(datos,
 #'
 #' @param datos Lista de polígonos con coordenadas y metadatos (como comunicado).
 #' @param costa Data frame con la línea de costa a graficar. Default `Tivy::linea_costa_peru`.
+#' @param paralelas Un data frame que contiene las líneas paralelas a la costa. Default `Tivy::paralelas_costa_peru`.
 #' @param tipo Tipo de gráfico a generar: `"estatico"` para ggplot2 o `"interactivo"` para leaflet.
 #' @param titulo Título del gráfico.
 #' @param colores Vector de colores a usar para diferenciar los polígonos (por comunicado u otra categoría).
@@ -650,6 +655,7 @@ graficar_poligonos_leaflet <- function(datos,
 #' @export
 graficar_poligonos <- function(datos,
                                costa = Tivy::linea_costa_peru,
+                               paralelas = Tivy::paralelas_costa_peru,
                                tipo = "estatico",
                                titulo = "Zonas de suspensión pesquera",
                                colores = NULL,
@@ -663,6 +669,7 @@ graficar_poligonos <- function(datos,
     return(graficar_poligonos_ggplot(
       datos = datos,
       costa = costa,
+      paralelas = paralelas,
       titulo = titulo,
       colores = colores,
       mostrar_leyenda = mostrar_leyenda,
@@ -673,6 +680,7 @@ graficar_poligonos <- function(datos,
     return(graficar_poligonos_leaflet(
       datos = datos,
       costa = costa,
+      paralelas = paralelas,
       titulo = titulo,
       colores = colores,
       mostrar_leyenda = mostrar_leyenda,

@@ -4,17 +4,31 @@
 \alias{preparar_poligonos}
 \title{Preparar polígonos a partir de datos de coordenadas}
 \usage{
-preparar_poligonos(datos, costa)
+preparar_poligonos(
+  datos,
+  costa,
+  paralelas_costa = NULL,
+  nombres_columnas = c("lat", "lon", "dc")
+)
 }
 \arguments{
 \item{datos}{Un data frame con coordenadas.}
 
 \item{costa}{Un data frame con la línea de costa.}
+
+\item{paralelas_costa}{Lista de data frames con líneas paralelas a diferentes distancias de la costa.
+Cada elemento de la lista debe tener un nombre que indique la distancia (ej. "l5", "l10").}
+
+\item{nombres_columnas}{Un vector con nombres de columnas en los data frames de paralelas_costa.
+Debe contener: c("lat", "lon", "dc") donde "dc" es la distancia a la costa.}
 }
 \value{
 Una lista de polígonos para visualización.
 }
 \description{
-Función auxiliar para procesar datos y preparar polígonos.
+Función auxiliar para procesar datos y preparar polígonos usando líneas paralelas
+preexistentes. Los bordes este y oeste del polígono seguirán la forma de las líneas
+paralelas a la costa a las millas náuticas especificadas, mientras que los bordes
+norte y sur serán líneas rectas a las latitudes dadas.
 }
 \keyword{internal}
