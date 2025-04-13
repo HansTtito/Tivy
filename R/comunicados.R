@@ -217,14 +217,14 @@ extrae_data_comunicados <- function(vector_pdf_names) {
       tryCatch({
         # Varios patrones para intentar capturar diferentes formatos de coordenadas
         patrones_lat <- c(
-          "\\d{1,2}°\\d{1,2}['´'][NS]",
-          "\\d{1,2}°\\d{1,2}[''][NS]",
+          "\\d{1,2}°\\d{1,2}['´’][NS]",
+          "\\d{1,2}°\\d{1,2}['’][NS]",
           "\\d{1,2}°\\d{1,2}['`][NS]"
         )
 
         patrones_lon <- c(
-          "\\d{1,2}°\\d{1,2}['´'][WEO]",
-          "\\d{1,2}°\\d{1,2}[''][WEO]",
+          "\\d{1,2}°\\d{1,2}['´’][WEO]",
+          "\\d{1,2}°\\d{1,2}['’][WEO]",
           "\\d{1,2}°\\d{1,2}['`][WEO]"
         )
 
