@@ -4,13 +4,15 @@
 \alias{convertir_a_fecha}
 \title{Convierte un vector de fechas en diferentes formatos a un formato de fecha estándar}
 \usage{
-convertir_a_fecha(vector_fecha)
+convertir_a_fecha(vector_fecha, tipo = "datetime")
 }
 \arguments{
 \item{vector_fecha}{Un vector de caracteres que contiene fechas en diversos formatos.}
+
+\item{tipo}{Tipo de objeto a devolver: "date" para Date, "datetime" para POSIXct (por defecto).}
 }
 \value{
-Un vector de objetos \code{Date} o \code{NA} si la fecha no puede ser convertida.
+Un vector de objetos \code{Date} o \code{POSIXct} según el parámetro tipo, o \code{NA} si la fecha no puede ser convertida.
 }
 \description{
 La función \code{convertir_a_fecha()} toma un vector de fechas en distintos formatos y las convierte a un formato de fecha estándar en R.

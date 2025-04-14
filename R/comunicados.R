@@ -428,6 +428,7 @@ extrae_data_comunicados <- function(vector_pdf_names) {
 }
 
 
+
 #' Formatear y filtrar datos de comunicados
 #'
 #' Esta función formatea correctamente los datos extraídos de comunicados,
@@ -439,11 +440,19 @@ extrae_data_comunicados <- function(vector_pdf_names) {
 #' @param fecha_max Fecha máxima para filtrar (opcional). Puede ser una cadena en formato
 #'        "YYYY-MM-DD" o un objeto POSIXct/Date.
 #'
-#' @return Un data frame con las fechas correctamente formateadas y filtrado según los
+#' @return Un data frame con todas las columnas correctamente formateadas y filtrado según los
 #'         parámetros especificados.
 #'
 #' @examples
 #' # Formatear sin filtrar
+#'
+#'
+#' pdf_urls <- c("https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+#' "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+#' "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf")
+#'
+#' resultados <- extrae_data_comunicados(pdf_urls)
+#'
 #' datos_formateados <- formatear_datos_comunicados(resultados)
 #'
 #' # Formatear y filtrar por rango de fechas
@@ -469,26 +478,7 @@ formatear_datos_comunicados <- function(datos, fecha_min = NULL, fecha_max = NUL
   # Clonar el dataframe para no modificar el original
   datos_fmt <- datos
 
-  # Convertir fechas a formato POSIXct
-  # Detectar el formato de fecha basado en los primeros valores no NA
-  detectar_formato <- function(fecha_col) {
-    fechas_no_na <- na.omit(fecha_col)
-    if (length(fechas_no_na) == 0) return(NULL)
-
-    # Probar diferentes formatos
-    formato1 <- try(as.POSIXct(fechas_no_na[1], format = "%Y-%m-%d %H:%M:%S"), silent = TRUE)
-    formato2 <- try(as.POSIXct(fechas_no_na[1], format = "%Y-%m-%d"), silent = TRUE)
-
-    if (!inherits(formato1, "try-error")) {
-      return("%Y-%m-%d %H:%M:%S")
-    } else if (!inherits(formato2, "try-error")) {
-      return("%Y-%m-%d")
-    } else {
-      return(NULL)  # Formato no reconocido
-    }
-  }
-
-  # Convertir columnas de fecha
+  # Convertir columnas de fecha usando la función convertir_a_fecha
   for (col in c("FechaHoraInicio", "FechaHoraFin")) {
     if (col %in% names(datos_fmt)) {
       # Si ya es POSIXct, no hacer nada
@@ -496,15 +486,29 @@ formatear_datos_comunicados <- function(datos, fecha_min = NULL, fecha_max = NUL
         next
       }
 
-      # Intentar inferir el formato
-      formato <- detectar_formato(datos_fmt[[col]])
+      # Convertir fechas usando la función convertir_a_fecha
+      datos_fmt[[col]] <- convertir_a_fecha(datos_fmt[[col]], tipo = "datetime")
+    }
+  }
 
-      if (!is.null(formato)) {
-        datos_fmt[[col]] <- as.POSIXct(datos_fmt[[col]], format = formato)
-      } else {
-        warning("No se pudo determinar el formato de la columna ", col,
-                ". Se mantendrá como está.")
+  # Convertir coordenadas de latitud y longitud si no están en formato decimal
+  for (col in c("LatitudInicio", "LatitudFin", "LongitudInicio", "LongitudFin")) {
+    if (col %in% names(datos_fmt)) {
+      # Verificar si la columna contiene coordenadas en formato DMS
+      if (any(grepl("[°'\"]", datos_fmt[[col]], ignore.case = TRUE))) {
+        # Convertir a decimal usando la función dms_a_decimal
+        datos_fmt[[col]] <- sapply(datos_fmt[[col]], function(x) {
+          if (is.na(x) || x == "") return(NA)
+          tryCatch(Tivy::dms_a_decimal(x), error = function(e) NA)
+        })
       }
+    }
+  }
+
+  # Asegurarse de que las columnas numéricas sean numéricas
+  for (col in c("MillasNauticasInicio", "MillasNauticasFin")) {
+    if (col %in% names(datos_fmt)) {
+      datos_fmt[[col]] <- as.numeric(datos_fmt[[col]])
     }
   }
 
@@ -513,7 +517,7 @@ formatear_datos_comunicados <- function(datos, fecha_min = NULL, fecha_max = NUL
     # Convertir fecha_min a POSIXct si es necesario
     if (!is.null(fecha_min)) {
       if (is.character(fecha_min)) {
-        fecha_min <- as.POSIXct(fecha_min)
+        fecha_min <- convertir_a_fecha(fecha_min, tipo = "datetime")
       } else if (inherits(fecha_min, "Date")) {
         fecha_min <- as.POSIXct(fecha_min)
       }
@@ -522,7 +526,7 @@ formatear_datos_comunicados <- function(datos, fecha_min = NULL, fecha_max = NUL
     # Convertir fecha_max a POSIXct si es necesario
     if (!is.null(fecha_max)) {
       if (is.character(fecha_max)) {
-        fecha_max <- as.POSIXct(fecha_max)
+        fecha_max <- convertir_a_fecha(fecha_max, tipo = "datetime")
       } else if (inherits(fecha_max, "Date")) {
         fecha_max <- as.POSIXct(fecha_max)
       }
@@ -539,13 +543,9 @@ formatear_datos_comunicados <- function(datos, fecha_min = NULL, fecha_max = NUL
     }
   }
 
-  # Asegurarse de que las columnas numéricas sean numéricas
-  if ("MillasNauticasInicio" %in% names(datos_fmt)) {
-    datos_fmt$MillasNauticasInicio <- as.numeric(datos_fmt$MillasNauticasInicio)
-  }
-
-  if ("MillasNauticasFin" %in% names(datos_fmt)) {
-    datos_fmt$MillasNauticasFin <- as.numeric(datos_fmt$MillasNauticasFin)
+  # Verificar que el dataframe tenga filas después del filtrado
+  if (nrow(datos_fmt) == 0) {
+    warning("No hay datos que cumplan con los criterios de filtrado.")
   }
 
   return(datos_fmt)

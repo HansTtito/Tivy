@@ -6,8 +6,9 @@
 #' Si una fecha no puede ser interpretada por ninguno de los formatos, se asigna como `NA`.
 #'
 #' @param vector_fecha Un vector de caracteres que contiene fechas en diversos formatos.
+#' @param tipo Tipo de objeto a devolver: "date" para Date, "datetime" para POSIXct (por defecto).
 #'
-#' @return Un vector de objetos `Date` o `NA` si la fecha no puede ser convertida.
+#' @return Un vector de objetos `Date` o `POSIXct` según el parámetro tipo, o `NA` si la fecha no puede ser convertida.
 #'
 #' @examples
 #' fechas <- c("2025-04-10", "10/04/2025", "April 10, 2025")
@@ -16,90 +17,31 @@
 #'
 #' @export
 #' @importFrom lubridate parse_date_time
-convertir_a_fecha <- function(vector_fecha) {
-  # Validación de entrada
-  if (missing(vector_fecha)) {
-    stop("Se requiere proporcionar el parámetro 'vector_fecha'.")
-  }
-
+convertir_a_fecha <- function(vector_fecha, tipo = "datetime") {
+  # Verificar si el vector está vacío
   if (length(vector_fecha) == 0) {
-    stop("El vector de fechas está vacío.")
+    return(vector_fecha)
   }
 
-  # Convertir a character si es un factor
-  if (is.factor(vector_fecha)) {
-    vector_fecha <- as.character(vector_fecha)
-    warning("El vector de fechas ha sido convertido de factor a character.")
-  }
-
-
-  # Lista de formatos de fecha posibles
-  formatos_fecha <- c(
-    "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d",
-    "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M", "%Y/%m/%d",
-    "%d-%m-%Y %H:%M:%S", "%d-%m-%Y %H:%M", "%d-%m-%Y",
-    "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y",
-    "%m-%d-%Y %H:%M:%S", "%m-%d-%Y %H:%M", "%m-%d-%Y",
-    "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y",
-    "%b %d, %Y %H:%M:%S", "%b %d, %Y %H:%M", "%b %d, %Y",
-    "%d %b %Y %H:%M:%S", "%d %b %Y %H:%M", "%d %b %Y",
-    "%d-%b-%Y %H:%M:%S", "%d-%b-%Y %H:%M", "%d-%b-%Y",
-    "%d/%b/%Y %H:%M:%S", "%d/%b/%Y %H:%M", "%d/%b/%Y"
+  # Códigos de formato para parse_date_time
+  ordenes <- c(
+    "Ymd HMS", "Ymd HM", "Ymd",
+    "Y/m/d HMS", "Y/m/d HM", "Y/m/d",
+    "dmy HMS", "dmy HM", "dmy",
+    "d/m/Y HMS", "d/m/Y HM", "d/m/Y",
+    "mdy HMS", "mdy HM", "mdy",
+    "m/d/Y HMS", "m/d/Y HM", "m/d/Y",
+    "bd Y HMS", "bd Y HM", "bd Y",
+    "db Y HMS", "db Y HM", "db Y"
   )
 
-  # Inicializar vector para almacenar resultados
-  resultado <- vector("list", length(vector_fecha))
+  # Convertir las fechas usando parse_date_time
+  fechas_convertidas <- lubridate::parse_date_time(vector_fecha, orders = ordenes, quiet = TRUE)
 
-  # Procesar cada elemento
-  for (i in seq_along(vector_fecha)) {
-    fecha_texto <- vector_fecha[i]
-
-    # Manejar valores NA o vacíos
-    if (is.na(fecha_texto) || fecha_texto == "") {
-      resultado[[i]] <- as.Date(NA)
-      next
-    }
-
-    # Intentar convertir la fecha con cada formato
-    fecha_convertida <- NA
-    for (formato in formatos_fecha) {
-      intento <- tryCatch({
-        fecha_parseada <- lubridate::parse_date_time(fecha_texto, orders = formato, quiet = TRUE)
-        # Verificar que la fecha esté en un rango razonable (entre 1900 y 2100)
-        if (!is.na(fecha_parseada)) {
-          año <- as.numeric(format(fecha_parseada, "%Y"))
-          if (año >= 1900 && año <= 2100) {
-            fecha_parseada
-          } else {
-            NA
-          }
-        } else {
-          NA
-        }
-      }, warning = function(w) {
-        NA
-      }, error = function(e) {
-        NA
-      })
-
-      if (!is.na(intento)) {
-        fecha_convertida <- as.Date(intento)
-        break  # Usar el primer formato exitoso
-      }
-    }
-
-    resultado[[i]] <- fecha_convertida
+  # Convertir al tipo de salida especificado
+  if (tipo == "date") {
+    fechas_convertidas <- as.Date(fechas_convertidas)
   }
 
-  # Combinar resultados
-  fechas_finales <- do.call(c, resultado)
-
-  # Verificar si todas las conversiones fallaron
-  if (all(is.na(fechas_finales))) {
-    warning("No se pudo convertir ninguna fecha. Verifique el formato de los datos de entrada.")
-  } else if (any(is.na(fechas_finales))) {
-    warning("Algunas fechas no pudieron ser convertidas y se asignaron como NA.")
-  }
-
-  return(fechas_finales)
+  return(fechas_convertidas)
 }

@@ -16,7 +16,7 @@ formatear_datos_comunicados(datos, fecha_min = NULL, fecha_max = NULL)
 "YYYY-MM-DD" o un objeto POSIXct/Date.}
 }
 \value{
-Un data frame con las fechas correctamente formateadas y filtrado según los
+Un data frame con todas las columnas correctamente formateadas y filtrado según los
 parámetros especificados.
 }
 \description{
