@@ -3,17 +3,9 @@
 \docType{data}
 \name{tallas_bitacora}
 \alias{tallas_bitacora}
-\title{Datos de tallas de especies marinas}
+\title{Datos de tallas muestreadas provenientes de las calas realizadas por las embarcaciones en el mar peruano.}
 \format{
-Un data.frame con los siguientes atributos:
-\describe{
-\item{id}{Identificador único del registro}
-\item{especie}{Nombre de la especie}
-\item{talla}{Longitud o talla del individuo en cm o mm}
-\item{fecha}{Fecha de captura o medición}
-\item{ubicacion}{Ubicación donde se realizó la medición}
-\item{...}{Otros atributos relevantes}
-}
+Un data.frame con datos de ejemplo de tallas muestreadas provenientes de las calas realizadas por embarcaciones en el mar peruano.
 }
 \source{
 Indicar la fuente de los datos

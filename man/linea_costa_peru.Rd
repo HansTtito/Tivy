@@ -5,14 +5,14 @@
 \alias{linea_costa_peru}
 \title{Línea costera de Perú}
 \format{
-Un objeto espacial (sf o sp) con los siguientes atributos:
+Un data.frame con los siguientes campos:
 \describe{
-\item{geometry}{Geometría lineal que representa la costa peruana}
-\item{...}{Otros atributos relevantes de la costa}
+\item{Long}{Longitud de la línea de costa del Perú}
+\item{Lat}{Latitud de la línea de costa del Perú}
 }
 }
 \source{
-Indicar la fuente de los datos: "Institución que proporcionó los datos"
+Instituto del Mar del Perú (IMARPE)
 }
 \usage{
 linea_costa_peru

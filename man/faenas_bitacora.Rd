@@ -5,16 +5,10 @@
 \alias{faenas_bitacora}
 \title{Faenas de pesca}
 \format{
-Un data.frame o objeto espacial con los siguientes atributos:
-\describe{
-\item{id}{Identificador único de la faena}
-\item{fecha}{Fecha de la faena}
-\item{embarcacion}{Identificador o nombre de la embarcación}
-\item{...}{Otros atributos relevantes de las faenas de pesca}
-}
+Un data.frame con datos de ejemplo de las faenas realizadas por embarcaciones en el mar peruano.
 }
 \source{
-Indicar la fuente de los datos
+Datos generados de manera aleatoria.
 }
 \usage{
 faenas_bitacora
@@ -24,6 +18,5 @@ Conjunto de datos que contiene información sobre faenas de pesca realizadas en 
 }
 \examples{
 data(faenas_bitacora)
-# Código de ejemplo para explorar los datos
 }
 \keyword{datasets}

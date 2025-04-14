@@ -5,28 +5,19 @@
 \alias{calas_bitacora}
 \title{Calas de pesca}
 \format{
-Un data.frame o objeto espacial con los siguientes atributos:
-\describe{
-\item{id}{Identificador único de la cala}
-\item{lat}{Latitud de la cala (si es un data.frame)}
-\item{lon}{Longitud de la cala (si es un data.frame)}
-\item{geometry}{Geometría del punto (si es un objeto espacial)}
-\item{fecha}{Fecha de registro}
-\item{...}{Otros atributos relevantes de las calas}
-}
+Un data.frame con datos de ejemplo de las calas realizadas por embarcaciones en el mar peruano.
 }
 \source{
-Indicar la fuente de los datos
+Datos generados de manera aleatoria.
 }
 \usage{
 calas_bitacora
 }
 \description{
-Conjunto de datos que contiene información sobre calas de pesca en el litoral peruano.
+Conjunto de datos que contiene información sobre calas de pesca en el mar peruano.
 Las calas son lugares específicos donde se realizan actividades de pesca.
 }
 \examples{
 data(calas_bitacora)
-# Código de ejemplo para explorar los datos
 }
 \keyword{datasets}

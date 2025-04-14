@@ -5,14 +5,17 @@
 \alias{areas_isoparalitorales_peru}
 \title{Áreas isoparalitorales}
 \format{
-Un objeto espacial (sf o sp) o data.frame con los siguientes atributos:
+Un data.frame con los siguientes atributos:
 \describe{
-\item{id}{Identificador único del área}
-\item{...}{Otros atributos relevantes de las áreas isoparalitorales}
+\item{lon}{Longitud correspondiente del área isoparalitoral}
+\item{lat}{Latitud correspondiente del área isoparalitoral}
+\item{area}{Código del Área Isoparalitoral}
+\item{grad}{Categoría de la latitud cada 0.5 grados (3 - 19.5)}
+\item{dc}{Categoría de distancia a la costa (10-200)}
 }
 }
 \source{
-Indicar la fuente de los datos
+Instituto del Mar del Perú (IMARPE)
 }
 \usage{
 areas_isoparalitorales_peru
@@ -23,6 +26,5 @@ Estas áreas representan zonas con características similares a lo largo del lit
 }
 \examples{
 data(areas_isoparalitorales_peru)
-# Código de ejemplo para explorar los datos
 }
 \keyword{datasets}

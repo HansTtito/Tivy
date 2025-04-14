@@ -5,12 +5,12 @@
 \alias{paralelas_costa_peru}
 \title{Líneas paralelas a la costa peruana}
 \format{
-Un objeto espacial (sf o sp) con los siguientes atributos:
+Una lista de data.frames, cada uno representa una línea paralela a la costa peruana.
 \describe{
-\item{id}{Identificador único de la línea}
-\item{distancia}{Distancia a la costa en millas náuticas o km}
-\item{geometry}{Geometría lineal}
-\item{...}{Otros atributos relevantes}
+Cada data frame contiene:
+\item{lon}{Longitud correspondiente del área isoparalitoral}
+\item{lat}{Latitud correspondiente del área isoparalitoral}
+\item{dc}{Categoría de distancia a la costa (10-200)}
 }
 }
 \source{
@@ -25,8 +25,5 @@ Estas líneas son útiles para análisis espaciales relacionados con la gestión
 }
 \examples{
 data(paralelas_costa_peru)
-if(requireNamespace("sf", quietly = TRUE)) {
-  plot(paralelas_costa_peru)
-}
 }
 \keyword{datasets}

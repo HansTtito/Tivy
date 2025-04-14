@@ -2,13 +2,13 @@
 #'
 #' Conjunto de datos que contiene la línea costera de Perú representada como un objeto espacial.
 #'
-#' @format Un objeto espacial (sf o sp) con los siguientes atributos:
+#' @format Un data.frame con los siguientes campos:
 #' \describe{
-#'   \item{geometry}{Geometría lineal que representa la costa peruana}
-#'   \item{...}{Otros atributos relevantes de la costa}
+#'   \item{Long}{Longitud de la línea de costa del Perú}
+#'   \item{Lat}{Latitud de la línea de costa del Perú}
 #' }
 #'
-#' @source Indicar la fuente de los datos: "Institución que proporcionó los datos"
+#' @source Instituto del Mar del Perú (IMARPE)
 #'
 #' @examples
 #' data(linea_costa_peru)
@@ -20,99 +20,81 @@
 #' Conjunto de datos que contiene áreas isoparalitorales de la costa peruana.
 #' Estas áreas representan zonas con características similares a lo largo del litoral.
 #'
-#' @format Un objeto espacial (sf o sp) o data.frame con los siguientes atributos:
+#' @format Un data.frame con los siguientes atributos:
 #' \describe{
-#'   \item{id}{Identificador único del área}
-#'   \item{...}{Otros atributos relevantes de las áreas isoparalitorales}
+#'   \item{lon}{Longitud correspondiente del área isoparalitoral}
+#'   \item{lat}{Latitud correspondiente del área isoparalitoral}
+#'   \item{area}{Código del Área Isoparalitoral}
+#'   \item{grad}{Categoría de la latitud cada 0.5 grados (3 - 19.5)}
+#'   \item{dc}{Categoría de distancia a la costa (10-200)}
 #' }
 #'
-#' @source Indicar la fuente de los datos
+#' @source Instituto del Mar del Perú (IMARPE)
 #'
 #' @examples
 #' data(areas_isoparalitorales_peru)
-#' # Código de ejemplo para explorar los datos
 "areas_isoparalitorales_peru"
+
 
 #' Calas de pesca
 #'
-#' Conjunto de datos que contiene información sobre calas de pesca en el litoral peruano.
+#' Conjunto de datos que contiene información sobre calas de pesca en el mar peruano.
 #' Las calas son lugares específicos donde se realizan actividades de pesca.
 #'
-#' @format Un data.frame o objeto espacial con los siguientes atributos:
-#' \describe{
-#'   \item{id}{Identificador único de la cala}
-#'   \item{lat}{Latitud de la cala (si es un data.frame)}
-#'   \item{lon}{Longitud de la cala (si es un data.frame)}
-#'   \item{geometry}{Geometría del punto (si es un objeto espacial)}
-#'   \item{fecha}{Fecha de registro}
-#'   \item{...}{Otros atributos relevantes de las calas}
-#' }
+#' @format Un data.frame con datos de ejemplo de las calas realizadas por embarcaciones en el mar peruano.
 #'
-#' @source Indicar la fuente de los datos
+#' @source Datos generados de manera aleatoria.
 #'
 #' @examples
 #' data(calas_bitacora)
-#' # Código de ejemplo para explorar los datos
 "calas_bitacora"
+
 
 #' Faenas de pesca
 #'
 #' Conjunto de datos que contiene información sobre faenas de pesca realizadas en el litoral peruano.
 #'
-#' @format Un data.frame o objeto espacial con los siguientes atributos:
-#' \describe{
-#'   \item{id}{Identificador único de la faena}
-#'   \item{fecha}{Fecha de la faena}
-#'   \item{embarcacion}{Identificador o nombre de la embarcación}
-#'   \item{...}{Otros atributos relevantes de las faenas de pesca}
-#' }
+#' @format Un data.frame con datos de ejemplo de las faenas realizadas por embarcaciones en el mar peruano.
 #'
-#' @source Indicar la fuente de los datos
+#' @source Datos generados de manera aleatoria.
 #'
 #' @examples
 #' data(faenas_bitacora)
-#' # Código de ejemplo para explorar los datos
 "faenas_bitacora"
 
-#' Líneas paralelas a la costa peruana
-#'
-#' Conjunto de datos que contiene líneas paralelas a la costa peruana a diferentes distancias.
-#' Estas líneas son útiles para análisis espaciales relacionados con la gestión pesquera.
-#'
-#' @format Un objeto espacial (sf o sp) con los siguientes atributos:
-#' \describe{
-#'   \item{id}{Identificador único de la línea}
-#'   \item{distancia}{Distancia a la costa en millas náuticas o km}
-#'   \item{geometry}{Geometría lineal}
-#'   \item{...}{Otros atributos relevantes}
-#' }
-#'
-#' @source Indicar la fuente de los datos
-#'
-#' @examples
-#' data(paralelas_costa_peru)
-#' if(requireNamespace("sf", quietly = TRUE)) {
-#'   plot(paralelas_costa_peru)
-#' }
-"paralelas_costa_peru"
 
-#' Datos de tallas de especies marinas
+#' Datos de tallas muestreadas provenientes de las calas realizadas por las embarcaciones en el mar peruano.
 #'
 #' Conjunto de datos que contiene información sobre tallas de especies marinas
 #' capturadas en el litoral peruano.
 #'
-#' @format Un data.frame con los siguientes atributos:
-#' \describe{
-#'   \item{id}{Identificador único del registro}
-#'   \item{especie}{Nombre de la especie}
-#'   \item{talla}{Longitud o talla del individuo en cm o mm}
-#'   \item{fecha}{Fecha de captura o medición}
-#'   \item{ubicacion}{Ubicación donde se realizó la medición}
-#'   \item{...}{Otros atributos relevantes}
-#' }
+#' @format Un data.frame con datos de ejemplo de tallas muestreadas provenientes de las calas realizadas por embarcaciones en el mar peruano.
 #'
 #' @source Indicar la fuente de los datos
 #'
 #' @examples
 #' data(tallas_bitacora)
 "tallas_bitacora"
+
+
+#' Líneas paralelas a la costa peruana
+#'
+#' Conjunto de datos que contiene líneas paralelas a la costa peruana a diferentes distancias.
+#' Estas líneas son útiles para análisis espaciales relacionados con la gestión pesquera.
+#'
+#' @format Una lista de data.frames, cada uno representa una línea paralela a la costa peruana.
+#' \describe{
+#' Cada data frame contiene:
+#'   \item{lon}{Longitud correspondiente del área isoparalitoral}
+#'   \item{lat}{Latitud correspondiente del área isoparalitoral}
+#'   \item{dc}{Categoría de distancia a la costa (10-200)}
+#' }
+#'
+#' @source Indicar la fuente de los datos
+#'
+#' @examples
+#' data(paralelas_costa_peru)
+"paralelas_costa_peru"
+
+
+
