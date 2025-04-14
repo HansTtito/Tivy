@@ -7,7 +7,7 @@
 merge_tallas_faenas_calas(data_calas, data_tallas_faenas)
 }
 \arguments{
-\item{data_calas}{Un data frame procesado con \code{processing_calas()} o \code{processing_calas_2()}.}
+\item{data_calas}{Un data frame procesado con \code{procesar_calas()}.}
 
 \item{data_tallas_faenas}{Un data frame con los datos de tallas por faena y cala.}
 }

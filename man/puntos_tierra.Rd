@@ -24,6 +24,6 @@ Un vector con clasificación "tierra" o "mar" para cada punto.
 Función que permite estimar los puntos que están a la derecha o izquierda de la línea de costa
 }
 \examples{
-data_calas = processing_calas(data_calas = calas)
+data_calas = procesar_calas(data_calas = calas_bitacora)
 puntos_tierra(x_punto = data_calas$lon_final, y_punto = data_calas$lat_final, linea_costa = Tivy::linea_costa_peru)
 }

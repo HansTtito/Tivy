@@ -359,7 +359,7 @@ distancia_costa <- function(lon,
 #' @export
 #' @rdname puntos_tierra
 #' @examples
-#' data_calas = processing_calas(data_calas = calas)
+#' data_calas = procesar_calas(data_calas = calas_bitacora)
 #' puntos_tierra(x_punto = data_calas$lon_final, y_punto = data_calas$lat_final, linea_costa = Tivy::linea_costa_peru)
 #' @importFrom future plan multisession sequential
 #' @importFrom future.apply future_lapply

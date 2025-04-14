@@ -4,7 +4,7 @@
 #' `merge_tallas_faenas_calas()` es una función para unir los datos de faenas, tallas y calas, combinando las capturas por especie,
 #' los rangos de tallas (mínimo y máximo) y la información espacial y temporal de cada cala.
 #'
-#' @param data_calas Un data frame procesado con `processing_calas()` o `processing_calas_2()`.
+#' @param data_calas Un data frame procesado con `procesar_calas()`.
 #' @param data_tallas_faenas Un data frame con los datos de tallas por faena y cala.
 #'
 #' @return Un data frame con los datos consolidados de faenas, tallas y calas.
