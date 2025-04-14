@@ -45,6 +45,9 @@ pdf_urls <- c("https://consultasenlinea.produce.gob.pe/produce/descarga/comunica
 resultados <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
 print(resultados)
 
+# Si es necesario, formatear los datos antes de ingresarlo a la función de gráficos
+
+resultados <- formatear_datos_comunicados(resultados)
 
 # Visualización de las áreas cerradas
 
