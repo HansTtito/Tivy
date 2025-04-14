@@ -426,3 +426,127 @@ extrae_data_comunicados <- function(vector_pdf_names) {
     return(estructura_vacia)
   }
 }
+
+
+#' Formatear y filtrar datos de comunicados
+#'
+#' Esta función formatea correctamente los datos extraídos de comunicados,
+#' convirtiendo las fechas a formato POSIXct y permitiendo filtrar por rango de fechas.
+#'
+#' @param datos Un data frame con la estructura generada por extrae_data_comunicados.
+#' @param fecha_min Fecha mínima para filtrar (opcional). Puede ser una cadena en formato
+#'        "YYYY-MM-DD" o un objeto POSIXct/Date.
+#' @param fecha_max Fecha máxima para filtrar (opcional). Puede ser una cadena en formato
+#'        "YYYY-MM-DD" o un objeto POSIXct/Date.
+#'
+#' @return Un data frame con las fechas correctamente formateadas y filtrado según los
+#'         parámetros especificados.
+#'
+#' @examples
+#' # Formatear sin filtrar
+#' datos_formateados <- formatear_datos_comunicados(resultados)
+#'
+#' # Formatear y filtrar por rango de fechas
+#' datos_filtrados <- formatear_datos_comunicados(
+#'   resultados,
+#'   fecha_min = "2024-11-01",
+#'   fecha_max = "2024-12-31"
+#' )
+#'
+#' @export
+formatear_datos_comunicados <- function(datos, fecha_min = NULL, fecha_max = NULL) {
+  # Verificar si el dataframe tiene la estructura esperada
+  columnas_requeridas <- c(
+    "FechaHoraInicio", "FechaHoraFin",
+    "LatitudInicio", "LatitudFin"
+  )
+
+  if (!all(columnas_requeridas %in% names(datos))) {
+    stop("El dataframe no tiene la estructura esperada. Debe contener las columnas: ",
+         paste(columnas_requeridas, collapse = ", "))
+  }
+
+  # Clonar el dataframe para no modificar el original
+  datos_fmt <- datos
+
+  # Convertir fechas a formato POSIXct
+  # Detectar el formato de fecha basado en los primeros valores no NA
+  detectar_formato <- function(fecha_col) {
+    fechas_no_na <- na.omit(fecha_col)
+    if (length(fechas_no_na) == 0) return(NULL)
+
+    # Probar diferentes formatos
+    formato1 <- try(as.POSIXct(fechas_no_na[1], format = "%Y-%m-%d %H:%M:%S"), silent = TRUE)
+    formato2 <- try(as.POSIXct(fechas_no_na[1], format = "%Y-%m-%d"), silent = TRUE)
+
+    if (!inherits(formato1, "try-error")) {
+      return("%Y-%m-%d %H:%M:%S")
+    } else if (!inherits(formato2, "try-error")) {
+      return("%Y-%m-%d")
+    } else {
+      return(NULL)  # Formato no reconocido
+    }
+  }
+
+  # Convertir columnas de fecha
+  for (col in c("FechaHoraInicio", "FechaHoraFin")) {
+    if (col %in% names(datos_fmt)) {
+      # Si ya es POSIXct, no hacer nada
+      if (inherits(datos_fmt[[col]], "POSIXct")) {
+        next
+      }
+
+      # Intentar inferir el formato
+      formato <- detectar_formato(datos_fmt[[col]])
+
+      if (!is.null(formato)) {
+        datos_fmt[[col]] <- as.POSIXct(datos_fmt[[col]], format = formato)
+      } else {
+        warning("No se pudo determinar el formato de la columna ", col,
+                ". Se mantendrá como está.")
+      }
+    }
+  }
+
+  # Filtrar por rango de fechas si se especifican
+  if (!is.null(fecha_min) || !is.null(fecha_max)) {
+    # Convertir fecha_min a POSIXct si es necesario
+    if (!is.null(fecha_min)) {
+      if (is.character(fecha_min)) {
+        fecha_min <- as.POSIXct(fecha_min)
+      } else if (inherits(fecha_min, "Date")) {
+        fecha_min <- as.POSIXct(fecha_min)
+      }
+    }
+
+    # Convertir fecha_max a POSIXct si es necesario
+    if (!is.null(fecha_max)) {
+      if (is.character(fecha_max)) {
+        fecha_max <- as.POSIXct(fecha_max)
+      } else if (inherits(fecha_max, "Date")) {
+        fecha_max <- as.POSIXct(fecha_max)
+      }
+    }
+
+    # Aplicar filtros
+    if (!is.null(fecha_min) && !is.null(fecha_max)) {
+      datos_fmt <- datos_fmt[datos_fmt$FechaHoraInicio >= fecha_min &
+                               datos_fmt$FechaHoraInicio <= fecha_max, ]
+    } else if (!is.null(fecha_min)) {
+      datos_fmt <- datos_fmt[datos_fmt$FechaHoraInicio >= fecha_min, ]
+    } else if (!is.null(fecha_max)) {
+      datos_fmt <- datos_fmt[datos_fmt$FechaHoraInicio <= fecha_max, ]
+    }
+  }
+
+  # Asegurarse de que las columnas numéricas sean numéricas
+  if ("MillasNauticasInicio" %in% names(datos_fmt)) {
+    datos_fmt$MillasNauticasInicio <- as.numeric(datos_fmt$MillasNauticasInicio)
+  }
+
+  if ("MillasNauticasFin" %in% names(datos_fmt)) {
+    datos_fmt$MillasNauticasFin <- as.numeric(datos_fmt$MillasNauticasFin)
+  }
+
+  return(datos_fmt)
+}
