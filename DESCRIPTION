@@ -1,11 +1,17 @@
 Package: Tivy
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Tools for Fisheries Data Analysis and Visualization
 Version: 0.1.0
 Author: Hans Ttito
 Maintainer: Hans Ttito <kvttitos@gmail.com>
-Description: More about what it does (maybe more than one line).
-    Use four spaces when indenting paragraphs within the Description.
+Description: Provides functions for loading, processing, and analyzing fisheries data,
+    including information from fishing logbooks, size measurements, and fishing grounds 
+    from Peru's Ministry of Production, as well as notifications issued for preventive
+    closures. The package includes tools for geographical visualization of fishing areas,
+    statistical modeling of fish populations, and processing of regulatory documents.
+    Contains built-in datasets for Peruvian coastal coordinates and parallel lines at
+    different nautical mile distances from shore, which are useful for analyzing fishing
+    activities within restricted zones.
 Imports:
   dplyr,
   tidyr,
