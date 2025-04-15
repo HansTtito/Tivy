@@ -138,14 +138,14 @@ resultados <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
 resultados_formateados <- formatear_datos_comunicados(resultados)
 
 # Visualizar áreas cerradas con ggplot
-graficar_poligonos_ggplot(datos = resultados_formateados)
+graficar_poligonos_ggplot(datos = resultados_formateados, mostrar_leyenda = TRUE)
 ```
 
 ![Visualización de áreas cerradas con ggplot](man/figures/poligonos_ggplot.png)
 
 ```r
 # Visualización interactiva con leaflet
-mapa_interactivo <- graficar_poligonos_leaflet(datos = resultados_formateados)
+mapa_interactivo <- graficar_poligonos_leaflet(datos = resultados_formateados, mostrar_leyenda = TRUE)
 mapa_interactivo
 ```
 
