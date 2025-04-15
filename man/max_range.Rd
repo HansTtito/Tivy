@@ -18,5 +18,5 @@ Valor máximo de talla con frecuencia mayor que cero.
 Talla máxima observada con frecuencia positiva
 }
 \examples{
-max_range(c(0,0,1,2,3), c(5,6,7,8,9))
+max_range(frecuencia = c(0,0,1,2,3), tallas = c(5,6,7,8,9))
 }

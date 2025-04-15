@@ -33,7 +33,7 @@ para interpolar, devuelve el punto más cercano.
 }
 \examples{
 # Asumiendo que linea_5_millas es un data frame con columnas 'lat' y 'lon'
-punto <- interpolar_punto(linea_5_millas, -12.5, "lat", "lon")
+punto <- interpolar_punto(paralelas_costa_peru$l5, -12.5, "lat", "lon")
 longitud <- punto["lon"]
 
 }

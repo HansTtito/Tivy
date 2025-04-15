@@ -4,7 +4,7 @@
 \alias{procesar_calas}
 \title{Procesamiento de datos de calas pesqueras, archivo sitrapesca de PRODUCE}
 \usage{
-procesar_calas(data_calas, formato = "xlsx")
+procesar_calas(data_calas, formato = "xlsx", corregir_coordenadas = TRUE)
 }
 \arguments{
 \item{data_calas}{Data frame con los datos crudos de calas.}

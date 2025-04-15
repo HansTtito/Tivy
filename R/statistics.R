@@ -27,6 +27,7 @@ talla_peso <- function(talla, a, b) {
 }
 
 
+
 #' Ponderación de tallas según captura total
 #'
 #' Calcula una ponderación de las tallas muestreadas en función de la captura total
@@ -224,7 +225,7 @@ porc_juveniles <- function(frecuencia, tallas, juvLim = 12) {
 #' @return Valor mínimo de talla con frecuencia mayor que cero.
 #' @export
 #' @examples
-#' min_range(c(0,0,1,2,3), c(5,6,7,8,9))
+#' min_range(frecuencia = c(0,0,1,2,3), tallas = c(5,6,7,8,9))
 min_range <- function(frecuencia, tallas) {
   # Validación de parámetros
   if (!is.numeric(frecuencia)) stop("El parámetro 'frecuencia' debe ser numérico.")
@@ -253,7 +254,7 @@ min_range <- function(frecuencia, tallas) {
 #' @return Valor máximo de talla con frecuencia mayor que cero.
 #' @export
 #' @examples
-#' max_range(c(0,0,1,2,3), c(5,6,7,8,9))
+#' max_range(frecuencia = c(0,0,1,2,3), tallas = c(5,6,7,8,9))
 max_range <- function(frecuencia, tallas) {
   # Validación de parámetros
   if (!is.numeric(frecuencia)) stop("El parámetro 'frecuencia' debe ser numérico.")
@@ -334,4 +335,144 @@ numero_a_peso <- function(data, tallas, a, b) {
   }, error = function(e) {
     stop("Error al calcular pesos: ", e$message)
   })
+}
+
+
+
+#' Versión mejorada utilizando dplyr
+#'
+#' Esta versión utiliza el paquete dplyr para un enfoque más moderno
+#' y efectivo del cálculo de juveniles por grupo, aprovechando la función porc_juveniles existente.
+#'
+#' @param data Data frame con datos de frecuencias de tallas.
+#' @param group_cols Vector de nombres de columnas para agrupar los datos.
+#' @param tallas_cols Vector de nombres de columnas que contienen las frecuencias de tallas.
+#' @param juvLim Talla límite para considerar juveniles (por defecto 12 cm).
+#' @param a Coeficiente de la relación longitud-peso.
+#' @param b Exponente de la relación longitud-peso.
+#' @return Data frame con porcentajes de juveniles por grupos, tanto en número como en peso.
+#' @export
+#' @importFrom dplyr group_by_at summarize across everything
+#' @importFrom tidyr pivot_longer pivot_wider
+#' @examples
+#' data_calas <- procesar_calas(data_calas = calas_bitacora)
+#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
+#' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
+#'
+#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
+#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
+#'
+#' datos_final <- agregar_variables(data_total)
+#'
+#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+#' resultado <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#'
+#' resultado$fecha_unica <- convertir_a_fecha(resultado$fecha_inicio_cala, tipo = "date")
+#'
+#' resultado_juveniles <- juveniles_por_grupo(data = resultado, group_cols = c("fecha_unica", "dc_cat"), cols_tallas = tallas_cols, juvLim = 12, a = 0.0012, b = 3.1242))
+juveniles_por_grupo <- function(data, group_cols, cols_tallas, juvLim = 12, a = 0.0012, b = 3.1242,
+                                remove_empty = TRUE) {
+  # Validación de parámetros
+  if (!is.data.frame(data)) stop("El parámetro 'data' debe ser un data.frame.")
+  if (!all(group_cols %in% colnames(data)))
+    stop("No todas las columnas de agrupación están en el data.frame.")
+
+  # Determinar si cols_tallas contiene nombres o índices
+  if (is.numeric(cols_tallas)) {
+    # Si son índices numéricos, obtener los nombres correspondientes
+    if (any(cols_tallas > ncol(data) | cols_tallas < 1))
+      stop("Alguno de los índices en cols_tallas está fuera del rango del data.frame.")
+
+    # Convertir los índices a nombres para trabajar uniformemente
+    cols_nombres <- names(data)[cols_tallas]
+  } else {
+    # Si ya son nombres, verificar que existan en el data.frame
+    if (!all(cols_tallas %in% colnames(data)))
+      stop("No todas las columnas de tallas están en el data.frame.")
+
+    cols_nombres <- cols_tallas
+  }
+
+  # Asegurar que las columnas de tallas sean numéricas
+  data <- data %>%
+    dplyr::mutate(dplyr::across(all_of(cols_nombres), ~as.numeric(.x)))
+
+  # Extraer valores numéricos de tallas a partir de nombres de columnas
+  # Solo si los nombres parecen contener información de tallas (e.g., "pond_8.5", "8", "talla_9")
+  if (all(grepl("^(pond_)?([0-9]+(\\.[0-9]+)?)$|^talla_[0-9]+(\\.[0-9]+)?$", cols_nombres))) {
+    # Extraer valores numéricos eliminando prefijos comunes
+    valores_tallas <- as.numeric(gsub("^(pond_|talla_)?", "", cols_nombres))
+  } else if (is.numeric(cols_tallas)) {
+    # Si los cols_tallas eran originalmente numéricos y no parecen ser patrones de tallas,
+    # usar los valores originales
+    valores_tallas <- cols_tallas
+  } else {
+    # En caso contrario, intentar convertir directamente los nombres a numéricos
+    valores_tallas <- suppressWarnings(as.numeric(cols_nombres))
+
+    # Si la conversión no funciona (generando NAs), usar números secuenciales
+    if (anyNA(valores_tallas)) {
+      warning("No se pudieron determinar valores numéricos de tallas a partir de los nombres de columnas. Usando secuencia 1:n.")
+      valores_tallas <- seq_along(cols_nombres)
+    }
+  }
+
+  # Función para procesar cada grupo usando calcular_juveniles
+  procesar_grupo <- function(df) {
+    # Comprobar si el dataframe es vacío o todas las frecuencias son cero
+    if (nrow(df) == 0) {
+      return(data.frame(
+        porc_juv_numero = NA_real_,
+        porc_juv_peso = NA_real_,
+        total_numero = 0,
+        total_peso = 0
+      ))
+    }
+
+    # Extraer y sumar frecuencias por talla
+    frecuencias <- colSums(df[, cols_nombres, drop = FALSE], na.rm = TRUE)
+
+    # Verificar si todas las frecuencias son cero
+    if (all(frecuencias == 0)) {
+      return(data.frame(
+        porc_juv_numero = NA_real_,
+        porc_juv_peso = NA_real_,
+        total_numero = 0,
+        total_peso = 0
+      ))
+    }
+
+    # Llamar a la función externa para calcular juveniles
+    calcular_juveniles(frecuencias, valores_tallas, juvLim, a, b)
+  }
+
+  # Si no hay columnas de agrupación, calcular para todo el conjunto
+  if (length(group_cols) == 0) {
+    return(procesar_grupo(data))
+  }
+
+  # Agrupar y calcular - versión actualizada sin usar cur_data()
+  resultados <- data %>%
+    dplyr::group_by(dplyr::across(all_of(group_cols))) %>%
+    dplyr::summarize(
+      resultado = list(
+        {
+          # Usar pick() para seleccionar las columnas de tallas
+          df_grupo <- dplyr::pick(all_of(cols_nombres))
+          # Añadir las filas para completar el data.frame
+          df_grupo <- as.data.frame(df_grupo)
+          procesar_grupo(df_grupo)
+        }
+      ),
+      .groups = "drop"
+    ) %>%
+    tidyr::unnest(resultado)
+
+  # Opcionalmente eliminar grupos sin datos
+  if (remove_empty && any(resultados$total_numero == 0, na.rm = TRUE)) {
+    resultados <- resultados %>%
+      dplyr::filter(total_numero > 0)
+  }
+
+  return(resultados)
 }

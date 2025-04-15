@@ -14,7 +14,7 @@
 #'
 #' @examples
 #' procesar_calas(data_calas = calas_bitacora, formato = "xlsx")
-procesar_calas <- function(data_calas, formato = "xlsx") {
+procesar_calas <- function(data_calas, formato = "xlsx", corregir_coordenadas = TRUE) {
   if (!formato %in% c("xlsx", "csv")) {
     stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
   }
@@ -33,10 +33,10 @@ procesar_calas <- function(data_calas, formato = "xlsx") {
   data_calas <- data_calas %>%
     dplyr::mutate(
       descripcion = stringi::stri_trim(descripcion),
-      lat_inicial = Tivy::dms_a_decimal(latitud_inicio),
-      lon_inicial = Tivy::dms_a_decimal(longitud_inicio),
-      lat_final = Tivy::dms_a_decimal(latitud_fin),
-      lon_final = Tivy::dms_a_decimal(longitud_fin)
+      lat_inicial = dms_a_decimal(latitud_inicio, corregir_errores = corregir_coordenadas),
+      lon_inicial = dms_a_decimal(longitud_inicio, hemisferio = "W", corregir_errores = corregir_coordenadas),
+      lat_final = dms_a_decimal(latitud_fin, corregir_errores = corregir_coordenadas),
+      lon_final = dms_a_decimal(longitud_fin, hemisferio = "W", corregir_errores = corregir_coordenadas)
     )
   return(data_calas)
 }

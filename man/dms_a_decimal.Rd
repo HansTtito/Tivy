@@ -4,7 +4,7 @@
 \alias{dms_a_decimal}
 \title{Convertir latitud o longitud a grados decimales}
 \usage{
-dms_a_decimal(coordenadas, hemisferio = "S")
+dms_a_decimal(coordenadas, hemisferio = "S", corregir_errores = TRUE)
 }
 \arguments{
 \item{coordenadas}{Vector de caracteres. Cada elemento debe estar en formatos como:

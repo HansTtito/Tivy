@@ -32,7 +32,7 @@ recto entre los puntos interpolados en los límites.
 }
 \examples{
 # Asumiendo que linea_10_millas es un data frame con columnas 'lat' y 'lon'
-puntos <- extraer_puntos_entre_latitudes(linea_10_millas, -14.5, -12.0, "lat", "lon")
+puntos <- extraer_puntos_entre_latitudes(paralelas_costa_peru$l10, -14.5, -12.0, "lat", "lon")
 
 }
 \keyword{internal}

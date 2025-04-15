@@ -34,7 +34,7 @@
 #' # dms_a_decimal(calas_bitacora$Longitud.Fin)
 #'
 #' @importFrom stringr str_split str_count str_detect str_extract
-dms_a_decimal <- function(coordenadas, hemisferio = "S") {
+dms_a_decimal <- function(coordenadas, hemisferio = "S", corregir_errores = TRUE) {
   # Validación de entrada
   if (missing(coordenadas)) {
     stop("El parámetro 'coordenadas' es obligatorio.")
@@ -117,17 +117,34 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
         return(NA_real_)
       }
 
-      # Validar rangos de las partes
-      if (length(partes) >= 1 && (is.na(partes[1]) || partes[1] < 0 || partes[1] > 180)) {
-        warning(paste("Grados fuera de rango (0-180) en la coordenada:", coord_original))
-      }
+      # NUEVO: Corregir automáticamente valores fuera de rango
+      if (corregir_errores && length(partes) >= 3) {
+        # Corregir segundos >= 60
+        if (!is.na(partes[3]) && partes[3] >= 60) {
+          minutos_extra <- floor(partes[3] / 60)
+          partes[3] <- partes[3] %% 60
+          partes[2] <- partes[2] + minutos_extra
+        }
 
-      if (length(partes) >= 2 && (is.na(partes[2]) || partes[2] < 0 || partes[2] >= 60)) {
-        warning(paste("Minutos fuera de rango (0-59) en la coordenada:", coord_original))
-      }
+        # Corregir minutos >= 60
+        if (!is.na(partes[2]) && partes[2] >= 60) {
+          grados_extra <- floor(partes[2] / 60)
+          partes[2] <- partes[2] %% 60
+          partes[1] <- partes[1] + grados_extra
+        }
+      } else {
+        # Emitir warnings pero no corregir
+        if (length(partes) >= 1 && (is.na(partes[1]) || partes[1] < 0 || partes[1] > 180)) {
+          warning(paste("Grados fuera de rango (0-180) en la coordenada:", coord_original))
+        }
 
-      if (length(partes) >= 3 && (is.na(partes[3]) || partes[3] < 0 || partes[3] >= 60)) {
-        warning(paste("Segundos fuera de rango (0-59) en la coordenada:", coord_original))
+        if (length(partes) >= 2 && (is.na(partes[2]) || partes[2] < 0 || partes[2] >= 60)) {
+          warning(paste("Minutos fuera de rango (0-59) en la coordenada:", coord_original))
+        }
+
+        if (length(partes) >= 3 && (is.na(partes[3]) || partes[3] < 0 || partes[3] >= 60)) {
+          warning(paste("Segundos fuera de rango (0-59) en la coordenada:", coord_original))
+        }
       }
 
       # Calcular según el número de componentes
@@ -162,8 +179,6 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S") {
 
   return(resultados)
 }
-
-
 
 #' Distancia a la costa vectorizado
 #'
