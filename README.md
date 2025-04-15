@@ -99,9 +99,19 @@ graficar_juveniles(
 
 ```r
 # Dashboard completo de análisis de juveniles
-dashboard <- dashboard_juveniles(
-  datos_juveniles = resultado_juveniles,
-  var_x = "fecha_unica"
+resultado$catch_t = resultado$catch_ANCHOVETA/1000
+
+dashboard = dashboard_juveniles(
+  data_total = resultado,
+  col_fecha = "fecha_unica", 
+  cols_tallas = paste0("pond_",seq(8,15,0.5)), 
+  limite_juv = 12,
+  a = 0.0001, b = 2.984, 
+  col_latitud = "lat_final",
+  col_longitud = "lon_final", 
+  col_captura = "catch_t",
+  col_juveniles = "juv",
+  show_limit_juv = TRUE
 )
 
 # Ver componentes individuales del dashboard
