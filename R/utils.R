@@ -318,8 +318,7 @@ graficar_estatico <- function(poligonos, costa, titulo, colores, mostrar_leyenda
   p <- p + ggplot2::labs(
     title = titulo,
     x = "Longitud",
-    y = "Latitud",
-    caption = "Fuente: PRODUCE"
+    y = "Latitud"
   ) + tema
 
   # Cuadrícula

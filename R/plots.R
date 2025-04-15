@@ -402,59 +402,178 @@ graficar_juveniles <- function(datos_juveniles, var_x, fill_var = NULL,
 
 #' Crear dashboard visual para el análisis de juveniles
 #'
-#' Genera un conjunto de visualizaciones en formato dashboard que resumen
-#' los resultados obtenidos a partir de la función `juveniles_por_grupo`.
-#' Este dashboard permite explorar la proporción de juveniles según diferentes
-#' criterios agrupados, incluyendo comparaciones por número y peso,
-#' así como tendencias temporales.
+#' Genera un conjunto de visualizaciones en formato dashboard para analizar la proporción
+#' de juveniles en capturas pesqueras. El dashboard incluye:
+#' \itemize{
+#'   \item Una comparación de juveniles en número y peso
+#'   \item Un gráfico de captura acumulada
+#'   \item Un mapa de distribución espacial de juveniles
+#'   \item Una visualización de tendencias de porcentaje de juveniles
+#' }
 #'
-#' @param datos_juveniles Data frame generado por `juveniles_por_grupo`, que
-#' contiene los porcentajes de juveniles por grupo.
-#' @param var_x Nombre de la variable a utilizar en el eje X de los gráficos
-#' (por ejemplo, "fecha_unica" para visualización temporal).
-#' @param limite_juv (Opcional) Valor umbral para el porcentaje legal de
-#' juveniles. Si se proporciona, se añade como línea de referencia en los gráficos.
-#' @param paleta (Opcional) Vector de colores personalizado para los gráficos.
-#' @param ordenar_comparacion Lógico. Indica si el gráfico de comparación de
-#' porcentajes debe ser ordenado de mayor a menor (por defecto es FALSE).
+#' @param data_total Data frame con los datos de capturas, tallas y ubicaciones.
+#'   Debe contener información sobre fechas, tallas, coordenadas y capturas.
+#' @param col_fecha Nombre de la columna que contiene las fechas. Si es NULL,
+#'   la función intentará detectarla automáticamente.
+#' @param cols_tallas Vector con los nombres de las columnas que contienen las
+#'   frecuencias de tallas. Si es NULL, la función intentará detectarlas automáticamente.
+#' @param limite_juv Valor numérico que representa el límite legal para definir
+#'   juveniles (en cm). El valor predeterminado es 12.
+#' @param a Parámetro 'a' de la relación longitud-peso (W = a*L^b). El valor predeterminado
+#'   es 0.0001.
+#' @param b Parámetro 'b' de la relación longitud-peso (W = a*L^b). El valor predeterminado
+#'   es 2.984.
+#' @param col_latitud Nombre de la columna que contiene la latitud. Si es NULL,
+#'   la función intentará detectarla automáticamente.
+#' @param col_longitud Nombre de la columna que contiene la longitud. Si es NULL,
+#'   la función intentará detectarla automáticamente.
+#' @param col_captura Nombre de la columna que contiene las capturas. Si es NULL,
+#'   la función intentará detectarla automáticamente.
+#' @param col_juveniles Nombre de la columna que contiene el porcentaje de juveniles.
+#'   Si es NULL, la función intentará detectarla automáticamente.
+#' @param xlim Vector numérico de longitud 2 que define los límites del eje x para el mapa.
+#'   Por defecto c(-85, -70) para cubrir la costa peruana.
+#' @param ylim Vector numérico de longitud 2 que define los límites del eje y para el mapa.
+#'   Por defecto c(-20, 0) para cubrir la costa peruana.
+#' @param show_limit_juv Lógico. Si es TRUE, se mostrará una línea de referencia para
+#'   el límite de juveniles en los gráficos apropiados.
+#' @param paleta Vector de colores personalizado para los gráficos. Si es NULL,
+#'   se usará una paleta predeterminada.
+#' @param ordenar_comparacion Lógico. Si es TRUE, el gráfico de comparación de porcentajes
+#'   se ordenará de mayor a menor. El valor predeterminado es FALSE.
+#' @param titulo_comp Título para el gráfico de comparación de juveniles.
+#' @param titulo_captura Título para el gráfico de captura acumulada.
+#' @param titulo_mapa Título para el mapa de distribución espacial.
+#' @param titulo_relacion Título para el gráfico de porcentaje de juveniles suavizado.
 #'
-#' @return Una lista de objetos `ggplot` que representan distintos aspectos del
-#' análisis de juveniles, lista para ser integrada en un dashboard.
+#' @return Una lista con los siguientes componentes:
+#'   \item{comparacion}{Gráfico de barras comparando juveniles por número y peso}
+#'   \item{captura_acumulada}{Gráfico de área mostrando la captura acumulada a lo largo del tiempo}
+#'   \item{mapa_juveniles}{Mapa que muestra la distribución espacial de juveniles}
+#'   \item{relacion}{Gráfico de tendencias suavizadas de porcentaje de juveniles}
+#'   \item{dashboard}{Si el paquete patchwork está instalado, un dashboard combinado de todos los gráficos}
+#'
 #' @export
+#' @importFrom dplyr group_by summarise arrange mutate filter
+#' @importFrom tidyr pivot_longer
+#' @importFrom ggplot2 ggplot aes geom_area geom_line geom_point geom_sf labs theme_minimal scale_color_gradient2 scale_size_continuous coord_sf geom_smooth facet_wrap scale_color_manual scale_y_continuous
+#' @importFrom scales comma
+#' @importFrom rnaturalearth ne_countries
 #' @importFrom patchwork wrap_plots
 #'
 #' @examples
-#' # Ejemplo de uso:
+#' \dontrun{
+#'
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
 #' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 #' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
 #'
-#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = "codigo_faena")
-#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
-#'
+#' # Integrar datos
+#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
+#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas,
+#'                                        data_tallas_faenas = data_tallasfaenas)
 #' datos_final <- agregar_variables(data_total)
-#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12",
-#'                  "12.5", "13", "13.5", "14", "14.5", "15")
-#' resultado <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_cols,
-#'                                 captura_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984)
-#' resultado$fecha_unica <- convertir_a_fecha(resultado$fecha_inicio_cala, tipo = "date")
-#' resultado_juveniles <- juveniles_por_grupo(data = resultado,
-#'                                            group_cols = c("fecha_unica"),
-#'                                            cols_tallas = tallas_cols)
 #'
-#' dashboard <- dashboard_juveniles(
-#'   datos_juveniles = resultado_juveniles,
-#'   var_x = "fecha_unica"
+#' # Preparar datos de tallas
+#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+#'                 "12", "12.5", "13", "13.5", "14", "14.5", "15")
+#'
+#' # Ponderar tallas por captura
+#' resultado <- ponderar_tallas_df(
+#'   df = datos_final,
+#'   tallas_cols = tallas_cols,
+#'   captura_col = "catch_ANCHOVETA",
+#'   a = 0.0001,
+#'   b = 2.984
 #' )
-dashboard_juveniles <- function(datos_juveniles, var_x = NULL, limite_juv = NULL,
-                                paleta = NULL, ordenar_comparacion = FALSE) {
-  # Validación de parámetros
-  if (!is.data.frame(datos_juveniles))
-    stop("datos_juveniles debe ser un data.frame")
+#'
+#' # Preparar datos para análisis
+#' resultado$fecha_unica <- convertir_a_fecha(resultado$fecha_inicio_cala, tipo = "date")
+#' resultado$catch_t <- resultado$catch_ANCHOVETA/1000  # Convertir a toneladas
+#'
+#' # Crear dashboard
+#' dashboard <- dashboard_juveniles(
+#'   data_total = resultado,
+#'   col_fecha = "fecha_unica",
+#'   cols_tallas = paste0("pond_", seq(8, 15, 0.5)),
+#'   limite_juv = 12,
+#'   a = 0.0001,
+#'   b = 2.984,
+#'   col_latitud = "lat_final",
+#'   col_longitud = "lon_final",
+#'   col_captura = "catch_t",
+#'   col_juveniles = "juv",
+#'   show_limit_juv = TRUE
+#' )
+#'
+#' # Visualizar componentes individuales
+#' dashboard$comparacion
+#' dashboard$captura_acumulada
+#' dashboard$mapa_juveniles
+#' dashboard$relacion
+#'
+#' # Visualizar dashboard completo
+#' dashboard$dashboard
+#' }
+dashboard_juveniles <- function(
+    data_total,
+    col_fecha = NULL,
+    cols_tallas = NULL,
+    limite_juv = 12,
+    a = 0.0001,
+    b = 2.984,
+    col_latitud = NULL,
+    col_longitud = NULL,
+    col_captura = NULL,
+    col_juveniles = NULL,
+    xlim = c(-85, -70),
+    ylim = c(-20, 0),
+    show_limit_juv = TRUE,
+    paleta = NULL,
+    ordenar_comparacion = FALSE,
+    titulo_comp = NULL,
+    titulo_captura = NULL,
+    titulo_mapa = NULL,
+    titulo_relacion = NULL
+) {
+  # Validaciones iniciales
+  if (!is.data.frame(data_total))
+    stop("data_total debe ser un data.frame")
 
-  # Si no se proporciona var_x, usar la primera columna
-  if (is.null(var_x)) {
-    var_x <- colnames(datos_juveniles)[1]
+  # Intentar detectar automáticamente las columnas si no se especifican
+  if (is.null(col_fecha)) {
+    cols_fecha <- grep("fecha|date", colnames(data_total), ignore.case = TRUE)
+    col_fecha <- if (length(cols_fecha) > 0) colnames(data_total)[cols_fecha[1]] else NULL
+    if (is.null(col_fecha))
+      stop("No se pudo detectar automáticamente la columna de fecha. Por favor, especifique col_fecha.")
+  }
+
+  if (is.null(cols_tallas)) {
+    # Intentar detectar columnas de tallas (asumiendo un patrón común)
+    cols_tallas_idx <- grep("^talla|^len|^pond_|cm$", colnames(data_total), ignore.case = TRUE)
+    cols_tallas <- if (length(cols_tallas_idx) > 0) colnames(data_total)[cols_tallas_idx] else NULL
+    if (is.null(cols_tallas))
+      stop("No se pudo detectar automáticamente las columnas de tallas. Por favor, especifique cols_tallas.")
+  }
+
+  if (is.null(col_latitud)) {
+    lat_cols <- grep("^lat|^latitude", colnames(data_total), ignore.case = TRUE)
+    col_latitud <- if (length(lat_cols) > 0) colnames(data_total)[lat_cols[1]] else NULL
+  }
+
+  if (is.null(col_longitud)) {
+    lon_cols <- grep("^lon|^longitude", colnames(data_total), ignore.case = TRUE)
+    col_longitud <- if (length(lon_cols) > 0) colnames(data_total)[lon_cols[1]] else NULL
+  }
+
+  if (is.null(col_captura)) {
+    cap_cols <- grep("catch|captura|desembar", colnames(data_total), ignore.case = TRUE)
+    col_captura <- if (length(cap_cols) > 0) colnames(data_total)[cap_cols[1]] else NULL
+  }
+
+  if (is.null(col_juveniles)) {
+    juv_cols <- grep("juv|porc_juv", colnames(data_total), ignore.case = TRUE)
+    col_juveniles <- if (length(juv_cols) > 0) colnames(data_total)[juv_cols[1]] else NULL
   }
 
   # Crear paleta por defecto si no se proporciona
@@ -463,45 +582,116 @@ dashboard_juveniles <- function(datos_juveniles, var_x = NULL, limite_juv = NULL
                 "#8C564B", "#E377C2", "#7F7F7F", "#BCBD22", "#17BECF")
   }
 
-  # Detectar si hay una columna de fecha
-  cols_fecha <- grep("fecha|date", colnames(datos_juveniles), ignore.case = TRUE)
-  fecha_var <- if (length(cols_fecha) > 0) colnames(datos_juveniles)[cols_fecha[1]] else NULL
+  # Calcular juveniles por grupo
+  datos_juveniles <- Tivy::juveniles_por_grupo(
+    data = data_total,
+    group_cols = col_fecha,
+    cols_tallas = cols_tallas,
+    juvLim = limite_juv,
+    a = a,
+    b = b
+  )
 
-  # Crear diferentes visualizaciones
-  # 1. Gráfico de comparación por variable principal
+  # Títulos por defecto si no se especifican
+  if (is.null(titulo_comp))
+    titulo_comp <- paste("Comparación de juveniles en número y peso")
+
+  if (is.null(titulo_captura))
+    titulo_captura <- "Captura acumulada de anchoveta"
+
+  if (is.null(titulo_mapa))
+    titulo_mapa <- "Distribución espacial de juveniles"
+
+  if (is.null(titulo_relacion))
+    titulo_relacion <- "Porcentaje de juveniles suavizado"
+
+  # 1. Gráfico de comparación por fecha
   p1 <- Tivy::graficar_juveniles(
     datos_juveniles = datos_juveniles,
-    var_x = var_x,
+    var_x = col_fecha,
     tipo_grafico = "barras",
-    titulo = paste("Comparación de juveniles por", var_x),
+    titulo = titulo_comp,
     limite_juv = limite_juv,
     ordenar_por = if(ordenar_comparacion) "peso" else "x",
     paleta = c("#3498DB", "#E74C3C")
   )
 
-  # 2. Gráfico de serie temporal si existe una columna de fecha
+  # 2. Gráfico de captura acumulada
   p2 <- NULL
-  if (!is.null(fecha_var)) {
-    p2 <- Tivy::graficar_juveniles(
-      datos_juveniles = datos_juveniles,
-      var_x = fecha_var,
-      fill_var = if (var_x != fecha_var) var_x else NULL,
-      tipo_grafico = "lineas",
-      titulo = "Evolución temporal del porcentaje de juveniles",
-      limite_juv = limite_juv,
-      paleta = paleta
-    )
+  if (!is.null(col_fecha) && !is.null(col_captura) && col_captura %in% colnames(data_total)) {
+    # Preparar datos para captura acumulada
+    datos_captura <- data_total %>%
+      dplyr::group_by(.data[[col_fecha]]) %>%
+      dplyr::summarise(
+        captura_diaria = sum(.data[[col_captura]], na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      dplyr::arrange(.data[[col_fecha]]) %>%
+      dplyr::mutate(captura_acumulada = cumsum(captura_diaria))
+
+    # Crear gráfico de captura acumulada
+    p2 <- ggplot2::ggplot(datos_captura) +
+      ggplot2::geom_area(ggplot2::aes(x = .data[[col_fecha]], y = captura_acumulada),
+                         fill = "#2CA02C", alpha = 0.7) +
+      ggplot2::geom_line(ggplot2::aes(x = .data[[col_fecha]], y = captura_acumulada),
+                         color = "#1F77B4", size = 1) +
+      ggplot2::geom_point(ggplot2::aes(x = .data[[col_fecha]], y = captura_acumulada),
+                          color = "#1F77B4", size = 2.5) +
+      ggplot2::labs(
+        title = titulo_captura,
+        x = col_fecha,
+        y = "Captura acumulada (t)"
+      ) +
+      ggplot2::theme_minimal() +
+      ggplot2::scale_y_continuous(labels = scales::comma)
   }
 
-  # 3. Boxplot para distribución
-  p3 <- Tivy::graficar_juveniles(
-    datos_juveniles = datos_juveniles,
-    var_x = var_x,
-    tipo_grafico = "mixto",
-    titulo = paste("Distribución de juveniles por", var_x),
-    limite_juv = limite_juv,
-    paleta = c("#3498DB", "#E74C3C")
-  )
+  # 3. Mapa de juveniles
+  p3 <- NULL
+  if (!is.null(col_latitud) && !is.null(col_longitud) &&
+      col_latitud %in% colnames(data_total) && col_longitud %in% colnames(data_total)) {
+
+    # Preparar datos para el mapa
+    datos_mapa <- data_total %>%
+      dplyr::group_by(.data[[col_longitud]], .data[[col_latitud]]) %>%
+      dplyr::filter(!is.na(.data[[col_longitud]]) & !is.na(.data[[col_latitud]]))
+
+    # Crear mapa base
+    mapa_peru <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+    # Crear mapa de juveniles
+    p3 <- ggplot2::ggplot() +
+      ggplot2::geom_sf(data = mapa_peru, fill = "lightgrey", color = "white") +
+      ggplot2::geom_point(
+        data = datos_mapa,
+        ggplot2::aes(
+          x = .data[[col_longitud]],
+          y = .data[[col_latitud]],
+          size = .data[[col_captura]],
+          col = .data[[col_juveniles]]
+        ),
+        alpha = 0.3
+      ) +
+      ggplot2::scale_color_gradient2(
+        low = "#3498DB",
+        mid = "#FFCC00",
+        high = "#E74C3C",
+        midpoint = 10,
+        name = "% Juveniles"
+      ) +
+      ggplot2::scale_size_continuous(
+        range = c(2, 8),
+        name = "Captura (t)"
+      ) +
+      ggplot2::coord_sf(
+        xlim = xlim,  # Ajustar según la costa peruana
+        ylim = ylim    # Ajustar según la costa peruana
+      ) +
+      ggplot2::labs(
+        title = titulo_mapa,
+        subtitle = paste("Límite juveniles:", limite_juv, "cm")
+      ) +
+      ggplot2::theme_minimal()
+  }
 
   # 4. Gráfico de dispersión Total vs Porcentaje
   datos_long <- datos_juveniles %>%
@@ -519,36 +709,37 @@ dashboard_juveniles <- function(datos_juveniles, var_x = NULL, limite_juv = NULL
       total = ifelse(tipo == "En número", total_numero, total_peso)
     )
 
-  p4 <- ggplot2::ggplot(datos_long, ggplot2::aes(x = .data[[var_x]], y = porcentaje, color = tipo)) +
+  p4 <- ggplot2::ggplot(datos_long, ggplot2::aes(x = .data[[col_fecha]], y = porcentaje, color = tipo)) +
     ggplot2::geom_point(size = 3, alpha = 0.7) +
     ggplot2::facet_wrap(~ tipo, scales = "free_x") +
     ggplot2::geom_smooth(method = "loess", se = TRUE, alpha = 0.2) +
     ggplot2::labs(
-      title = "Relación entre total y porcentaje de juveniles",
+      title = titulo_relacion,
       y = "Porcentaje de juveniles (%)"
     ) +
     ggplot2::theme_minimal() +
     ggplot2::scale_color_manual(values = c("#3498DB", "#E74C3C"))
 
-
   # Retornar la lista de gráficos
   result <- list(
     comparacion = p1,
-    serie_temporal = p2,
-    mixto = p3,
+    captura_acumulada = p2,
+    mapa_juveniles = p3,
     relacion = p4
   )
 
   # Si patchwork está disponible, crear un dashboard combinado
   if (requireNamespace("patchwork", quietly = TRUE)) {
-    graficos <- list(p1, p3, p4)
-    if (!is.null(p2)) graficos <- c(graficos, list(p2))
-
+    graficos <- list(p1, p2, p3, p4)
     # Filtrar gráficos no nulos
     graficos <- graficos[!sapply(graficos, is.null)]
-
     # Combinar gráficos
-    result$dashboard <- patchwork::wrap_plots(graficos, ncol = 2)
+    # Usa:
+    result$dashboard <- patchwork::wrap_plots(
+      graficos,
+      ncol = 2,
+      widths = rep(1, length(graficos))  # Forzar mismo ancho
+    )
   }
 
   return(result)
