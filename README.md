@@ -35,6 +35,7 @@ datos_final <- agregar_variables(data_total)
 
 head(datos_final)
 
+# Estimación de juveniles
 
 tallas_cols = as.character(seq(8,15,0.5))
 
