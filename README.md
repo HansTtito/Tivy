@@ -99,10 +99,10 @@ graficar_juveniles(
 
 ```r
 # Dashboard completo de análisis de juveniles
-resultado$catch_t = resultado$catch_ANCHOVETA/1000
+datos_final_ponderados$catch_t = datos_final_ponderados$catch_ANCHOVETA/1000
 
 dashboard = dashboard_juveniles(
-  data_total = resultado,
+  data_total = datos_final_ponderados,
   col_fecha = "fecha_unica", 
   cols_tallas = paste0("pond_",seq(8,15,0.5)), 
   limite_juv = 12,
