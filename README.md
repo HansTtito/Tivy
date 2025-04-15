@@ -45,6 +45,23 @@ datos_final_ponderados$fecha_unica <- convertir_a_fecha(datos_final_ponderados$f
 
 resultado_juveniles <- juveniles_por_grupo(data = datos_final_ponderados, group_cols = c("fecha_unica"), cols_tallas = paste0("pond_", tallas_cols))
 
+# Plots
+
+# Ejemplo básico - gráfico de barras por embarcación
+graficar_juveniles(
+  datos_juveniles = resultado_juveniles, 
+  var_x = c("fecha_unica"),
+  limite_juv = 12
+)
+
+
+dashboard <- dashboard_juveniles(
+  datos_juveniles = resultado_juveniles,
+  var_x = "fecha_unica"
+)
+
+dashboard$comparacion  # Comparación de juveniles
+dashboard$dashboard # Todos los gráficos
 
 # Lectura de comunicados
 

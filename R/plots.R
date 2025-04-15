@@ -525,7 +525,6 @@ dashboard_juveniles <- function(datos_juveniles, var_x = NULL, limite_juv = NULL
     ggplot2::geom_smooth(method = "loess", se = TRUE, alpha = 0.2) +
     ggplot2::labs(
       title = "Relación entre total y porcentaje de juveniles",
-      x = "Total (número/peso)",
       y = "Porcentaje de juveniles (%)"
     ) +
     ggplot2::theme_minimal() +
