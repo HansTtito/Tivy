@@ -164,10 +164,10 @@ mapa_interactivo
 
 `Tivy` está diseñado para trabajar con la estructura de datos del Ministerio de Producción del Perú. Los archivos de entrada típicos incluyen:
 
-- **Bitácoras de calas**: Registros de operaciones de pesca
-- **Bitácoras de faenas**: Información de viajes y embarcaciones
-- **Registros de tallas**: Mediciones biométricas de especies capturadas
-- **Comunicados oficiales**: Documentos PDF con información sobre cierres preventivos
+- **Bitácoras de calas**: Registros de operaciones de pesca.
+- **Bitácoras de faenas**: Información de viajes y embarcaciones.
+- **Registros de tallas**: Mediciones biométricas de especies capturadas.
+- **Comunicados oficiales**: Documentos PDF con información sobre cierres preventivos.
 
 ## 🔧 Funciones principales
 
