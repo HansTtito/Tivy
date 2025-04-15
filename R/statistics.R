@@ -26,6 +26,7 @@ talla_peso <- function(talla, a, b) {
   return(a * talla^b)
 }
 
+
 #' Ponderación de tallas según captura total
 #'
 #' Calcula una ponderación de las tallas muestreadas en función de la captura total
@@ -52,30 +53,129 @@ ponderacion <- function(frecuencia, captura, tallas, a, b) {
   if (!is.numeric(captura)) stop("El parámetro 'captura' debe ser numérico.")
   if (!is.numeric(a)) stop("El parámetro 'a' debe ser numérico.")
   if (!is.numeric(b)) stop("El parámetro 'b' debe ser numérico.")
-
   if (length(frecuencia) != length(tallas)) {
     stop("Los vectores 'frecuencia' y 'tallas' deben tener la misma longitud.")
   }
 
-  if (captura <= 0) warning("El valor de 'captura' es <= 0, lo que podría producir resultados no válidos.")
-  if (any(tallas <= 0, na.rm = TRUE)) warning("Se detectaron valores de talla <= 0, que podrían producir resultados no válidos.")
+  # Manejar NAs en captura
+  if (is.na(captura) || captura <= 0) {
+    warning("El valor de 'captura' es NA o <= 0, se utilizará captura = 1 para los cálculos.")
+    captura <- 1
+  }
 
+  if (any(tallas <= 0, na.rm = TRUE)) warning("Se detectaron valores de talla <= 0, que podrían producir resultados no válidos.")
   if (sum(frecuencia, na.rm = TRUE) == 0) {
     warning("La suma de frecuencias es cero, se devolverá un vector de ceros.")
     return(rep(0, length(tallas)))
   }
 
+  # Reemplazar NAs en frecuencia con ceros
+  frecuencia[is.na(frecuencia)] <- 0
+
   peso <- talla_peso(talla = tallas, a = a, b = b) * frecuencia
   suma_peso <- sum(peso, na.rm = TRUE)
-
   if (suma_peso == 0) {
     warning("La suma de pesos es cero, se devolverá un vector de ceros.")
     return(rep(0, length(tallas)))
   }
-
   talla_ponderada <- (captura / suma_peso) * frecuencia
   return(talla_ponderada)
 }
+
+
+#' Ponderación de tallas en un data frame
+#'
+#' Esta función realiza la ponderación de frecuencias de tallas según la captura total
+#' utilizando la relación longitud-peso. Permite procesamiento paralelo para conjuntos
+#' de datos grandes.
+#'
+#' @param df Un data frame que contiene las columnas de tallas y captura.
+#' @param tallas_cols Un vector de caracteres con los nombres de las columnas que representan las tallas.
+#' @param captura_col Nombre de la columna que contiene los valores de captura.
+#' @param a Valor numérico del coeficiente de la relación longitud-peso.
+#' @param b Valor numérico del exponente de la relación longitud-peso.
+#' @param paralelo Booleano indicando si se debe utilizar procesamiento paralelo.
+#' @param num_cores Número de núcleos a utilizar (si paralelo=TRUE).
+#' @param tam_bloque Tamaño de los bloques para procesamiento (si paralelo=TRUE).
+#'
+#' @return Un data frame con las columnas originales y las columnas de tallas ponderadas.
+#'         Las columnas ponderadas tendrán el prefijo "pond_" seguido del nombre original.
+#'
+#' @examples
+#'
+#' data_calas <- procesar_calas(data_calas = calas_bitacora)
+#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
+#' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
+#'
+#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
+#'
+#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
+#'
+#' tallas_columnas <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+#' # Procesamiento secuencial
+#' resultado <- ponderar_tallas_df(df = data_total, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#'
+#' # Procesamiento paralelo para conjuntos grandes
+#' resultado_paralelo <- ponderar_tallas_df(
+#'   df = data_total, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984, paralelo = TRUE
+#' )
+#'
+#' @import parallel
+#' @export
+ponderar_tallas_df <- function(df, tallas_cols, captura_col, a, b,
+                               paralelo = FALSE, num_cores = NULL, tam_bloque = 10000) {
+  # Validaciones iniciales
+  if (!is.data.frame(df)) {
+    stop("El primer argumento debe ser un data frame.")
+  }
+
+  if (!all(tallas_cols %in% names(df))) {
+    stop("Algunas columnas de tallas no existen en el data frame.")
+  }
+
+  if (!(captura_col %in% names(df))) {
+    stop("La columna de captura no existe en el data frame.")
+  }
+
+  # Si se solicita procesamiento paralelo
+  if (paralelo) {
+    # Verificar paquetes necesarios
+    if (!requireNamespace("future", quietly = TRUE) ||
+        !requireNamespace("future.apply", quietly = TRUE)) {
+      stop("Paquetes future y future.apply necesarios para procesamiento paralelo. Instálalos.")
+    }
+
+    # Configurar procesamiento paralelo
+    if (is.null(num_cores)) {
+      num_cores <- max(1, parallel::detectCores() / 2)
+    }
+    future::plan(future::multisession, workers = num_cores)
+
+    # Dividir en bloques
+    num_filas <- nrow(df)
+    indices_bloques <- split(1:num_filas,
+                             ceiling(seq_along(1:num_filas) / tam_bloque))
+
+    # Procesar bloques en paralelo
+    resultados <- future.apply::future_lapply(
+      indices_bloques,
+      function(indices) {
+        bloque <- df[indices, ]
+        Tivy:::procesar_bloque(bloque, tallas_cols, captura_col, a, b)
+      },
+      future.seed = TRUE
+    )
+
+    # Combinar resultados
+    resultado_final <- do.call(rbind, resultados)
+
+    return(resultado_final)
+  } else {
+    # Procesamiento secuencial
+    return(Tivy:::procesar_bloque(df, tallas_cols, captura_col, a, b))
+  }
+}
+
 
 
 #' Porcentaje de juveniles
@@ -115,6 +215,8 @@ porc_juveniles <- function(frecuencia, tallas, juvLim = 12) {
   return(juv)
 }
 
+
+
 #' Talla mínima observada con frecuencia positiva
 #'
 #' @param frecuencia Un vector numérico con las frecuencias de tallas.
@@ -142,6 +244,8 @@ min_range <- function(frecuencia, tallas) {
   return(min(tallas[!is.na(frecuencia)], na.rm = TRUE))
 }
 
+
+
 #' Talla máxima observada con frecuencia positiva
 #'
 #' @param frecuencia Un vector numérico con las frecuencias de tallas.
@@ -168,6 +272,8 @@ max_range <- function(frecuencia, tallas) {
   frecuencia[frecuencia <= 0] <- NA
   return(max(tallas[!is.na(frecuencia)], na.rm = TRUE))
 }
+
+
 
 #' Conversión de número de individuos a peso
 #'

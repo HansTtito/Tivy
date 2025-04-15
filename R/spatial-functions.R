@@ -303,14 +303,14 @@ distancia_costa <- function(lon,
   # Función de cálculo envuelta en tryCatch para manejar errores
   resultados_lotes <- tryCatch({
     apply_fun(lotes_indices, function(indices_lote) {
-      calcular_distancias_vectorizado(
-        lon_validos[indices_lote],
-        lat_validos[indices_lote],
-        linea_costa$Long,
-        linea_costa$Lat,
-        tipo_distancia,
-        ventana,
-        unidad
+      Tivy:::calcular_distancias_vectorizado(
+        lon_punto = lon_validos[indices_lote],
+        lat_punto = lat_validos[indices_lote],
+        costa_lon = linea_costa$Long,
+        costa_lat = linea_costa$Lat,
+        tipo_distancia = tipo_distancia,
+        ventana = ventana,
+        unidad = unidad
       )
     })
   }, error = function(e) {
@@ -347,171 +347,128 @@ distancia_costa <- function(lon,
 
 
 #' Puntos en tierra
-#' @description
-#' Función que permite estimar los puntos que están a la derecha o izquierda de la línea de costa
 #'
-#' @param x_punto Un vector con las longitudes
-#' @param y_punto Un vector con las latitudes
-#' @param linea_costa Un data frame con las coordenadas de la costa, el orden debe ser: lon, lat. Default `Tivy::linea_costa_peru`.
-#' @param paralelo Lógico. Si `TRUE`, realiza el cálculo en paralelo utilizando múltiples núcleos. Default `FALSE`.
-#' @param nucleos Número de núcleos a usar para procesamiento paralelo. Default `4`.
-#' @return Un vector con clasificación "tierra" o "mar" para cada punto.
-#' @export
-#' @rdname puntos_tierra
+#' @description
+#' Esta función clasifica un conjunto de coordenadas geográficas (longitud y latitud) como "tierra" o "mar" según su posición relativa a una línea de costa. Se considera que un punto está en tierra si su longitud es mayor a la de su punto más cercano en la línea de costa. Además, permite el cálculo en paralelo para mejorar el rendimiento en grandes volúmenes de datos.
+#'
+#' @param x_punto Vector numérico de longitudes (en grados decimales).
+#' @param y_punto Vector numérico de latitudes (en grados decimales).
+#' @param linea_costa `data.frame` con las coordenadas de la línea de costa. Debe tener columnas nombradas `Long` y `Lat`. Por defecto se puede usar `Tivy::linea_costa_peru`.
+#' @param paralelo Lógico. Si `TRUE`, realiza el cálculo en paralelo utilizando múltiples núcleos. Por defecto es `FALSE`.
+#' @param nucleos Número de núcleos a usar en caso de procesamiento paralelo. Por defecto es `4`.
+#' @param tipo_distancia Tipo de distancia geodésica a usar en el cálculo: `"haversine"` (por defecto) u otras si la función interna lo permite.
+#' @param ventana Ventana geográfica en grados para reducir el número de puntos de la línea de costa a considerar por cada punto. Por defecto es `0.5`.
+#' @param unidad Unidad de medida para la distancia: `"km"` (por defecto) u otra si la función interna lo permite.
+#'
+#' @return Un vector de texto del mismo largo que `x_punto`, indicando si cada punto se encuentra en `"tierra"` o `"mar"`. Los valores `NA` se mantienen como `NA`.
+#'
+#' @details
+#' Esta función usa internamente `Tivy:::calcular_distancias_vectorizado()` para identificar el punto más cercano en la línea de costa para cada coordenada. Si `paralelo = TRUE`, utiliza los paquetes `future` y `future.apply` para distribuir el trabajo entre varios núcleos.
+#'
 #' @examples
-#' data_calas = procesar_calas(data_calas = calas_bitacora)
-#' puntos_tierra(x_punto = data_calas$lon_final, y_punto = data_calas$lat_final, linea_costa = Tivy::linea_costa_peru)
-#' @importFrom future plan multisession sequential
-#' @importFrom future.apply future_lapply
-puntos_tierra <- function(x_punto, y_punto, linea_costa, paralelo = FALSE, nucleos = 4) {
-  # Validación de parámetros
-  if (missing(x_punto) || missing(y_punto) || missing(linea_costa)) {
-    stop("Los parámetros 'x_punto', 'y_punto' y 'linea_costa' son obligatorios.")
+#' data_calas <- procesar_calas(data_calas = calas_bitacora)
+#' resultado <- puntos_tierra(
+#'   x_punto = data_calas$lon_final,
+#'   y_punto = data_calas$lat_final,
+#'   linea_costa = Tivy::linea_costa_peru
+#' )
+#' table(resultado)
+#'
+#' @export
+puntos_tierra <- function(x_punto,
+                          y_punto,
+                          linea_costa = Tivy::linea_costa_peru,
+                          paralelo = FALSE,
+                          nucleos = 4,
+                          tipo_distancia = "haversine",
+                          ventana = 0.5,
+                          unidad = "mn") {
+  # --- Validaciones ---
+  if (!is.numeric(x_punto) || !is.numeric(y_punto)) {
+    stop("`x_punto` y `y_punto` deben ser vectores numéricos.")
   }
 
-  # Validar tipos de datos
-  if (!is.numeric(x_punto)) stop("El parámetro 'x_punto' debe ser numérico.")
-  if (!is.numeric(y_punto)) stop("El parámetro 'y_punto' debe ser numérico.")
-  if (!is.data.frame(linea_costa)) stop("El parámetro 'linea_costa' debe ser un data.frame.")
-  if (!is.logical(paralelo)) stop("El parámetro 'paralelo' debe ser lógico (TRUE/FALSE).")
-  if (!is.numeric(nucleos) || nucleos < 1) stop("El parámetro 'nucleos' debe ser un número entero positivo.")
-
-  # Validar longitud de vectores
   if (length(x_punto) != length(y_punto)) {
-    stop("Los vectores 'x_punto' y 'y_punto' deben tener la misma longitud.")
+    stop("`x_punto` y `y_punto` deben tener la misma longitud.")
   }
 
-  # Validar rangos de coordenadas
-  if (any(abs(x_punto) > 180, na.rm = TRUE)) {
-    warning("Se detectaron valores de longitud fuera del rango válido (-180 a 180).")
-  }
-  if (any(abs(y_punto) > 90, na.rm = TRUE)) {
-    warning("Se detectaron valores de latitud fuera del rango válido (-90 a 90).")
+  if (!is.data.frame(linea_costa)) {
+    stop("`linea_costa` debe ser un data.frame.")
   }
 
-  # Asegurarse de que linea_costa tenga los nombres de columnas correctos
-  if (!"Long" %in% colnames(linea_costa) || !"Lat" %in% colnames(linea_costa)) {
-    stop("linea_costa debe contener columnas 'Long' y 'Lat'")
+  if (!all(c("Long", "Lat") %in% names(linea_costa))) {
+    stop("`linea_costa` debe contener columnas llamadas 'Long' y 'Lat'.")
   }
 
-  # Verificar que linea_costa tiene datos
-  if (nrow(linea_costa) == 0) {
-    stop("linea_costa está vacío")
+  if (!is.logical(paralelo)) {
+    stop("`paralelo` debe ser TRUE o FALSE.")
   }
 
-  # Verificar que linea_costa tiene coordenadas numéricas
-  if (!is.numeric(linea_costa$Long) || !is.numeric(linea_costa$Lat)) {
-    stop("Las columnas 'Long' y 'Lat' de linea_costa deben ser numéricas")
+  if (!is.numeric(nucleos) || nucleos < 1) {
+    stop("`nucleos` debe ser un número entero positivo.")
   }
 
-  # Limpiar datos de entrada
-  idx_validos <- !is.na(x_punto) & !is.na(y_punto)
-  if (sum(idx_validos) == 0) {
-    warning("Todos los puntos de entrada contienen valores NA")
-    return(rep(NA_character_, length(x_punto)))
+  if (!tipo_distancia %in% c("haversine", "manhattan", "grid")) {
+    stop("`tipo_distancia` debe ser uno de: 'haversine', 'manhattan', 'grid'.")
   }
 
-  x_validos <- x_punto[idx_validos]
-  y_validos <- y_punto[idx_validos]
-
-  # Preparar vectores de resultados del mismo tamaño que los originales
-  resultados <- rep(NA_character_, length(x_punto))
-
-  # Constantes
-  grados2rad <- pi / 180
-
-  # Convertir a radianes
-  tryCatch({
-    lon_rad <- x_validos * grados2rad
-    lat_rad <- y_validos * grados2rad
-    shore_lon_rad <- linea_costa$Long * grados2rad
-    shore_lat_rad <- linea_costa$Lat * grados2rad
-  }, error = function(e) {
-    stop("Error al convertir coordenadas a radianes: ", e$message)
-  })
-
-  # Función para encontrar el índice del punto costero más cercano
-  find_closest_shore <- function(i) {
-    tryCatch({
-      # Fórmula del gran círculo para calcular distancias
-      xy_rad <- sin(lat_rad[i]) * sin(shore_lat_rad)
-      yx_rad <- cos(lat_rad[i]) * cos(shore_lat_rad) * cos(shore_lon_rad - lon_rad[i])
-
-      # Asegurar que los valores están en el rango [-1, 1] para evitar NaN en acos
-      sum_rad <- xy_rad + yx_rad
-      sum_rad[sum_rad < -1] <- -1
-      sum_rad[sum_rad > 1] <- 1
-
-      dist_rad <- acos(sum_rad)
-
-      # Devolver índice del punto más cercano
-      return(which.min(dist_rad))
-    }, error = function(e) {
-      warning("Error al calcular el punto costero más cercano para el índice ", i, ": ", e$message)
-      return(NA_integer_)
-    })
+  if (!is.numeric(ventana) || ventana < 0) {
+    stop("`ventana` debe ser un número no negativo.")
   }
 
-  # Procesamiento paralelo o secuencial
-  if (paralelo) {
-    if (!requireNamespace("future", quietly = TRUE) ||
-        !requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Paquetes 'future' y/o 'future.apply' no encontrados. Usando procesamiento secuencial.")
-      paralelo <- FALSE
+  if (!unidad %in% c("km", "mn")) {
+    stop("`unidad` debe ser 'km' o 'mn'.")
+  }
+
+  # Convertir factores o cadenas a numéricos si es necesario
+  x_punto <- as.numeric(x_punto)
+  y_punto <- as.numeric(y_punto)
+  linea_costa$Long <- as.numeric(linea_costa$Long)
+  linea_costa$Lat <- as.numeric(linea_costa$Lat)
+
+  # Eliminar coordenadas NA si existen (mantener NAs en salida)
+  n <- length(x_punto)
+
+  procesar_punto <- function(i) {
+    if (is.na(x_punto[i]) || is.na(y_punto[i])) return(NA_character_)
+
+    resultado <- Tivy:::calcular_distancias_vectorizado(
+      lon_punto = x_punto[i],
+      lat_punto = y_punto[i],
+      costa_lon = linea_costa$Long,
+      costa_lat = linea_costa$Lat,
+      tipo_distancia = tipo_distancia,
+      ventana = ventana,
+      unidad = unidad
+    )
+
+    idx_costa <- resultado$indices[1]
+
+    if (idx_costa >= 2 && idx_costa < nrow(linea_costa)) {
+      p1 <- c(linea_costa$Long[idx_costa - 1], linea_costa$Lat[idx_costa - 1])
+      p2 <- c(linea_costa$Long[idx_costa + 1], linea_costa$Lat[idx_costa + 1])
+      p  <- c(x_punto[i], y_punto[i])
+
+      direccion <- (p2[1] - p1[1]) * (p[2] - p1[2]) - (p2[2] - p1[2]) * (p[1] - p1[1])
+
+      if (direccion > 0) return("mar") else return("tierra")
     }
+
+    return("desconocido")
   }
 
-  # Ajustar núcleos si hay menos puntos que núcleos
-  nucleos <- min(nucleos, length(x_validos))
-
+  # Ejecutar en paralelo o no
   if (paralelo) {
-    tryCatch({
-      # Configurar paralelización
-      future::plan(future::multisession, workers = nucleos)
-      on.exit(future::plan(future::sequential), add = TRUE)  # Asegurar que se restaure el plan secuencial
-
-      # Calcular índices de los puntos más cercanos en paralelo
-      closest_indices <- future.apply::future_lapply(
-        1:length(x_validos),
-        function(i) find_closest_shore(i),
-        future.seed = TRUE
-      )
-
-      # Desempaquetar resultado
-      closest_indices <- unlist(closest_indices)
-    }, error = function(e) {
-      warning("Error en procesamiento paralelo: ", e$message, ". Cambiando a procesamiento secuencial.")
-      closest_indices <- sapply(1:length(x_validos), find_closest_shore)
-    })
+    future::plan(future::multisession, workers = nucleos)
+    resultado <- future.apply::future_lapply(seq_len(n), procesar_punto)
+    future::plan(future::sequential)
   } else {
-    # Versión secuencial
-    closest_indices <- sapply(1:length(x_validos), find_closest_shore)
+    resultado <- lapply(seq_len(n), procesar_punto)
   }
 
-  # Determinar si cada punto está en tierra o mar
-  tryCatch({
-    for (i in 1:length(x_validos)) {
-      idx_costa <- closest_indices[i]
-
-      # Saltear puntos con índice NA
-      if (is.na(idx_costa)) {
-        next
-      }
-
-      # Para la costa peruana (océano al oeste), determinar posición relativa
-      # Si el punto está al este de la costa (longitud mayor), está en tierra
-      resultados[idx_validos][i] <- ifelse(
-        x_validos[i] > linea_costa$Long[idx_costa],
-        "tierra",
-        "mar"
-      )
-    }
-  }, error = function(e) {
-    warning("Error al determinar si los puntos están en tierra o mar: ", e$message)
-  })
-
-  return(resultados)
+  return(unlist(resultado))
 }
+
 
 
 

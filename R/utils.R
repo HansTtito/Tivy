@@ -574,7 +574,7 @@ encontrar_linea_paralela <- function(millas, paralelas_costa) {
 #'
 #' @examples
 #' # Asumiendo que linea_5_millas es un data frame con columnas 'lat' y 'lon'
-#' punto <- interpolar_punto(linea_5_millas, -12.5, "lat", "lon")
+#' punto <- interpolar_punto(paralelas_costa_peru$l5, -12.5, "lat", "lon")
 #' longitud <- punto["lon"]
 #'
 #' @keywords internal
@@ -653,7 +653,7 @@ interpolar_punto <- function(linea, latitud, nombre_lat, nombre_lon) {
 #'
 #' @examples
 #' # Asumiendo que linea_10_millas es un data frame con columnas 'lat' y 'lon'
-#' puntos <- extraer_puntos_entre_latitudes(linea_10_millas, -14.5, -12.0, "lat", "lon")
+#' puntos <- extraer_puntos_entre_latitudes(paralelas_costa_peru$l10, -14.5, -12.0, "lat", "lon")
 #'
 #' @keywords internal
 extraer_puntos_entre_latitudes <- function(linea, lat_min, lat_max, nombre_lat, nombre_lon) {
@@ -987,4 +987,63 @@ preparar_poligonos <- function(datos, costa, paralelas_costa = NULL, nombres_col
   }
 
   return(poligonos)
+}
+
+
+
+#' Procesa un bloque de filas para la ponderación de tallas
+#'
+#' Función auxiliar que procesa un conjunto de filas para calcular las tallas ponderadas.
+#' Puede ser utilizada directamente para procesar subconjuntos de datos.
+#'
+#' @param df_bloque Data frame a procesar
+#' @param tallas_cols Nombres de las columnas de tallas
+#' @param captura_col Nombre de la columna de captura
+#' @param a Coeficiente de la relación longitud-peso
+#' @param b Exponente de la relación longitud-peso
+#' @return Data frame con columnas ponderadas añadidas con el prefijo "pond_"
+#'
+#' @examples
+#' tallas_columnas <- c("8", "8.5", "9", "9.5", "10")
+#' datos_muestra <- data.frame(
+#'   captura = 1000,
+#'   "8" = 5, "8.5" = 10, "9" = 20, "9.5" = 15, "10" = 8
+#' )
+#' resultado <- procesar_bloque(datos_muestra, tallas_columnas, "captura", 0.0001, 2.984)
+#'
+#' @keywords internal
+procesar_bloque <- function(df_bloque, tallas_cols, captura_col, a, b) {
+  # Usar data.frame estándar en lugar de data.table
+  resultado <- df_bloque
+
+  # Valores numéricos de tallas
+  tallas_valores <- as.numeric(tallas_cols)
+
+  # Columnas resultado
+  tallas_ponderadas_cols <- paste0("pond_", tallas_cols)
+
+  # Crear columnas de resultado
+  for(col in tallas_ponderadas_cols) {
+    resultado[[col]] <- NA_real_
+  }
+
+  # Procesar cada fila
+  for (i in 1:nrow(resultado)) {
+    # Extraer valores de captura y frecuencias
+    captura_i <- resultado[[captura_col]][i]
+    frecuencias_i <- as.numeric(resultado[i, tallas_cols])
+
+    # Aplicar ponderación usando la función original
+    tallas_ponderadas <- ponderacion(
+      frecuencias_i, captura_i, tallas_valores, a, b
+    )
+
+    # Guardar resultados
+    for (j in seq_along(tallas_cols)) {
+      col_ponderada <- tallas_ponderadas_cols[j]
+      resultado[i, col_ponderada] <- tallas_ponderadas[j]
+    }
+  }
+
+  return(resultado)
 }

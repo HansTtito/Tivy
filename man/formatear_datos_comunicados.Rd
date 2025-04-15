@@ -25,6 +25,14 @@ convirtiendo las fechas a formato POSIXct y permitiendo filtrar por rango de fec
 }
 \examples{
 # Formatear sin filtrar
+
+
+pdf_urls <- c("https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+"https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+"https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf")
+
+resultados <- extrae_data_comunicados(pdf_urls)
+
 datos_formateados <- formatear_datos_comunicados(resultados)
 
 # Formatear y filtrar por rango de fechas
