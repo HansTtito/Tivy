@@ -179,10 +179,6 @@ Las contribuciones son bienvenidas. Por favor considera:
 3. Incluir pruebas para nuevas funcionalidades
 4. Actualizar la documentación correspondiente
 
-## 📜 Licencia
-
-Este proyecto está licenciado bajo [MIT](LICENSE.md).
-
 ## 📚 Cita
 
 Si utilizas `Tivy` en tu investigación, por favor cítalo como:
@@ -192,6 +188,3 @@ Ttito, H. (2023). Tivy: Herramientas para el Análisis de Datos Pesqueros en Per
 https://github.com/HansTtito/Tivy
 ```
 
-## 🙏 Reconocimientos
-
-Este paquete ha sido desarrollado gracias al apoyo de [nombre de instituciones o colaboradores si aplica].
