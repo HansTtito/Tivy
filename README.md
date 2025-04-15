@@ -40,7 +40,7 @@ tallas_cols = as.character(seq(8,15,0.5))
 
 datos_final_ponderados <- ponderar_tallas_df(datos_final, tallas_cols = tallas_cols, captura_col = 'catch_ANCHOVETA', a = 0.0012, b = 3.1242)
 
-datos_final_ponderados <- convertir_a_fecha(datos_final_ponderados, tipo = "date")
+datos_final_ponderados$fecha_unica <- convertir_a_fecha(datos_final_ponderados$fecha_inicio_cala, tipo = "date")
 
 resultado_juveniles <- juveniles_por_grupo(data = datos_final_ponderados, group_cols = c("fecha_unica"), cols_tallas = paste0("pond_", tallas_cols))
 
