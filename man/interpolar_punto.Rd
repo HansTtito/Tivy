@@ -31,10 +31,4 @@ La función ordena la línea por latitud, busca los puntos que encierran la lati
 deseada y realiza una interpolación lineal. En caso de no encontrar puntos adecuados
 para interpolar, devuelve el punto más cercano.
 }
-\examples{
-# Asumiendo que linea_5_millas es un data frame con columnas 'lat' y 'lon'
-punto <- interpolar_punto(paralelas_costa_peru$l5, -12.5, "lat", "lon")
-longitud <- punto["lon"]
-
-}
 \keyword{internal}

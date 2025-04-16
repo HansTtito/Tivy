@@ -2,7 +2,7 @@
 % Please edit documentation in R/add-variables.R
 \name{agregar_variables}
 \alias{agregar_variables}
-\title{Agrega variables de juveniles, tamaño de muestra, distancia a la costa y su categoría}
+\title{Agrega variables de juveniles, tama\if{html}{\out{<c3>}}\if{html}{\out{<b1>}}o de muestra, distancia a la costa y su categor\if{html}{\out{<c3>}}\if{html}{\out{<ad>}}a}
 \usage{
 agregar_variables(
   data,
@@ -14,31 +14,31 @@ agregar_variables(
 }
 \arguments{
 \item{data}{Un data frame que debe contener las coordenadas de latitud (\code{lat_inicial}) y longitud (\code{lon_inicial}),
-así como columnas con los tamaños de los individuos.}
+as\if{html}{\out{<c3>}}\if{html}{\out{<ad>}} como columnas con los tama\if{html}{\out{<c3>}}\if{html}{\out{<b1>}}os de los individuos.}
 
-\item{JuvLim}{Límite de talla para considerar juveniles (default = 12). Si la talla es menor que este valor,
+\item{JuvLim}{L\if{html}{\out{<c3>}}\if{html}{\out{<ad>}}mite de talla para considerar juveniles (default = 12). Si la talla es menor que este valor,
 el individuo se considera juvenil.}
 
-\item{tipo_distancia}{Tipo de cálculo de distancia a la costa (opciones como "haversine", etc.),
+\item{tipo_distancia}{Tipo de c\if{html}{\out{<c3>}}\if{html}{\out{<a1>}}lculo de distancia a la costa (opciones como "haversine", etc.),
 por defecto es "haversine".}
 
-\item{ventana}{Ventana para suavizar la línea de costa, el valor por defecto es 0.5.}
+\item{ventana}{Ventana para suavizar la l\if{html}{\out{<c3>}}\if{html}{\out{<ad>}}nea de costa, el valor por defecto es 0.5.}
 
-\item{unidad}{Unidad de distancia utilizada para la medición de la distancia a la costa
+\item{unidad}{Unidad de distancia utilizada para la medici\if{html}{\out{<c3>}}\if{html}{\out{<b3>}}n de la distancia a la costa
 ("mn", "km", etc.), por defecto es "mn".}
 }
 \value{
 Un data frame con las siguientes nuevas variables:
 \itemize{
-\item \code{juv}: La proporción de juveniles en cada fila.
+\item \code{juv}: La proporci\if{html}{\out{<c3>}}\if{html}{\out{<b3>}}n de juveniles en cada fila.
 \item \code{muestra}: El total de individuos en la muestra.
 \item \code{dc}: La distancia a la costa desde las coordenadas de latitud y longitud proporcionadas.
-\item \code{dc_cat}: La categoría de distancia a la costa (por ejemplo, "05-15 mn", "15-30 mn", etc.).
+\item \code{dc_cat}: La categor\if{html}{\out{<c3>}}\if{html}{\out{<ad>}}a de distancia a la costa (por ejemplo, "05-15 mn", "15-30 mn", etc.).
 }
 }
 \description{
-Esta función agrega nuevas variables a un conjunto de datos, incluyendo la proporción de juveniles,
-el total de individuos en la muestra, la distancia a la costa y la categoría de distancia a la costa.
+Esta funci\if{html}{\out{<c3>}}\if{html}{\out{<b3>}}n agrega nuevas variables a un conjunto de datos, incluyendo la proporci\if{html}{\out{<c3>}}\if{html}{\out{<b3>}}n de juveniles,
+el total de individuos en la muestra, la distancia a la costa y la categor\if{html}{\out{<c3>}}\if{html}{\out{<ad>}}a de distancia a la costa.
 }
 \examples{
 \dontrun{
@@ -51,7 +51,7 @@ calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
 data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
 data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
 
-# Aplicación de la función
+# Aplicaci<c3><b3>n de la funci<c3><b3>n
 resultados <- agregar_variables(data_total)
 }
 }

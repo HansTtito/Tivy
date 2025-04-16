@@ -46,12 +46,20 @@ utilizando leaflet. Devuelve un objeto leaflet que puede ser modificado posterio
 }
 \examples{
 # Crear mapa básico
-resultados <- extrae_data_comunicados(c("comunicado1.pdf"))
-m <- graficar_poligonos_leaflet(datos = resultados, costa = Tivy::linea_costa_peru)
+
+pdf_urls <- c(
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
+)
+
+results <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
+
+m <- graficar_poligonos_leaflet(datos = results, costa = Tivy::linea_costa_peru)
 
 # Personalizar posteriormente
-m \%>\%
-  leaflet::addMarkers(lng = -77.1, lat = -12.0, popup = "Lima") \%>\%
+m |>
+  leaflet::addMarkers(lng = -77.1, lat = -12.0, popup = "Lima") |>
   leaflet::addCircleMarkers(lng = -76.3, lat = -13.4, radius = 5, color = "red")
 
 }

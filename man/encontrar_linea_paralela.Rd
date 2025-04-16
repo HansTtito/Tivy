@@ -23,11 +23,4 @@ Una lista con dos elementos:
 Esta función busca dentro de una lista de líneas paralelas a la costa la que mejor
 se aproxima a una distancia específica en millas náuticas.
 }
-\examples{
-# Asumiendo que paralelas_costa_peru es una lista de líneas a distintas distancias
-resultado <- encontrar_linea_paralela(7, paralelas_costa_peru)
-linea <- resultado$df
-milla_encontrada <- resultado$milla_real
-
-}
 \keyword{internal}

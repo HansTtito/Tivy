@@ -2,34 +2,22 @@
 % Please edit documentation in R/auxiliar.R
 \name{extraer_valores_tallas}
 \alias{extraer_valores_tallas}
-\title{Obtener valores de tallas a partir de nombres de columnas}
+\title{Extraer valores numéricos desde nombres de columnas}
 \usage{
-extraer_valores_tallas(nombres_columnas, patron = "pond_")
+extraer_valores_tallas(nombres_columnas)
 }
 \arguments{
 \item{nombres_columnas}{Vector de caracteres con los nombres de columnas.}
-
-\item{patron}{El patrón o prefijo a eliminar (por defecto "pond_").}
 }
 \value{
 Vector numérico con los valores de tallas extraídos.
 }
 \description{
-Extrae los valores numéricos de tallas a partir de los nombres de columnas
-que siguen el patrón especificado.
+Esta función extrae todos los valores numéricos (incluidos decimales) desde un vector
+de nombres de columnas, eliminando cualquier carácter no numérico.
 }
 \examples{
-data_calas <- procesar_calas(data_calas = calas_bitacora)
-data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
-calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
-
-data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
-data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
-datos_final <- agregar_variables(data_total)
-
-tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
-
-cols_pond <- buscar_columnas_patron(tallas_pond, "pond_")
-valores_tallas <- extraer_valores_tallas(cols_pond)
+nombres <- c("pond_10.5", "talla_11", "12.5mm", "T14", "13-erróneo")
+extraer_valores_tallas(nombres)
+# Resultado: 10.5 11.0 12.5 14.0 13.0
 }

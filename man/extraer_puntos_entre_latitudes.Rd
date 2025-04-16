@@ -30,9 +30,4 @@ Si es necesario, interpola puntos adicionales para los límites exactos de
 lat_min y lat_max. Si no hay suficientes puntos en el rango, crea un segmento
 recto entre los puntos interpolados en los límites.
 }
-\examples{
-# Asumiendo que linea_10_millas es un data frame con columnas 'lat' y 'lon'
-puntos <- extraer_puntos_entre_latitudes(paralelas_costa_peru$l10, -14.5, -12.0, "lat", "lon")
-
-}
 \keyword{internal}

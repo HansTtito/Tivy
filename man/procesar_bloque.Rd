@@ -24,13 +24,4 @@ Data frame con columnas ponderadas añadidas con el prefijo "pond_"
 Función auxiliar que procesa un conjunto de filas para calcular las tallas ponderadas.
 Puede ser utilizada directamente para procesar subconjuntos de datos.
 }
-\examples{
-tallas_columnas <- c("8", "8.5", "9", "9.5", "10")
-datos_muestra <- data.frame(
-  captura = 1000,
-  "8" = 5, "8.5" = 10, "9" = 20, "9.5" = 15, "10" = 8
-)
-resultado <- procesar_bloque(datos_muestra, tallas_columnas, "captura", 0.0001, 2.984)
-
-}
 \keyword{internal}

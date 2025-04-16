@@ -22,7 +22,7 @@ graficar_interactivo(
 
 \item{titulo}{Título a mostrar en la parte superior del mapa.}
 
-\item{colores}{Vector de colores. Si \code{NULL}, se asignan automáticamente con \code{RColorBrewer::Set3}.}
+\item{colores}{Vector de colores. Si \code{NULL}, se asignan automáticamente con \code{RColorBrewer::brewer.pal}.}
 
 \item{mostrar_leyenda}{Lógico. Si \code{TRUE}, se muestra el control de capas (leyenda).}
 

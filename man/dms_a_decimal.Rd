@@ -16,6 +16,10 @@ dms_a_decimal(coordenadas, hemisferio = "S", corregir_errores = TRUE)
 
 \item{hemisferio}{Caracter \code{"N"}, \code{"S"}, \code{"E"}, \code{"W"} o \code{"O"} que indica el hemisferio correspondiente
 cuando no está especificado en la coordenada. \code{"S"} y \code{"W"}/\code{"O"} generan valores negativos. Default: \code{"S"}.}
+
+\item{corregir_errores}{Lógico. Si es TRUE (valor por defecto), la función corrige automáticamente
+valores fuera de rango, como minutos o segundos mayores a 60, convirtiéndolos apropiadamente
+a la unidad superior.}
 }
 \value{
 Un vector numérico con las coordenadas convertidas a grados decimales.
@@ -23,6 +27,7 @@ Un vector numérico con las coordenadas convertidas a grados decimales.
 \description{
 Convierte coordenadas expresadas en formato grados, minutos y segundos (DMS) o grados y minutos (DM) a grados decimales.
 Por defecto, se asume que las coordenadas están en el hemisferio sur (latitudes negativas).
+La función puede corregir automáticamente errores comunes como minutos o segundos mayores a 60.
 }
 \examples{
 # Convertir coordenadas del sur (formato completo)
@@ -39,6 +44,13 @@ dms_a_decimal(c("73 15"), hemisferio = "W")
 dms_a_decimal(c("17°26'S"))
 dms_a_decimal(c("73°15'W"))
 dms_a_decimal(c("39 48 N"))
+
+# Corregir automáticamente valores fuera de rango
+dms_a_decimal(c("39° 75' 36\""), corregir_errores = TRUE)  # Minutos > 60
+dms_a_decimal(c("39° 48' 98\""), corregir_errores = TRUE)  # Segundos > 60
+
+# Desactivar corrección automática
+dms_a_decimal(c("39° 75' 36\""), corregir_errores = FALSE)  # Generará advertencia
 
 # En un dataframe
 # dms_a_decimal(calas_bitacora$Longitud.Fin)

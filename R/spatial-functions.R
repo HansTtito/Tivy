@@ -3,6 +3,7 @@
 #' @description
 #' Convierte coordenadas expresadas en formato grados, minutos y segundos (DMS) o grados y minutos (DM) a grados decimales.
 #' Por defecto, se asume que las coordenadas están en el hemisferio sur (latitudes negativas).
+#' La función puede corregir automáticamente errores comunes como minutos o segundos mayores a 60.
 #'
 #' @param coordenadas Vector de caracteres. Cada elemento debe estar en formatos como:
 #'   - Con símbolos: `"G° M' S\""`, `"G° M'"`, `"17°26'S"`
@@ -10,6 +11,9 @@
 #'   - El hemisferio puede estar incluido en la coordenada
 #' @param hemisferio Caracter `"N"`, `"S"`, `"E"`, `"W"` o `"O"` que indica el hemisferio correspondiente
 #' cuando no está especificado en la coordenada. `"S"` y `"W"`/`"O"` generan valores negativos. Default: `"S"`.
+#' @param corregir_errores Lógico. Si es TRUE (valor por defecto), la función corrige automáticamente
+#' valores fuera de rango, como minutos o segundos mayores a 60, convirtiéndolos apropiadamente
+#' a la unidad superior.
 #'
 #' @return Un vector numérico con las coordenadas convertidas a grados decimales.
 #' @export
@@ -29,6 +33,13 @@
 #' dms_a_decimal(c("17°26'S"))
 #' dms_a_decimal(c("73°15'W"))
 #' dms_a_decimal(c("39 48 N"))
+#'
+#' # Corregir automáticamente valores fuera de rango
+#' dms_a_decimal(c("39° 75' 36\""), corregir_errores = TRUE)  # Minutos > 60
+#' dms_a_decimal(c("39° 48' 98\""), corregir_errores = TRUE)  # Segundos > 60
+#'
+#' # Desactivar corrección automática
+#' dms_a_decimal(c("39° 75' 36\""), corregir_errores = FALSE)  # Generará advertencia
 #'
 #' # En un dataframe
 #' # dms_a_decimal(calas_bitacora$Longitud.Fin)
@@ -180,6 +191,7 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S", corregir_errores = TRUE
   return(resultados)
 }
 
+
 #' Distancia a la costa vectorizado
 #'
 #' @description
@@ -318,7 +330,7 @@ distancia_costa <- function(lon,
   # Función de cálculo envuelta en tryCatch para manejar errores
   resultados_lotes <- tryCatch({
     apply_fun(lotes_indices, function(indices_lote) {
-      Tivy:::calcular_distancias_vectorizado(
+      calcular_distancias_vectorizado(
         lon_punto = lon_validos[indices_lote],
         lat_punto = lat_validos[indices_lote],
         costa_lon = linea_costa$Long,
@@ -378,7 +390,7 @@ distancia_costa <- function(lon,
 #' @return Un vector de texto del mismo largo que `x_punto`, indicando si cada punto se encuentra en `"tierra"` o `"mar"`. Los valores `NA` se mantienen como `NA`.
 #'
 #' @details
-#' Esta función usa internamente `Tivy:::calcular_distancias_vectorizado()` para identificar el punto más cercano en la línea de costa para cada coordenada. Si `paralelo = TRUE`, utiliza los paquetes `future` y `future.apply` para distribuir el trabajo entre varios núcleos.
+#' Esta función usa internamente `calcular_distancias_vectorizado()` para identificar el punto más cercano en la línea de costa para cada coordenada. Si `paralelo = TRUE`, utiliza los paquetes `future` y `future.apply` para distribuir el trabajo entre varios núcleos.
 #'
 #' @examples
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
@@ -447,7 +459,7 @@ puntos_tierra <- function(x_punto,
   procesar_punto <- function(i) {
     if (is.na(x_punto[i]) || is.na(y_punto[i])) return(NA_character_)
 
-    resultado <- Tivy:::calcular_distancias_vectorizado(
+    resultado <- calcular_distancias_vectorizado(
       lon_punto = x_punto[i],
       lat_punto = y_punto[i],
       costa_lon = linea_costa$Long,

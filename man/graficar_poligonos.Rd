@@ -51,7 +51,15 @@ generar un gráfico estático con \code{ggplot2} o un gráfico interactivo con \
 }
 \examples{
 # Crear mapa básico
-resultados <- extrae_data_comunicados(c("comunicado1.pdf", "comunicado2.pdf"))
-graficar_poligonos(datos = resultados, costa = Tivy::linea_costa_peru)
+
+pdf_urls <- c(
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
+)
+
+results <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
+
+graficar_poligonos(datos = results, costa = Tivy::linea_costa_peru)
 
 }

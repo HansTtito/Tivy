@@ -2,41 +2,47 @@
 % Please edit documentation in R/comunicados.R
 \name{extrae_data_comunicados}
 \alias{extrae_data_comunicados}
-\title{Extrae datos de los comunicados emitidos por PRODUCE en formato PDF}
+\title{Extract data from PRODUCE announcements in PDF format}
 \usage{
 extrae_data_comunicados(vector_pdf_names)
 }
 \arguments{
-\item{vector_pdf_names}{Un vector de nombres de archivo PDF o URLs a procesar.}
+\item{vector_pdf_names}{A character vector of PDF file names or URLs to be processed.}
 }
 \value{
-Un data.frame con la información extraída de los comunicados. El data.frame incluye las siguientes
-columnas:
+A data.frame with the extracted information from the announcements. The data.frame includes the following
+columns:
 \itemize{
-\item FechaHoraInicio: Fecha y hora de inicio.
-\item FechaHoraFin: Fecha y hora de fin.
-\item LatitudInicio: Latitud de inicio.
-\item LatitudFin: Latitud de fin.
-\item LongitudInicio: Longitud de inicio (si está disponible).
-\item LongitudFin: Longitud de fin (si está disponible).
-\item MillasNauticasInicio: Millas náuticas de inicio (si no hay longitudes).
-\item MillasNauticasFin: Millas náuticas de fin (si no hay longitudes).
-\item comunicado: Nombre del archivo del comunicado.
+\item FechaHoraInicio: Start date and time.
+\item FechaHoraFin: End date and time.
+\item LatitudInicio: Starting latitude.
+\item LatitudFin: Ending latitude.
+\item LongitudInicio: Starting longitude (if available).
+\item LongitudFin: Ending longitude (if available).
+\item MillasNauticasInicio: Starting nautical miles (if longitude is not available).
+\item MillasNauticasFin: Ending nautical miles (if longitude is not available).
+\item comunicado: Name of the PDF file or announcement.
 }
 }
 \description{
-Esta función procesa archivos PDF que contienen comunicados y extrae información relevante, como fechas,
-horas, coordenadas de latitud y longitud, y millas náuticas. Si no se encuentran longitudes, la función
-procesará las millas náuticas. El resultado es un data.frame con las fechas de inicio y fin, coordenadas
-y otra información relacionada con el comunicado.
+This function processes PDF files containing official announcements and extracts relevant information,
+such as dates, times, latitude and longitude coordinates, and nautical miles. If longitude data is not found,
+the function will use the nautical mile values instead. The result is a data.frame containing the start and
+end dates, coordinates, and other information related to the announcement.
 }
 \examples{
-# Con archivos locales
+# Using local files
+\dontrun{
 pdf_files <- c("comunicado1.pdf", "comunicado2.pdf")
-resultados <- extrae_data_comunicados(pdf_files)
+results <- extrae_data_comunicados(vector_pdf_names = pdf_files)
+}
 
-# Con URLs
-pdf_urls <- c("https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf")
-resultados_url <- extrae_data_comunicados(pdf_urls)
+# Using URLs
+pdf_urls <- c(
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
+)
+results <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
 
 }

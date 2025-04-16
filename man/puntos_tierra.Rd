@@ -39,7 +39,7 @@ Un vector de texto del mismo largo que \code{x_punto}, indicando si cada punto s
 Esta función clasifica un conjunto de coordenadas geográficas (longitud y latitud) como "tierra" o "mar" según su posición relativa a una línea de costa. Se considera que un punto está en tierra si su longitud es mayor a la de su punto más cercano en la línea de costa. Además, permite el cálculo en paralelo para mejorar el rendimiento en grandes volúmenes de datos.
 }
 \details{
-Esta función usa internamente \code{Tivy:::calcular_distancias_vectorizado()} para identificar el punto más cercano en la línea de costa para cada coordenada. Si \code{paralelo = TRUE}, utiliza los paquetes \code{future} y \code{future.apply} para distribuir el trabajo entre varios núcleos.
+Esta función usa internamente \code{calcular_distancias_vectorizado()} para identificar el punto más cercano en la línea de costa para cada coordenada. Si \code{paralelo = TRUE}, utiliza los paquetes \code{future} y \code{future.apply} para distribuir el trabajo entre varios núcleos.
 }
 \examples{
 data_calas <- procesar_calas(data_calas = calas_bitacora)

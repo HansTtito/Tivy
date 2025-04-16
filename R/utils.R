@@ -174,13 +174,13 @@ calcular_distancias_vectorizado <- function(lon_punto, lat_punto, costa_lon, cos
     # Cálculo vectorizado según el método elegido
     resultado <- switch(
       tipo_distancia,
-      "haversine" = Tivy:::calcular_distancia_haversine_wgs84(
+      "haversine" = calcular_distancia_haversine_wgs84(
         lon_punto[i], lat_punto[i], costa_lon_filtrada, costa_lat_filtrada, unidad
       ),
-      "manhattan" = Tivy:::calcular_distancia_manhattan(
+      "manhattan" = calcular_distancia_manhattan(
         lon_punto[i], lat_punto[i], costa_lon_filtrada, costa_lat_filtrada, unidad
       ),
-      "grid" = Tivy:::calcular_distancia_grid(
+      "grid" = calcular_distancia_grid(
         lon_punto[i], lat_punto[i], costa_lon_filtrada, costa_lat_filtrada, unidad
       ),
       stop("Tipo de distancia no válido")
@@ -266,6 +266,7 @@ calcular_longitud_costa <- function(costa, latitud) {
 #' @param tema Tema de `ggplot2` a utilizar. Por defecto, `theme_minimal()`.
 #'
 #' @return Un objeto `ggplot` listo para ser graficado.
+#' @importFrom RColorBrewer brewer.pal
 #' @keywords internal
 graficar_estatico <- function(poligonos, costa, titulo, colores, mostrar_leyenda = TRUE,
                               etiquetas = NULL, agregar_grid = TRUE, tema = ggplot2::theme_minimal()) {
@@ -354,13 +355,15 @@ graficar_estatico <- function(poligonos, costa, titulo, colores, mostrar_leyenda
 #' @param poligonos Lista de polígonos. Cada uno debe tener campos como `coords`, `comunicado`, fechas y coordenadas.
 #' @param costa Data frame con la línea de costa (columnas `Long` y `Lat`).
 #' @param titulo Título a mostrar en la parte superior del mapa.
-#' @param colores Vector de colores. Si `NULL`, se asignan automáticamente con `RColorBrewer::Set3`.
+#' @param colores Vector de colores. Si `NULL`, se asignan automáticamente con `RColorBrewer::brewer.pal`.
 #' @param mostrar_leyenda Lógico. Si `TRUE`, se muestra el control de capas (leyenda).
 #' @param etiquetas Vector opcional de nombres para mostrar en la leyenda y etiquetas del mapa.
 #' @param capas_base Lógico. Si `TRUE`, se incluyen capas base como mapas satelitales y oceánicos.
 #' @param minimap Lógico. Si `TRUE`, se muestra un minimapa en la esquina inferior derecha.
 #'
 #' @return Un objeto `leaflet` con el mapa interactivo.
+#' @importFrom RColorBrewer brewer.pal
+#'
 #' @keywords internal
 graficar_interactivo <- function(poligonos, costa, titulo, colores, mostrar_leyenda = TRUE,
                                  etiquetas = NULL, capas_base = TRUE, minimap = TRUE) {
@@ -526,12 +529,6 @@ graficar_interactivo <- function(poligonos, costa, titulo, colores, mostrar_leye
 #'   \item milla_real: El valor numérico de la milla realmente encontrada.
 #' }
 #'
-#' @examples
-#' # Asumiendo que paralelas_costa_peru es una lista de líneas a distintas distancias
-#' resultado <- encontrar_linea_paralela(7, paralelas_costa_peru)
-#' linea <- resultado$df
-#' milla_encontrada <- resultado$milla_real
-#'
 #' @keywords internal
 encontrar_linea_paralela <- function(millas, paralelas_costa) {
   # Extraer los números de millas de los nombres de las listas
@@ -570,11 +567,6 @@ encontrar_linea_paralela <- function(millas, paralelas_costa) {
 #' La función ordena la línea por latitud, busca los puntos que encierran la latitud
 #' deseada y realiza una interpolación lineal. En caso de no encontrar puntos adecuados
 #' para interpolar, devuelve el punto más cercano.
-#'
-#' @examples
-#' # Asumiendo que linea_5_millas es un data frame con columnas 'lat' y 'lon'
-#' punto <- interpolar_punto(paralelas_costa_peru$l5, -12.5, "lat", "lon")
-#' longitud <- punto["lon"]
 #'
 #' @keywords internal
 interpolar_punto <- function(linea, latitud, nombre_lat, nombre_lon) {
@@ -650,10 +642,6 @@ interpolar_punto <- function(linea, latitud, nombre_lat, nombre_lon) {
 #' lat_min y lat_max. Si no hay suficientes puntos en el rango, crea un segmento
 #' recto entre los puntos interpolados en los límites.
 #'
-#' @examples
-#' # Asumiendo que linea_10_millas es un data frame con columnas 'lat' y 'lon'
-#' puntos <- extraer_puntos_entre_latitudes(paralelas_costa_peru$l10, -14.5, -12.0, "lat", "lon")
-#'
 #' @keywords internal
 extraer_puntos_entre_latitudes <- function(linea, lat_min, lat_max, nombre_lat, nombre_lon) {
   # Ordenar por latitud
@@ -665,8 +653,8 @@ extraer_puntos_entre_latitudes <- function(linea, lat_min, lat_max, nombre_lat, 
   # Si no hay suficientes puntos dentro del rango, tendremos que interpolar
   if (nrow(puntos_filtrados) < 2) {
     # Interpolar puntos en los límites
-    punto_min <- Tivy:::interpolar_punto(linea, lat_min, nombre_lat, nombre_lon)
-    punto_max <- Tivy:::interpolar_punto(linea, lat_max, nombre_lat, nombre_lon)
+    punto_min <- interpolar_punto(linea, lat_min, nombre_lat, nombre_lon)
+    punto_max <- interpolar_punto(linea, lat_max, nombre_lat, nombre_lon)
 
     # Crear matriz de puntos
     puntos <- rbind(
@@ -686,7 +674,7 @@ extraer_puntos_entre_latitudes <- function(linea, lat_min, lat_max, nombre_lat, 
 
   # Si el primer punto no está exactamente en lat_min, interpolar
   if (abs(primer_punto[[nombre_lat]] - lat_min) > 0.0001) {
-    punto_min <- Tivy:::interpolar_punto(linea, lat_min, nombre_lat, nombre_lon)
+    punto_min <- interpolar_punto(linea, lat_min, nombre_lat, nombre_lon)
     puntos_limite <- rbind(puntos_limite, punto_min)
   }
 
@@ -695,7 +683,7 @@ extraer_puntos_entre_latitudes <- function(linea, lat_min, lat_max, nombre_lat, 
 
   # Si el último punto no está exactamente en lat_max, interpolar
   if (abs(ultimo_punto[[nombre_lat]] - lat_max) > 0.0001) {
-    punto_max <- Tivy:::interpolar_punto(linea, lat_max, nombre_lat, nombre_lon)
+    punto_max <- interpolar_punto(linea, lat_max, nombre_lat, nombre_lon)
     puntos_limite <- rbind(puntos_limite, punto_max)
   }
 
@@ -832,8 +820,8 @@ preparar_poligonos <- function(datos, costa, paralelas_costa = NULL, nombres_col
         nombre_lon <- nombres_columnas[2] # Columna de longitud
 
         # Encontrar líneas paralelas para las millas inicial y final
-        linea_ini_info <- Tivy:::encontrar_linea_paralela(millas_ini, paralelas_costa)
-        linea_fin_info <- Tivy:::encontrar_linea_paralela(millas_fin, paralelas_costa)
+        linea_ini_info <- encontrar_linea_paralela(millas_ini, paralelas_costa)
+        linea_fin_info <- encontrar_linea_paralela(millas_fin, paralelas_costa)
 
         linea_ini <- linea_ini_info$df  # Línea más cercana a la costa
         linea_fin <- linea_fin_info$df  # Línea más alejada de la costa
@@ -843,18 +831,18 @@ preparar_poligonos <- function(datos, costa, paralelas_costa = NULL, nombres_col
             nrow(linea_ini) > 0 && nrow(linea_fin) > 0) {
 
           # Interpolar puntos exactos en las esquinas
-          punto_ne <- Tivy:::interpolar_punto(linea_ini, lat_norte, nombre_lat, nombre_lon)
-          punto_se <- Tivy:::interpolar_punto(linea_ini, lat_sur, nombre_lat, nombre_lon)
-          punto_no <- Tivy:::interpolar_punto(linea_fin, lat_norte, nombre_lat, nombre_lon)
-          punto_so <- Tivy:::interpolar_punto(linea_fin, lat_sur, nombre_lat, nombre_lon)
+          punto_ne <- interpolar_punto(linea_ini, lat_norte, nombre_lat, nombre_lon)
+          punto_se <- interpolar_punto(linea_ini, lat_sur, nombre_lat, nombre_lon)
+          punto_no <- interpolar_punto(linea_fin, lat_norte, nombre_lat, nombre_lon)
+          punto_so <- interpolar_punto(linea_fin, lat_sur, nombre_lat, nombre_lon)
 
           # Extraer puntos de la línea oeste (más alejada) entre las latitudes
-          puntos_oeste <- Tivy:::extraer_puntos_entre_latitudes(
+          puntos_oeste <- extraer_puntos_entre_latitudes(
             linea_fin, lat_sur, lat_norte, nombre_lat, nombre_lon
           )
 
           # Extraer puntos de la línea este (más cercana) entre las latitudes
-          puntos_este <- Tivy:::extraer_puntos_entre_latitudes(
+          puntos_este <- extraer_puntos_entre_latitudes(
             linea_ini, lat_sur, lat_norte, nombre_lat, nombre_lon
           )
 
@@ -902,8 +890,8 @@ preparar_poligonos <- function(datos, costa, paralelas_costa = NULL, nombres_col
 
       # Si llegamos aquí, es porque no pudimos crear un polígono detallado con líneas paralelas
       # Caemos de nuevo al método original con aproximación
-      lon_costa_lat_norte <- Tivy:::calcular_longitud_costa(costa, lat_norte)
-      lon_costa_lat_sur <- Tivy:::calcular_longitud_costa(costa, lat_sur)
+      lon_costa_lat_norte <- calcular_longitud_costa(costa, lat_norte)
+      lon_costa_lat_sur <- calcular_longitud_costa(costa, lat_sur)
 
       # Factor de conversión ajustado por cada latitud
       factor_lat_norte <- cos(lat_norte * pi/180)
@@ -1001,14 +989,6 @@ preparar_poligonos <- function(datos, costa, paralelas_costa = NULL, nombres_col
 #' @param a Coeficiente de la relación longitud-peso
 #' @param b Exponente de la relación longitud-peso
 #' @return Data frame con columnas ponderadas añadidas con el prefijo "pond_"
-#'
-#' @examples
-#' tallas_columnas <- c("8", "8.5", "9", "9.5", "10")
-#' datos_muestra <- data.frame(
-#'   captura = 1000,
-#'   "8" = 5, "8.5" = 10, "9" = 20, "9.5" = 15, "10" = 8
-#' )
-#' resultado <- procesar_bloque(datos_muestra, tallas_columnas, "captura", 0.0001, 2.984)
 #'
 #' @keywords internal
 procesar_bloque <- function(df_bloque, tallas_cols, captura_col, a, b) {

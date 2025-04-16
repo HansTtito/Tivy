@@ -22,6 +22,7 @@ de un prefijo específico seguido de un número.
 }
 \examples{
 # Identificar todas las columnas pond_X en el dataframe
+
 data_calas <- procesar_calas(data_calas = calas_bitacora)
 data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
@@ -31,9 +32,9 @@ data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_fae
 datos_final <- agregar_variables(data_total)
 
 tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_cols, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
 
-cols_pond <- buscar_columnas_patron(tallas_pond, "pond_")
+cols_pond <- buscar_columnas_patron(data = tallas_pond, patron = "pond_")
 
 # Usar las columnas encontradas para cálculos
 tallas_pond[, cols_pond]

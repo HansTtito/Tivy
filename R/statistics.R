@@ -58,27 +58,47 @@ ponderacion <- function(frecuencia, captura, tallas, a, b) {
     stop("Los vectores 'frecuencia' y 'tallas' deben tener la misma longitud.")
   }
 
-  # Manejar NAs en captura
+  # Acumular mensajes de advertencia
+  mensajes_warning <- character()
+
+  # Validación de captura
   if (is.na(captura) || captura <= 0) {
-    warning("El valor de 'captura' es NA o <= 0, se utilizará captura = 1 para los cálculos.")
+    mensajes_warning <- c(mensajes_warning,
+                          "El valor de 'captura' es NA o <= 0, se usará captura = 1.")
     captura <- 1
   }
 
-  if (any(tallas <= 0, na.rm = TRUE)) warning("Se detectaron valores de talla <= 0, que podrían producir resultados no válidos.")
+  # Validación de tallas
+  if (any(tallas <= 0, na.rm = TRUE)) {
+    mensajes_warning <- c(mensajes_warning,
+                          "Hay tallas <= 0, podrían producirse resultados no válidos.")
+  }
+
+  # Validación de frecuencia
+  frecuencia[is.na(frecuencia)] <- 0
   if (sum(frecuencia, na.rm = TRUE) == 0) {
-    warning("La suma de frecuencias es cero, se devolverá un vector de ceros.")
+    mensajes_warning <- c(mensajes_warning,
+                          "La suma de frecuencias es cero. Se devolverá un vector de ceros.")
+    if (length(mensajes_warning) > 0) warning(paste(mensajes_warning, collapse = " | "))
     return(rep(0, length(tallas)))
   }
 
-  # Reemplazar NAs en frecuencia con ceros
-  frecuencia[is.na(frecuencia)] <- 0
-
+  # Cálculo de pesos
   peso <- talla_peso(talla = tallas, a = a, b = b) * frecuencia
   suma_peso <- sum(peso, na.rm = TRUE)
   if (suma_peso == 0) {
-    warning("La suma de pesos es cero, se devolverá un vector de ceros.")
+    mensajes_warning <- c(mensajes_warning,
+                          "La suma de pesos es cero. Se devolverá un vector de ceros.")
+    if (length(mensajes_warning) > 0) warning(paste(mensajes_warning, collapse = " | "))
     return(rep(0, length(tallas)))
   }
+
+  # Mostrar advertencias acumuladas (si existen)
+  if (length(mensajes_warning) > 0) {
+    warning(paste(mensajes_warning, collapse = " | "))
+  }
+
+  # Cálculo final
   talla_ponderada <- (captura / suma_peso) * frecuencia
   return(talla_ponderada)
 }
@@ -162,7 +182,7 @@ ponderar_tallas_df <- function(df, tallas_cols, captura_col, a, b,
       indices_bloques,
       function(indices) {
         bloque <- df[indices, ]
-        Tivy:::procesar_bloque(bloque, tallas_cols, captura_col, a, b)
+        procesar_bloque(bloque, tallas_cols, captura_col, a, b)
       },
       future.seed = TRUE
     )
@@ -170,10 +190,12 @@ ponderar_tallas_df <- function(df, tallas_cols, captura_col, a, b,
     # Combinar resultados
     resultado_final <- do.call(rbind, resultados)
 
+    future::plan(future::sequential)
+
     return(resultado_final)
   } else {
     # Procesamiento secuencial
-    return(Tivy:::procesar_bloque(df, tallas_cols, captura_col, a, b))
+    return(procesar_bloque(df, tallas_cols, captura_col, a, b))
   }
 }
 
@@ -289,28 +311,54 @@ max_range <- function(frecuencia, tallas) {
 #' @export
 #' @importFrom stats setNames
 #' @examples
-#' data <- data.frame(id = 1:2, `8` = c(3,2), `9` = c(5,4), `10` = c(2,3))
-#' tallas <- c(8,9,10)
-#' numero_a_peso(data, tallas, a = 0.0012, b = 2.984)
+#'
+#' data(calas_bitacora)
+#' data(faenas_bitacora)
+#' data(tallas_bitacora)
+#'
+#' # Procesar datos
+#' data_calas <- procesar_calas(data_calas = calas_bitacora)
+#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
+#' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
+#'
+#' # Integrar datos
+#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
+#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas,
+#'                                        data_tallas_faenas = data_tallasfaenas)
+#' datos_final <- agregar_variables(data_total)
+#'
+#' # Definir columnas de tallas
+#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+#'                  "12", "12.5", "13", "13.5", "14", "14.5", "15")
+#'
+#' # Ponderar tallas
+#' resultado <- ponderar_tallas_df(df = datos_final,
+#'                                tallas_cols = tallas_cols,
+#'                                captura_col = "catch_ANCHOVETA",
+#'                                a = 0.0001,
+#'                                b = 2.984)
+#'
+#'numero_a_peso(data = resultado, tallas = paste0('pond_', tallas_cols), a = 0.0012, b = 3.1242)
 numero_a_peso <- function(data, tallas, a, b) {
   # Validación de parámetros
   if (!is.data.frame(data)) stop("El parámetro 'data' debe ser un data.frame.")
-  if (!is.numeric(tallas)) stop("El parámetro 'tallas' debe ser numérico.")
   if (!is.numeric(a)) stop("El parámetro 'a' debe ser numérico.")
   if (!is.numeric(b)) stop("El parámetro 'b' debe ser numérico.")
 
-  # Validación de que las tallas estén presentes en el data.frame
-  tallas_char <- as.character(tallas)
-  tallas_presentes <- tallas_char %in% colnames(data)
+  if (is.character(tallas)) {
+    tallas_num <- extraer_valores_tallas(tallas)
+  }
 
+  # Validación de que las tallas estén presentes en el data.frame
+  tallas_presentes <- tallas %in% colnames(data)
   if (!all(tallas_presentes)) {
-    tallas_faltantes <- tallas_char[!tallas_presentes]
+    tallas_faltantes <- tallas[!tallas_presentes]
     stop("Las siguientes tallas no están presentes como columnas en el data.frame: ",
          paste(tallas_faltantes, collapse = ", "))
   }
 
   # Verificar que las columnas de tallas contengan valores numéricos
-  for (talla_col in tallas_char) {
+  for (talla_col in tallas) {
     if (!is.numeric(data[[talla_col]])) {
       data[[talla_col]] <- as.numeric(data[[talla_col]])
       warning("La columna '", talla_col, "' ha sido convertida a numérica.")
@@ -319,19 +367,17 @@ numero_a_peso <- function(data, tallas, a, b) {
 
   # Cálculo de pesos
   tryCatch({
-    peso <- as.data.frame(t(apply(data[, tallas_char, drop = FALSE], 1, function(x) {
-      talla_peso(talla = tallas, a = a, b = b) * x
+    pesos <- as.data.frame(t(apply(data[, tallas, drop = FALSE], 1, function(x) {
+      talla_peso(talla = tallas_num, a = a, b = b) * x
     })))
 
-    # Identificar columnas no numéricas (descriptivas)
-    id <- setdiff(names(data), tallas_char)
+    # Renombrar columnas con prefijo "peso_"
+    colnames(pesos) <- paste0("peso_", tallas)
 
-    # Combinar columnas descriptivas con columnas de peso
-    if (length(id) > 0) {
-      peso <- cbind(data[, id, drop = FALSE], peso)
-    }
+    # Añadir las columnas de peso al data original
+    resultado <- cbind(data, pesos)
 
-    return(peso)
+    return(resultado)
   }, error = function(e) {
     stop("Error al calcular pesos: ", e$message)
   })
@@ -339,37 +385,91 @@ numero_a_peso <- function(data, tallas, a, b) {
 
 
 
-#' Versión mejorada utilizando dplyr
+
+
+#' Cálculo de porcentaje de juveniles por grupos
 #'
-#' Esta versión utiliza el paquete dplyr para un enfoque más moderno
-#' y efectivo del cálculo de juveniles por grupo, aprovechando la función porc_juveniles existente.
+#' @description
+#' Calcula el porcentaje de juveniles por grupos especificados, tanto en número como
+#' en peso. Utiliza un enfoque moderno con dplyr para procesar los datos y calcular
+#' las proporciones de juveniles basándose en frecuencias de tallas.
 #'
 #' @param data Data frame con datos de frecuencias de tallas.
 #' @param group_cols Vector de nombres de columnas para agrupar los datos.
-#' @param tallas_cols Vector de nombres de columnas que contienen las frecuencias de tallas.
+#' @param cols_tallas Vector de nombres o índices de columnas que contienen las
+#'   frecuencias de tallas. Pueden ser nombres con patrones como "pond_X", "talla_X" o "X".
 #' @param juvLim Talla límite para considerar juveniles (por defecto 12 cm).
-#' @param a Coeficiente de la relación longitud-peso.
-#' @param b Exponente de la relación longitud-peso.
-#' @return Data frame con porcentajes de juveniles por grupos, tanto en número como en peso.
+#' @param a Coeficiente de la relación longitud-peso (por defecto 0.0012).
+#' @param b Exponente de la relación longitud-peso (por defecto 3.1242).
+#' @param remove_empty Lógico. Si es TRUE (por defecto), elimina los grupos
+#'   sin datos (total_numero = 0).
+#'
+#' @return Data frame con los siguientes campos:
+#'   \itemize{
+#'     \item Columnas de agrupación especificadas en group_cols
+#'     \item porc_juv_numero: Porcentaje de juveniles en número
+#'     \item porc_juv_peso: Porcentaje de juveniles en peso
+#'     \item total_numero: Total de individuos en el grupo
+#'     \item total_peso: Peso total en el grupo
+#'   }
+#'
 #' @export
-#' @importFrom dplyr group_by_at summarize across everything
-#' @importFrom tidyr pivot_longer pivot_wider
+#' @importFrom dplyr group_by_at summarize across everything filter pick
+#' @importFrom tidyr unnest
+#'
 #' @examples
+#' # Cargar datos de ejemplo
+#' data(calas_bitacora)
+#' data(faenas_bitacora)
+#' data(tallas_bitacora)
+#'
+#' # Procesar datos
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
 #' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 #' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
 #'
+#' # Integrar datos
 #' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
-#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
-#'
+#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas,
+#'                                        data_tallas_faenas = data_tallasfaenas)
 #' datos_final <- agregar_variables(data_total)
 #'
-#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-#' resultado <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#' # Definir columnas de tallas
+#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+#'                  "12", "12.5", "13", "13.5", "14", "14.5", "15")
 #'
+#' # Ponderar tallas
+#' resultado <- ponderar_tallas_df(df = datos_final,
+#'                                tallas_cols = tallas_cols,
+#'                                captura_col = "catch_ANCHOVETA",
+#'                                a = 0.0001,
+#'                                b = 2.984)
+#'
+#' # Añadir columna de fecha para agrupar
 #' resultado$fecha_unica <- convertir_a_fecha(resultado$fecha_inicio_cala, tipo = "date")
 #'
-#' resultado_juveniles <- juveniles_por_grupo(data = resultado, group_cols = c("fecha_unica", "dc_cat"), cols_tallas = tallas_cols, juvLim = 12, a = 0.0012, b = 3.1242))
+#' # Calcular juveniles por fecha
+#' resultado_por_fecha <- juveniles_por_grupo(
+#'   data = resultado,
+#'   group_cols = "fecha_unica",
+#'   cols_tallas = paste0("pond_", tallas_cols),
+#'   juvLim = 12,
+#'   a = 0.0012,
+#'   b = 3.1242
+#' )
+#'
+#' # Calcular juveniles por fecha y distancia a costa
+#' resultado_fecha_dc <- juveniles_por_grupo(
+#'   data = resultado,
+#'   group_cols = c("fecha_unica", "dc_cat"),
+#'   cols_tallas = paste0("pond_", tallas_cols),
+#'   juvLim = 12,
+#'   a = 0.0012,
+#'   b = 3.1242
+#' )
+#'
+#' # Ver resultados
+#' head(resultado_por_fecha)
 juveniles_por_grupo <- function(data, group_cols, cols_tallas, juvLim = 12, a = 0.0012, b = 3.1242,
                                 remove_empty = TRUE) {
   # Validación de parámetros

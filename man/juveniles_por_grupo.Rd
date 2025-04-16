@@ -2,7 +2,7 @@
 % Please edit documentation in R/statistics.R
 \name{juveniles_por_grupo}
 \alias{juveniles_por_grupo}
-\title{Versión mejorada utilizando dplyr}
+\title{Cálculo de porcentaje de juveniles por grupos}
 \usage{
 juveniles_por_grupo(
   data,
@@ -19,35 +19,84 @@ juveniles_por_grupo(
 
 \item{group_cols}{Vector de nombres de columnas para agrupar los datos.}
 
+\item{cols_tallas}{Vector de nombres o índices de columnas que contienen las
+frecuencias de tallas. Pueden ser nombres con patrones como "pond_X", "talla_X" o "X".}
+
 \item{juvLim}{Talla límite para considerar juveniles (por defecto 12 cm).}
 
-\item{a}{Coeficiente de la relación longitud-peso.}
+\item{a}{Coeficiente de la relación longitud-peso (por defecto 0.0012).}
 
-\item{b}{Exponente de la relación longitud-peso.}
+\item{b}{Exponente de la relación longitud-peso (por defecto 3.1242).}
 
-\item{tallas_cols}{Vector de nombres de columnas que contienen las frecuencias de tallas.}
+\item{remove_empty}{Lógico. Si es TRUE (por defecto), elimina los grupos
+sin datos (total_numero = 0).}
 }
 \value{
-Data frame con porcentajes de juveniles por grupos, tanto en número como en peso.
+Data frame con los siguientes campos:
+\itemize{
+\item Columnas de agrupación especificadas en group_cols
+\item porc_juv_numero: Porcentaje de juveniles en número
+\item porc_juv_peso: Porcentaje de juveniles en peso
+\item total_numero: Total de individuos en el grupo
+\item total_peso: Peso total en el grupo
+}
 }
 \description{
-Esta versión utiliza el paquete dplyr para un enfoque más moderno
-y efectivo del cálculo de juveniles por grupo, aprovechando la función porc_juveniles existente.
+Calcula el porcentaje de juveniles por grupos especificados, tanto en número como
+en peso. Utiliza un enfoque moderno con dplyr para procesar los datos y calcular
+las proporciones de juveniles basándose en frecuencias de tallas.
 }
 \examples{
+# Cargar datos de ejemplo
+data(calas_bitacora)
+data(faenas_bitacora)
+data(tallas_bitacora)
+
+# Procesar datos
 data_calas <- procesar_calas(data_calas = calas_bitacora)
 data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
 
+# Integrar datos
 data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
-data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
-
+data_total <- merge_tallas_faenas_calas(data_calas = data_calas,
+                                       data_tallas_faenas = data_tallasfaenas)
 datos_final <- agregar_variables(data_total)
 
-tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-resultado <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+# Definir columnas de tallas
+tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+                 "12", "12.5", "13", "13.5", "14", "14.5", "15")
 
+# Ponderar tallas
+resultado <- ponderar_tallas_df(df = datos_final,
+                               tallas_cols = tallas_cols,
+                               captura_col = "catch_ANCHOVETA",
+                               a = 0.0001,
+                               b = 2.984)
+
+# Añadir columna de fecha para agrupar
 resultado$fecha_unica <- convertir_a_fecha(resultado$fecha_inicio_cala, tipo = "date")
 
-resultado_juveniles <- juveniles_por_grupo(data = resultado, group_cols = c("fecha_unica", "dc_cat"), cols_tallas = tallas_cols, juvLim = 12, a = 0.0012, b = 3.1242))
+# Calcular juveniles por fecha
+resultado_por_fecha <- juveniles_por_grupo(
+  data = resultado,
+  group_cols = "fecha_unica",
+  cols_tallas = paste0("pond_", tallas_cols),
+  juvLim = 12,
+  a = 0.0012,
+  b = 3.1242
+)
+
+# Calcular juveniles por fecha y distancia a costa
+resultado_fecha_dc <- juveniles_por_grupo(
+  data = resultado,
+  group_cols = c("fecha_unica", "dc_cat"),
+  cols_tallas = paste0("pond_", tallas_cols),
+  juvLim = 12,
+  a = 0.0012,
+  b = 3.1242
+)
+
+# Ver resultados
+head(resultado_por_fecha)
 }

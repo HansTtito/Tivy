@@ -23,7 +23,32 @@ Convierte frecuencias numéricas de tallas en un data.frame a estimaciones de pe
 usando la relación talla-peso.
 }
 \examples{
-data <- data.frame(id = 1:2, `8` = c(3,2), `9` = c(5,4), `10` = c(2,3))
-tallas <- c(8,9,10)
-numero_a_peso(data, tallas, a = 0.0012, b = 2.984)
+
+data(calas_bitacora)
+data(faenas_bitacora)
+data(tallas_bitacora)
+
+# Procesar datos
+data_calas <- procesar_calas(data_calas = calas_bitacora)
+data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
+calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
+
+# Integrar datos
+data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
+data_total <- merge_tallas_faenas_calas(data_calas = data_calas,
+                                       data_tallas_faenas = data_tallasfaenas)
+datos_final <- agregar_variables(data_total)
+
+# Definir columnas de tallas
+tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5",
+                 "12", "12.5", "13", "13.5", "14", "14.5", "15")
+
+# Ponderar tallas
+resultado <- ponderar_tallas_df(df = datos_final,
+                               tallas_cols = tallas_cols,
+                               captura_col = "catch_ANCHOVETA",
+                               a = 0.0001,
+                               b = 2.984)
+
+numero_a_peso(data = resultado, tallas = paste0('pond_', tallas_cols), a = 0.0012, b = 3.1242)
 }

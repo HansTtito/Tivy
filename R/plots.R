@@ -22,8 +22,15 @@
 #'
 #' @examples
 #' # Crear gráfico básico
-#' resultados <- extrae_data_comunicados(c("comunicado1.pdf"))
-#' g <- graficar_poligonos_ggplot(datos = resultados, costa = Tivy::linea_costa_peru)
+#'
+#' pdf_urls <- c(
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
+#' )
+#' results <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
+#'
+#' g <- graficar_poligonos_ggplot(datos = results, costa = Tivy::linea_costa_peru)
 #'
 #' # Personalizar posteriormente
 #' g +
@@ -42,10 +49,10 @@ graficar_poligonos_ggplot <- function(datos,
                                       agregar_grid = FALSE) {
 
   # Preparar los polígonos (todo el procesamiento de datos es el mismo)
-  poligonos <- preparar_poligonos(datos, costa, paralelas,)
+  poligonos <- preparar_poligonos(datos = datos, costa = costa, paralelas_costa = paralelas)
 
   # Crear visualización estática con ggplot2
-  return(Tivy:::graficar_estatico(
+  return(graficar_estatico(
     poligonos,
     costa = costa,
     titulo = titulo,
@@ -79,12 +86,20 @@ graficar_poligonos_ggplot <- function(datos,
 #'
 #' @examples
 #' # Crear mapa básico
-#' resultados <- extrae_data_comunicados(c("comunicado1.pdf"))
-#' m <- graficar_poligonos_leaflet(datos = resultados, costa = Tivy::linea_costa_peru)
+#'
+#' pdf_urls <- c(
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
+#' )
+#'
+#' results <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
+#'
+#' m <- graficar_poligonos_leaflet(datos = results, costa = Tivy::linea_costa_peru)
 #'
 #' # Personalizar posteriormente
-#' m %>%
-#'   leaflet::addMarkers(lng = -77.1, lat = -12.0, popup = "Lima") %>%
+#' m |>
+#'   leaflet::addMarkers(lng = -77.1, lat = -12.0, popup = "Lima") |>
 #'   leaflet::addCircleMarkers(lng = -76.3, lat = -13.4, radius = 5, color = "red")
 #'
 #' @export
@@ -102,7 +117,7 @@ graficar_poligonos_leaflet <- function(datos,
   poligonos <- preparar_poligonos(datos, costa, paralelas)
 
   # Crear visualización interactiva con leaflet
-  return(Tivy:::graficar_interactivo(
+  return(graficar_interactivo(
     poligonos, costa, titulo, colores,
     mostrar_leyenda = mostrar_leyenda,
     etiquetas = etiquetas,
@@ -134,8 +149,16 @@ graficar_poligonos_leaflet <- function(datos,
 #'
 #' @examples
 #' # Crear mapa básico
-#' resultados <- extrae_data_comunicados(c("comunicado1.pdf", "comunicado2.pdf"))
-#' graficar_poligonos(datos = resultados, costa = Tivy::linea_costa_peru)
+#'
+#' pdf_urls <- c(
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
+#' )
+#'
+#' results <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
+#'
+#' graficar_poligonos(datos = results, costa = Tivy::linea_costa_peru)
 #'
 #' @export
 graficar_poligonos <- function(datos,
@@ -514,7 +537,7 @@ graficar_juveniles <- function(datos_juveniles, var_x, fill_var = NULL,
 #'
 #' # Visualizar dashboard completo
 #' dashboard$dashboard
-#' }
+#'}
 dashboard_juveniles <- function(
     data_total,
     col_fecha = NULL,

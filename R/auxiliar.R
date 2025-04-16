@@ -10,6 +10,7 @@
 #' @export
 #' @examples
 #' # Identificar todas las columnas pond_X en el dataframe
+#'
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
 #' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 #' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
@@ -19,9 +20,9 @@
 #' datos_final <- agregar_variables(data_total)
 #'
 #' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-#' tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#' tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_cols, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
 #'
-#' cols_pond <- buscar_columnas_patron(tallas_pond, "pond_")
+#' cols_pond <- buscar_columnas_patron(data = tallas_pond, patron = "pond_")
 #'
 #' # Usar las columnas encontradas para cálculos
 #' tallas_pond[, cols_pond]
@@ -53,39 +54,34 @@ buscar_columnas_patron <- function(data, patron = "pond_", ordenar = TRUE) {
   return(columnas_coincidentes)
 }
 
-#' Obtener valores de tallas a partir de nombres de columnas
+
+
+#' Extraer valores numéricos desde nombres de columnas
 #'
-#' Extrae los valores numéricos de tallas a partir de los nombres de columnas
-#' que siguen el patrón especificado.
+#' Esta función extrae todos los valores numéricos (incluidos decimales) desde un vector
+#' de nombres de columnas, eliminando cualquier carácter no numérico.
 #'
 #' @param nombres_columnas Vector de caracteres con los nombres de columnas.
-#' @param patron El patrón o prefijo a eliminar (por defecto "pond_").
 #' @return Vector numérico con los valores de tallas extraídos.
 #' @export
 #' @examples
-#' data_calas <- procesar_calas(data_calas = calas_bitacora)
-#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
-#' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
-#'
-#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
-#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
-#' datos_final <- agregar_variables(data_total)
-#'
-#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-#' tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
-#'
-#' cols_pond <- buscar_columnas_patron(tallas_pond, "pond_")
-#' valores_tallas <- extraer_valores_tallas(cols_pond)
-extraer_valores_tallas <- function(nombres_columnas, patron = "pond_") {
-  if (!is.character(nombres_columnas)) stop("El parámetro 'nombres_columnas' debe ser un vector de caracteres.")
-  if (!is.character(patron)) stop("El parámetro 'patron' debe ser una cadena de texto.")
+#' nombres <- c("pond_10.5", "talla_11", "12.5mm", "T14", "13-erróneo")
+#' extraer_valores_tallas(nombres)
+#' # Resultado: 10.5 11.0 12.5 14.0 13.0
+extraer_valores_tallas <- function(nombres_columnas) {
+  if (!is.character(nombres_columnas)) {
+    stop("El parámetro 'nombres_columnas' debe ser un vector de caracteres.")
+  }
 
-  # Extraer los valores numéricos eliminando el patrón
-  valores <- as.numeric(gsub(patron, "", nombres_columnas))
+  # Extrae la primera aparición de número en cada string (soporta decimales)
+  valores <- as.numeric(stringr::str_extract(nombres_columnas, "\\d+\\.?\\d*"))
+
+  if (any(is.na(valores))) {
+    warning("Algunos nombres no contienen valores numéricos y fueron convertidos a NA.")
+  }
 
   return(valores)
 }
-
 
 
 #' Obtener nombres y posiciones de columnas que coinciden con un patrón
@@ -110,7 +106,7 @@ extraer_valores_tallas <- function(nombres_columnas, patron = "pond_") {
 #' datos_final <- agregar_variables(data_total)
 #'
 #' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-#' tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#' tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_cols, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
 #'
 #' resultado <- info_columnas_patron(tallas_pond, "pond_")
 #'

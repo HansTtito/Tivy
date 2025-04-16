@@ -32,7 +32,7 @@ data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_fae
 datos_final <- agregar_variables(data_total)
 
 tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_cols, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
 
 resultado <- info_columnas_patron(tallas_pond, "pond_")
 
