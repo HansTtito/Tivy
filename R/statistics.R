@@ -246,22 +246,20 @@ ponderar_tallas_df <- function(df, tallas_cols, captura_col, a, b,
 #' porc <- porc_juveniles(frecuencia, tallas, juvLim = 12)
 #'
 #' print(porc)
-porc_juveniles <- function(frecuencia, tallas, juvLim = 12) {
+porc_juveniles <- function(frecuencia, tallas, juvLim = 12, silenciar_warnings = FALSE) {
   # Validación de parámetros
   if (!is.numeric(frecuencia)) stop("El parámetro 'frecuencia' debe ser numérico.")
   if (!is.numeric(tallas)) stop("El parámetro 'tallas' debe ser numérico.")
   if (!is.numeric(juvLim)) stop("El parámetro 'juvLim' debe ser numérico.")
-
   if (length(frecuencia) != length(tallas)) {
     stop("Los vectores 'frecuencia' y 'tallas' deben tener la misma longitud.")
   }
-
-  if (juvLim <= 0) warning("El valor de 'juvLim' es <= 0, lo que podría no ser biológicamente plausible.")
+  if (juvLim <= 0 && !silenciar_warnings)
+    warning("El valor de 'juvLim' es <= 0, lo que podría no ser biológicamente plausible.")
 
   total_frecuencia <- sum(frecuencia, na.rm = TRUE)
-
   if (total_frecuencia == 0) {
-    warning("La suma de frecuencias es cero. Se devolverá NA.")
+    if (!silenciar_warnings) warning("La suma de frecuencias es cero. Se devolverá NA.")
     return(NA_real_)
   }
 

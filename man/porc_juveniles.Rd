@@ -4,7 +4,7 @@
 \alias{porc_juveniles}
 \title{Porcentaje de juveniles}
 \usage{
-porc_juveniles(frecuencia, tallas, juvLim = 12)
+porc_juveniles(frecuencia, tallas, juvLim = 12, silenciar_warnings = FALSE)
 }
 \arguments{
 \item{frecuencia}{Un vector numérico con la frecuencia de tallas muestreadas.}

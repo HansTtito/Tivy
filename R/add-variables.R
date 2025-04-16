@@ -41,8 +41,8 @@ agregar_variables <- function(data,
                               JuvLim = 12,
                               tipo_distancia = "haversine",
                               ventana = 0.5,
-                              unidad = "mn") {
-
+                              unidad = "mn",
+                              silenciar_warnings = TRUE) {
   stopifnot(is.data.frame(data))
   required_cols <- c("lon_inicial", "lat_inicial")
 
@@ -53,7 +53,7 @@ agregar_variables <- function(data,
   }
 
   # Identificar columnas de tallas
-  tallas <- grep(pattern = "^[1-9][0-9]*$",
+  tallas <- grep(pattern = "^[1-9][0-9]*$|^[1-9][0-9]*\\.[0-9]+$",
                  x = names(data),
                  value = TRUE)
 
@@ -63,14 +63,36 @@ agregar_variables <- function(data,
     return(data)
   }
 
+  # Asegurar que las columnas de tallas sean numéricas
   data[tallas] <- lapply(data[tallas], as.numeric)
 
-  # Proporción de juveniles
+  # Contador para warnings de frecuencia cero
+  frecuencia_cero_count <- 0
+
+  # Aplicar la función porc_juveniles a cada fila para calcular proporción de juveniles
   data$juv <- apply(data[, tallas, drop = FALSE],
                     1,
-                    porc_juveniles,
-                    tallas = as.numeric(tallas),
-                    juvLim = JuvLim)
+                    function(row) {
+                      # Verificar si la suma de frecuencias es cero
+                      if (sum(row, na.rm = TRUE) == 0) {
+                        frecuencia_cero_count <<- frecuencia_cero_count + 1
+                        return(NA_real_)
+                      }
+
+                      # Calcular porcentaje de juveniles silenciando warnings individuales
+                      porc_juveniles(
+                        frecuencia = row,
+                        tallas = as.numeric(tallas),
+                        juvLim = JuvLim,
+                        silenciar_warnings = TRUE
+                      )
+                    })
+
+  # Mostrar un resumen de warnings de frecuencia cero al final
+  if (!silenciar_warnings && frecuencia_cero_count > 0) {
+    warning("Se encontraron ", frecuencia_cero_count,
+            " filas con suma de frecuencias igual a cero. Se asignó NA a juv.")
+  }
 
   # Total de individuos en la muestra
   data$muestra <- rowSums(data[, tallas], na.rm = TRUE)
@@ -90,7 +112,7 @@ agregar_variables <- function(data,
     ),
     error = function(e) {
       # Si ya se ha mostrado el warning, no lo volvemos a mostrar
-      if (!distancia_warning_shown) {
+      if (!silenciar_warnings && !distancia_warning_shown) {
         warning("Error en cálculo de distancia a costa: ", conditionMessage(e))
         distancia_warning_shown <<- TRUE  # Marca el warning como mostrado
       }
@@ -112,4 +134,3 @@ agregar_variables <- function(data,
 
   return(data)
 }
-

@@ -9,7 +9,8 @@ agregar_variables(
   JuvLim = 12,
   tipo_distancia = "haversine",
   ventana = 0.5,
-  unidad = "mn"
+  unidad = "mn",
+  silenciar_warnings = TRUE
 )
 }
 \arguments{
