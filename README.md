@@ -194,7 +194,7 @@ Las contribuciones son bienvenidas. Por favor considera:
 Si utilizas `Tivy` en tu investigación, por favor cítalo como:
 
 ```
-Ttito, H. (2023). Tivy: Herramientas para el Análisis de Datos Pesqueros en Perú. R package version 0.1.0.
+Ttito, H. (2025). Tivy: Herramientas para el Análisis de Datos Pesqueros en Perú. R package version 0.1.0.
 https://github.com/HansTtito/Tivy
 ```
 
