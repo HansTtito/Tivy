@@ -20,6 +20,10 @@ los rangos de tallas (mínimo y máximo) y la información espacial y temporal d
 }
 \examples{
 
+data(calas_bitacora)
+data(faenas_bitacora)
+data(tallas_bitacora)
+
 data_calas <- procesar_calas(data_calas = calas_bitacora, formato = "xlsx")
 data_faenas <- procesar_faenas(data_faenas = faenas_bitacora, formato = "xlsx")
 data_tallas <- procesar_tallas(data_tallas = tallas_bitacora, formato = "xlsx")

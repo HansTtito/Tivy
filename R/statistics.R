@@ -137,16 +137,16 @@ ponderacion <- function(frecuencia, captura, tallas, a, b, silenciar_warnings = 
 #' @examples
 #'
 #' data(calas_bitacora)
-#' data(calas_bitacora)
+#' data(faenas_bitacora)
 #' data(tallas_bitacora)
 #'
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
-#' data_faenas <- procesar_faenas(data_faenas = calas_bitacora)
+#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 #' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
 #'
-#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
+#' data_tallas_faenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
 #'
-#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
+#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallas_faenas)
 #'
 #' tallas_columnas <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
 #'
