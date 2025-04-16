@@ -52,6 +52,7 @@ data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena
 data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
 
 # Aplicación de la función
-resultados <- agregar_variables(data_total)
+resultados <- agregar_variables(data = data_total)
 
+print(resultados)
 }
