@@ -22,8 +22,12 @@ la fórmula general de la relación longitud-peso: \eqn{W = a \cdot L^b}, donde
 \eqn{W} es el peso, \eqn{L} la longitud (talla), \eqn{a} y \eqn{b} los parámetros específicos.
 }
 \examples{
+
 tallas <- seq(5, 20, by = 0.5)
 a <- 0.0001
 b <- 2.984
+
 pesos <- talla_peso(talla = tallas, a = a, b = b)
+
+print(pesos)
 }

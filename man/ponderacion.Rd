@@ -4,7 +4,7 @@
 \alias{ponderacion}
 \title{Ponderación de tallas según captura total}
 \usage{
-ponderacion(frecuencia, captura, tallas, a, b)
+ponderacion(frecuencia, captura, tallas, a, b, silenciar_warnings = FALSE)
 }
 \arguments{
 \item{frecuencia}{Un vector numérico con la frecuencia de tallas observadas en el muestreo.}
@@ -25,10 +25,16 @@ Calcula una ponderación de las tallas muestreadas en función de la captura tot
 registrada. Esto permite escalar la frecuencia observada a la captura total.
 }
 \examples{
+
 frecuencia <- c(0, 1, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 10, 6, 3, 2)
+
 tallas <- seq(5, 20, by = 1)
+
 captura <- 1000
 a <- 0.0001
 b <- 2.984
+
 ponderadas <- ponderacion(frecuencia, captura, tallas, a, b)
+
+print(head(ponderadas))
 }

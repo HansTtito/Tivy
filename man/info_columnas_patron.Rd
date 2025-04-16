@@ -23,6 +23,10 @@ que siguen el patrón especificado.
 \examples{
 # Obtener tanto posiciones como nombres
 
+data(calas_bitacora)
+data(faenas_bitacora)
+data(tallas_bitacora)
+
 data_calas <- procesar_calas(data_calas = calas_bitacora)
 data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
@@ -38,7 +42,7 @@ resultado <- info_columnas_patron(tallas_pond, "pond_")
 
 posiciones <- resultado$posiciones
 print(posiciones)
+
 nombres <- resultado$nombres
 print(nombres)
-
 }

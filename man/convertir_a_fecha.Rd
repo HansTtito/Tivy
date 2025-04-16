@@ -20,8 +20,11 @@ La función intenta analizar cada fecha utilizando una serie de formatos predefi
 Si una fecha no puede ser interpretada por ninguno de los formatos, se asigna como \code{NA}.
 }
 \examples{
+
 fechas <- c("2025-04-10", "10/04/2025", "April 10, 2025")
+
 fechas_convertidas <- convertir_a_fecha(fechas)
+
 print(fechas_convertidas)
 
 }

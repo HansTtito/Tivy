@@ -42,12 +42,15 @@ Esta función clasifica un conjunto de coordenadas geográficas (longitud y lati
 Esta función usa internamente \code{calcular_distancias_vectorizado()} para identificar el punto más cercano en la línea de costa para cada coordenada. Si \code{paralelo = TRUE}, utiliza los paquetes \code{future} y \code{future.apply} para distribuir el trabajo entre varios núcleos.
 }
 \examples{
+
 data_calas <- procesar_calas(data_calas = calas_bitacora)
+
 resultado <- puntos_tierra(
   x_punto = data_calas$lon_final,
   y_punto = data_calas$lat_final,
   linea_costa = Tivy::linea_costa_peru
 )
+
 table(resultado)
 
 }

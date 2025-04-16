@@ -97,6 +97,10 @@ extraer_valores_tallas <- function(nombres_columnas) {
 #' @examples
 #' # Obtener tanto posiciones como nombres
 #'
+#' data(calas_bitacora)
+#' data(faenas_bitacora)
+#' data(tallas_bitacora)
+#'
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
 #' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 #' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
@@ -112,9 +116,9 @@ extraer_valores_tallas <- function(nombres_columnas) {
 #'
 #' posiciones <- resultado$posiciones
 #' print(posiciones)
+#'
 #' nombres <- resultado$nombres
 #' print(nombres)
-#'
 info_columnas_patron <- function(data, patron = "pond_", ordenar = TRUE) {
   # Validación de parámetros
   if (!is.data.frame(data)) stop("El parámetro 'data' debe ser un data.frame.")

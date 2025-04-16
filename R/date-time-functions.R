@@ -11,8 +11,11 @@
 #' @return Un vector de objetos `Date` o `POSIXct` según el parámetro tipo, o `NA` si la fecha no puede ser convertida.
 #'
 #' @examples
+#'
 #' fechas <- c("2025-04-10", "10/04/2025", "April 10, 2025")
+#'
 #' fechas_convertidas <- convertir_a_fecha(fechas)
+#'
 #' print(fechas_convertidas)
 #'
 #' @export

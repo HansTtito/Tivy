@@ -48,8 +48,9 @@ Estima la distancia entre un conjunto de puntos (lon, lat) y una línea de costa
 Se puede ejecutar de forma secuencial o en paralelo, y retornar también los índices de los puntos costeros más cercanos.
 }
 \examples{
-\dontrun{
+
 data_calas <- procesar_calas(data_calas = calas_bitacora)
+
 distancia_costa(
   lon = data_calas$lon_final,
   lat = data_calas$lat_final,
@@ -59,6 +60,5 @@ distancia_costa(
   paralelo = TRUE,
   nucleos = 2
 )
-}
 
 }

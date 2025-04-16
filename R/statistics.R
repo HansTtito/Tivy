@@ -10,10 +10,14 @@
 #' @return Un vector numérico con los pesos estimados.
 #' @export
 #' @examples
+#'
 #' tallas <- seq(5, 20, by = 0.5)
 #' a <- 0.0001
 #' b <- 2.984
+#'
 #' pesos <- talla_peso(talla = tallas, a = a, b = b)
+#'
+#' print(pesos)
 talla_peso <- function(talla, a, b) {
   # Validación de parámetros
   if (!is.numeric(talla)) stop("El parámetro 'talla' debe ser numérico.")
@@ -41,13 +45,19 @@ talla_peso <- function(talla, a, b) {
 #' @return Un vector numérico con las frecuencias ponderadas.
 #' @export
 #' @examples
+#'
 #' frecuencia <- c(0, 1, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 10, 6, 3, 2)
+#'
 #' tallas <- seq(5, 20, by = 1)
+#'
 #' captura <- 1000
 #' a <- 0.0001
 #' b <- 2.984
+#'
 #' ponderadas <- ponderacion(frecuencia, captura, tallas, a, b)
-ponderacion <- function(frecuencia, captura, tallas, a, b) {
+#'
+#' print(head(ponderadas))
+ponderacion <- function(frecuencia, captura, tallas, a, b, silenciar_warnings = FALSE) {
   # Validación de parámetros
   if (!is.numeric(frecuencia)) stop("El parámetro 'frecuencia' debe ser numérico.")
   if (!is.numeric(tallas)) stop("El parámetro 'tallas' debe ser numérico.")
@@ -79,7 +89,8 @@ ponderacion <- function(frecuencia, captura, tallas, a, b) {
   if (sum(frecuencia, na.rm = TRUE) == 0) {
     mensajes_warning <- c(mensajes_warning,
                           "La suma de frecuencias es cero. Se devolverá un vector de ceros.")
-    if (length(mensajes_warning) > 0) warning(paste(mensajes_warning, collapse = " | "))
+    if (!silenciar_warnings && length(mensajes_warning) > 0)
+      warning(paste(mensajes_warning, collapse = " | "))
     return(rep(0, length(tallas)))
   }
 
@@ -89,12 +100,13 @@ ponderacion <- function(frecuencia, captura, tallas, a, b) {
   if (suma_peso == 0) {
     mensajes_warning <- c(mensajes_warning,
                           "La suma de pesos es cero. Se devolverá un vector de ceros.")
-    if (length(mensajes_warning) > 0) warning(paste(mensajes_warning, collapse = " | "))
+    if (!silenciar_warnings && length(mensajes_warning) > 0)
+      warning(paste(mensajes_warning, collapse = " | "))
     return(rep(0, length(tallas)))
   }
 
   # Mostrar advertencias acumuladas (si existen)
-  if (length(mensajes_warning) > 0) {
+  if (!silenciar_warnings && length(mensajes_warning) > 0) {
     warning(paste(mensajes_warning, collapse = " | "))
   }
 
@@ -124,8 +136,12 @@ ponderacion <- function(frecuencia, captura, tallas, a, b) {
 #'
 #' @examples
 #'
+#' data(calas_bitacora)
+#' data(calas_bitacora)
+#' data(tallas_bitacora)
+#'
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
-#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
+#' data_faenas <- procesar_faenas(data_faenas = calas_bitacora)
 #' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
 #'
 #' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
@@ -133,27 +149,31 @@ ponderacion <- function(frecuencia, captura, tallas, a, b) {
 #' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
 #'
 #' tallas_columnas <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+#'
 #' # Procesamiento secuencial
 #' resultado <- ponderar_tallas_df(df = data_total, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#'
+#' print(head(resultado))
 #'
 #' # Procesamiento paralelo para conjuntos grandes
 #' resultado_paralelo <- ponderar_tallas_df(
 #'   df = data_total, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984, paralelo = TRUE
 #' )
 #'
+#' print(head(resultado_paralelo))
+#'
 #' @import parallel
 #' @export
 ponderar_tallas_df <- function(df, tallas_cols, captura_col, a, b,
-                               paralelo = FALSE, num_cores = NULL, tam_bloque = 10000) {
+                               paralelo = FALSE, num_cores = NULL, tam_bloque = 10000,
+                               silenciar_warnings = TRUE) {
   # Validaciones iniciales
   if (!is.data.frame(df)) {
     stop("El primer argumento debe ser un data frame.")
   }
-
   if (!all(tallas_cols %in% names(df))) {
     stop("Algunas columnas de tallas no existen en el data frame.")
   }
-
   if (!(captura_col %in% names(df))) {
     stop("La columna de captura no existe en el data frame.")
   }
@@ -182,20 +202,26 @@ ponderar_tallas_df <- function(df, tallas_cols, captura_col, a, b,
       indices_bloques,
       function(indices) {
         bloque <- df[indices, ]
-        procesar_bloque(bloque, tallas_cols, captura_col, a, b)
+        procesar_bloque(bloque, tallas_cols, captura_col, a, b, silenciar_warnings = TRUE)
       },
       future.seed = TRUE
     )
 
     # Combinar resultados
     resultado_final <- do.call(rbind, resultados)
-
     future::plan(future::sequential)
+
+    # Mostrar resumen de warnings al final si no se silencian
+    if (!silenciar_warnings) {
+      # Aquí podríamos agregar un mensaje resumen si fuera necesario
+      # pero como el procesamiento es paralelo, sería más complejo obtener conteos exactos
+      message("Procesamiento paralelo completado. Algunas filas podrían tener valores NA o cero para tallas ponderadas.")
+    }
 
     return(resultado_final)
   } else {
     # Procesamiento secuencial
-    return(procesar_bloque(df, tallas_cols, captura_col, a, b))
+    return(procesar_bloque(df, tallas_cols, captura_col, a, b, silenciar_warnings))
   }
 }
 
@@ -212,9 +238,14 @@ ponderar_tallas_df <- function(df, tallas_cols, captura_col, a, b,
 #' @return Porcentaje de juveniles en la muestra.
 #' @export
 #' @examples
+#'
 #' frecuencia <- c(0, 1, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 10, 6, 3, 2)
+#'
 #' tallas <- seq(5, 20, by = 1)
+#'
 #' porc <- porc_juveniles(frecuencia, tallas, juvLim = 12)
+#'
+#' print(porc)
 porc_juveniles <- function(frecuencia, tallas, juvLim = 12) {
   # Validación de parámetros
   if (!is.numeric(frecuencia)) stop("El parámetro 'frecuencia' debe ser numérico.")

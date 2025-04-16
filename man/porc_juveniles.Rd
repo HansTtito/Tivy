@@ -21,7 +21,12 @@ Estima el porcentaje de individuos considerados juveniles en una muestra
 según una talla límite establecida.
 }
 \examples{
+
 frecuencia <- c(0, 1, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 10, 6, 3, 2)
+
 tallas <- seq(5, 20, by = 1)
+
 porc <- porc_juveniles(frecuencia, tallas, juvLim = 12)
+
+print(porc)
 }

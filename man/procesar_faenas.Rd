@@ -19,5 +19,10 @@ Procesa datos de faenas pesqueras provenientes de las bitácoras de PRODUCE,
 en formato CSV o XLSX. Devuelve un data frame limpio y estandarizado.
 }
 \examples{
-procesar_faenas(data_faenas = faenas_bitacora, formato = "xlsx")
+
+data(faenas_bitacora)
+
+faenas = procesar_faenas(data_faenas = faenas_bitacora, formato = "xlsx")
+
+print(head(faenas))
 }

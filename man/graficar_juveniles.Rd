@@ -58,15 +58,19 @@ de juveniles.
 data_calas <- procesar_calas(data_calas = calas_bitacora)
 data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
 calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
+
 data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = "codigo_faena")
 data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
 
 datos_final <- agregar_variables(data_total)
 tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12",
                  "12.5", "13", "13.5", "14", "14.5", "15")
+
 resultado <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_cols,
                                 captura_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984)
+
 resultado$fecha_unica <- convertir_a_fecha(resultado$fecha_inicio_cala, tipo = "date")
+
 resultado_juveniles <- juveniles_por_grupo(data = resultado,
                                            group_cols = c("fecha_unica"),
                                            cols_tallas = tallas_cols)

@@ -11,6 +11,7 @@
 #' @export
 #'
 #' @examples
+#'
 #' procesar_tallas(data_tallas = tallas_bitacora, formato = "xlsx")
 #'
 #' @importFrom dplyr select mutate %>%

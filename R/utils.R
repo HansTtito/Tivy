@@ -991,38 +991,71 @@ preparar_poligonos <- function(datos, costa, paralelas_costa = NULL, nombres_col
 #' @return Data frame con columnas ponderadas añadidas con el prefijo "pond_"
 #'
 #' @keywords internal
-procesar_bloque <- function(df_bloque, tallas_cols, captura_col, a, b) {
-  # Usar data.frame estándar en lugar de data.table
-  resultado <- df_bloque
-
-  # Valores numéricos de tallas
-  tallas_valores <- as.numeric(tallas_cols)
-
-  # Columnas resultado
-  tallas_ponderadas_cols <- paste0("pond_", tallas_cols)
-
-  # Crear columnas de resultado
-  for(col in tallas_ponderadas_cols) {
-    resultado[[col]] <- NA_real_
+procesar_bloque <- function(df, tallas_cols, captura_col, a, b, silenciar_warnings = FALSE) {
+  # Obtener lista de tallas
+  tallas_valores <- as.numeric(sub(".*_", "", tallas_cols))
+  if (all(is.na(tallas_valores))) {
+    tallas_valores <- as.numeric(tallas_cols)
   }
 
-  # Procesar cada fila
-  for (i in 1:nrow(resultado)) {
-    # Extraer valores de captura y frecuencias
-    captura_i <- resultado[[captura_col]][i]
-    frecuencias_i <- as.numeric(resultado[i, tallas_cols])
+  # Si aún hay NAs, usar secuencia
+  if (any(is.na(tallas_valores))) {
+    warning("No se pudieron extraer valores numéricos de tallas, usando secuencia 1:n")
+    tallas_valores <- seq_along(tallas_cols)
+  }
 
-    # Aplicar ponderación usando la función original
-    tallas_ponderadas <- ponderacion(
-      frecuencias_i, captura_i, tallas_valores, a, b
+  # Contador para warnings
+  contador_warnings <- list(
+    captura_na = 0,
+    frec_cero = 0,
+    peso_cero = 0,
+    tallas_cero = 0
+  )
+
+  # Procesar cada fila
+  result <- df
+  for (i in 1:nrow(df)) {
+    captura_i <- df[i, captura_col]
+    frecuencias_i <- as.numeric(df[i, tallas_cols])
+
+    # Contabilizar posibles warnings
+    if (is.na(captura_i) || captura_i <= 0) contador_warnings$captura_na <- contador_warnings$captura_na + 1
+    if (sum(frecuencias_i, na.rm = TRUE) == 0) contador_warnings$frec_cero <- contador_warnings$frec_cero + 1
+    if (any(tallas_valores <= 0, na.rm = TRUE)) contador_warnings$tallas_cero <- contador_warnings$tallas_cero + 1
+
+    # Calcular ponderación (silenciando warnings individuales)
+    ponderadas <- Tivy::ponderacion(
+      frecuencia = frecuencias_i,
+      captura = captura_i,
+      tallas = tallas_valores,
+      a = a,
+      b = b,
+      silenciar_warnings = TRUE
     )
 
-    # Guardar resultados
+    # Añadir resultados
     for (j in seq_along(tallas_cols)) {
-      col_ponderada <- tallas_ponderadas_cols[j]
-      resultado[i, col_ponderada] <- tallas_ponderadas[j]
+      result[i, paste0("pond_", tallas_valores[j])] <- ponderadas[j]
     }
   }
 
-  return(resultado)
+  # Mostrar resumen de warnings al final
+  if (silenciar_warnings == FALSE) {
+    warnings_text <- character(0)
+    if (contador_warnings$captura_na > 0)
+      warnings_text <- c(warnings_text,
+                         paste0(contador_warnings$captura_na, " filas con captura NA o <= 0"))
+    if (contador_warnings$frec_cero > 0)
+      warnings_text <- c(warnings_text,
+                         paste0(contador_warnings$frec_cero, " filas con suma de frecuencias = 0"))
+    if (contador_warnings$tallas_cero > 0)
+      warnings_text <- c(warnings_text,
+                         paste0("Hay tallas <= 0 que podrían producir resultados no válidos"))
+
+    if (length(warnings_text) > 0) {
+      warning("Resumen de problemas encontrados: ", paste(warnings_text, collapse = "; "))
+    }
+  }
+
+  return(result)
 }

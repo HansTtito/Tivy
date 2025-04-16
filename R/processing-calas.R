@@ -35,11 +35,15 @@
 #' @examples
 #' # Cargar datos de ejemplo
 #'
+#' data(calas_bitacora)
+#'
 #' # Procesar datos con configuración predeterminada (corrigiendo coordenadas)
 #' calas_procesadas <- procesar_calas(
 #'   data_calas = calas_bitacora,
 #'   formato = "xlsx"
 #' )
+#'
+#' print(head(calas_procesadas))
 #'
 #' # Procesar datos sin corregir posibles errores en coordenadas
 #' calas_sin_correccion <- procesar_calas(
@@ -49,7 +53,7 @@
 #' )
 #'
 #' # Ver las primeras filas del resultado
-#' head(calas_procesadas)
+#' print(head(calas_sin_correccion))
 procesar_calas <- function(data_calas, formato = "xlsx", corregir_coordenadas = TRUE) {
   if (!formato %in% c("xlsx", "csv")) {
     stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")

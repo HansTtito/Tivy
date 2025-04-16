@@ -19,10 +19,15 @@ Un data frame con los datos consolidados de faenas, tallas y calas.
 los rangos de tallas (mínimo y máximo) y la información espacial y temporal de cada cala.
 }
 \examples{
+
 data_calas <- procesar_calas(data_calas = calas_bitacora, formato = "xlsx")
 data_faenas <- procesar_faenas(data_faenas = faenas_bitacora, formato = "xlsx")
 data_tallas <- procesar_tallas(data_tallas = tallas_bitacora, formato = "xlsx")
+
 data_tallas_faenas <- merge(x = data_tallas, y = data_faenas, by = "codigo_faena", all = TRUE)
+
 data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallas_faenas)
+
+print(head(data_total))
 
 }

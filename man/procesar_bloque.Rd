@@ -4,11 +4,9 @@
 \alias{procesar_bloque}
 \title{Procesa un bloque de filas para la ponderación de tallas}
 \usage{
-procesar_bloque(df_bloque, tallas_cols, captura_col, a, b)
+procesar_bloque(df, tallas_cols, captura_col, a, b, silenciar_warnings = FALSE)
 }
 \arguments{
-\item{df_bloque}{Data frame a procesar}
-
 \item{tallas_cols}{Nombres de las columnas de tallas}
 
 \item{captura_col}{Nombre de la columna de captura}
@@ -16,6 +14,8 @@ procesar_bloque(df_bloque, tallas_cols, captura_col, a, b)
 \item{a}{Coeficiente de la relación longitud-peso}
 
 \item{b}{Exponente de la relación longitud-peso}
+
+\item{df_bloque}{Data frame a procesar}
 }
 \value{
 Data frame con columnas ponderadas añadidas con el prefijo "pond_"

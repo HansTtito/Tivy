@@ -217,8 +217,9 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S", corregir_errores = TRUE
 #'
 #' @export
 #' @examples
-#' \dontrun{
+#'
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
+#'
 #' distancia_costa(
 #'   lon = data_calas$lon_final,
 #'   lat = data_calas$lat_final,
@@ -228,7 +229,6 @@ dms_a_decimal <- function(coordenadas, hemisferio = "S", corregir_errores = TRUE
 #'   paralelo = TRUE,
 #'   nucleos = 2
 #' )
-#' }
 #'
 #' @importFrom future plan multisession
 #' @importFrom future.apply future_lapply
@@ -393,12 +393,15 @@ distancia_costa <- function(lon,
 #' Esta función usa internamente `calcular_distancias_vectorizado()` para identificar el punto más cercano en la línea de costa para cada coordenada. Si `paralelo = TRUE`, utiliza los paquetes `future` y `future.apply` para distribuir el trabajo entre varios núcleos.
 #'
 #' @examples
+#'
 #' data_calas <- procesar_calas(data_calas = calas_bitacora)
+#'
 #' resultado <- puntos_tierra(
 #'   x_punto = data_calas$lon_final,
 #'   y_punto = data_calas$lat_final,
 #'   linea_costa = Tivy::linea_costa_peru
 #' )
+#'
 #' table(resultado)
 #'
 #' @export

@@ -43,6 +43,9 @@ pdf_urls <- c(
   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
 )
+
 results <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
+
+print(head(results))
 
 }

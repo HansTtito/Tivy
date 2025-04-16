@@ -12,7 +12,8 @@ ponderar_tallas_df(
   b,
   paralelo = FALSE,
   num_cores = NULL,
-  tam_bloque = 10000
+  tam_bloque = 10000,
+  silenciar_warnings = TRUE
 )
 }
 \arguments{
@@ -43,8 +44,12 @@ de datos grandes.
 }
 \examples{
 
+data(calas_bitacora)
+data(calas_bitacora)
+data(tallas_bitacora)
+
 data_calas <- procesar_calas(data_calas = calas_bitacora)
-data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
+data_faenas <- procesar_faenas(data_faenas = calas_bitacora)
 calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
 
 data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
@@ -52,12 +57,17 @@ data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena
 data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
 
 tallas_columnas <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+
 # Procesamiento secuencial
 resultado <- ponderar_tallas_df(df = data_total, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+
+print(head(resultado))
 
 # Procesamiento paralelo para conjuntos grandes
 resultado_paralelo <- ponderar_tallas_df(
   df = data_total, tallas_cols = tallas_columnas, captura_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984, paralelo = TRUE
 )
+
+print(head(resultado_paralelo))
 
 }
