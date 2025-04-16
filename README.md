@@ -116,6 +116,10 @@ dashboard = dashboard_juveniles(
 
 # Ver componentes individuales del dashboard
 dashboard$comparacion  # Comparación de juveniles
+dashboard$relacion  # Relación juveniles ~ Tiempo
+dashboard$captura_acumulada  # captura acumulada
+dashboard$mapa_juveniles # Mapa de juveniles
+
 dashboard$dashboard    # Panel completo con todos los gráficos
 ```
 
