@@ -3,18 +3,18 @@
 \docType{data}
 \name{faenas_bitacora}
 \alias{faenas_bitacora}
-\title{Faenas de pesca}
+\title{Fishing trips}
 \format{
-Un data.frame con datos de ejemplo de las faenas realizadas por embarcaciones en el mar peruano.
+A data.frame with sample data of fishing trips made by vessels in the Peruvian sea.
 }
 \source{
-Datos generados de manera aleatoria.
+Randomly generated data.
 }
 \usage{
 faenas_bitacora
 }
 \description{
-Conjunto de datos que contiene información sobre faenas de pesca realizadas en el litoral peruano.
+Dataset containing information about fishing trips conducted along the Peruvian littoral.
 }
 \examples{
 data(faenas_bitacora)

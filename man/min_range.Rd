@@ -2,21 +2,21 @@
 % Please edit documentation in R/statistics.R
 \name{min_range}
 \alias{min_range}
-\title{Talla mínima observada con frecuencia positiva}
+\title{Minimum observed length with positive frequency}
 \usage{
-min_range(frecuencia, tallas)
+min_range(frequency, length)
 }
 \arguments{
-\item{frecuencia}{Un vector numérico con las frecuencias de tallas.}
+\item{frequency}{A numeric vector with the frequencies of length.}
 
-\item{tallas}{Vector de tallas correspondiente.}
+\item{length}{Corresponding length vector.}
 }
 \value{
-Valor mínimo de talla con frecuencia mayor que cero.
+Minimum length value with frequency greater than zero.
 }
 \description{
-Talla mínima observada con frecuencia positiva
+Minimum observed length with positive frequency
 }
 \examples{
-min_range(frecuencia = c(0,0,1,2,3), tallas = c(5,6,7,8,9))
+min_range(frequency = c(0,0,1,2,3), length = c(5,6,7,8,9))
 }

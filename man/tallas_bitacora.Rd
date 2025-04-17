@@ -3,19 +3,19 @@
 \docType{data}
 \name{tallas_bitacora}
 \alias{tallas_bitacora}
-\title{Datos de tallas muestreadas provenientes de las calas realizadas por las embarcaciones en el mar peruano.}
+\title{Length data sampled from hauls made by vessels in the Peruvian sea.}
 \format{
-Un data.frame con datos de ejemplo de tallas muestreadas provenientes de las calas realizadas por embarcaciones en el mar peruano.
+A data.frame with sample data of lengths sampled from hauls made by vessels in the Peruvian sea.
 }
 \source{
-Indicar la fuente de los datos
+Indicate the data source
 }
 \usage{
 tallas_bitacora
 }
 \description{
-Conjunto de datos que contiene información sobre tallas de especies marinas
-capturadas en el litoral peruano.
+Dataset containing information about lengths of marine species
+captured along the Peruvian littoral.
 }
 \examples{
 data(tallas_bitacora)

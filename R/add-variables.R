@@ -1,133 +1,127 @@
-#' Agrega variables de juveniles, tamaño de muestra, distancia a la costa y su categoría
+#' Adds variables for juveniles, sample length, distance to coast, and distance category
 #'
-#' Esta función agrega nuevas variables a un conjunto de datos, incluyendo la proporción de juveniles,
-#' el total de individuos en la muestra, la distancia a la costa y la categoría de distancia a la costa.
+#' This function adds new variables to a dataset, including the proportion of juveniles,
+#' the total number of individuals in the sample, the distance to the coast, and the distance category.
 #'
-#' @param data Un data frame que debe contener las coordenadas de latitud (`lat_inicial`) y longitud (`lon_inicial`),
-#' así como columnas con los tamaños de los individuos.
-#' @param JuvLim Límite de talla para considerar juveniles (default = 12). Si la talla es menor que este valor,
-#' el individuo se considera juvenil.
-#' @param tipo_distancia Tipo de cálculo de distancia a la costa (opciones como "haversine", etc.),
-#' por defecto es "haversine".
-#' @param ventana Ventana para suavizar la línea de costa, el valor por defecto es 0.5.
-#' @param unidad Unidad de distancia utilizada para la medición de la distancia a la costa
-#' ("mn", "km", etc.), por defecto es "mn".
+#' @param data A data frame that must contain latitude (`lat_initial`) and longitude (`lon_initial`) coordinates,
+#' as well as columns with individual length.
+#' @param JuvLim Length threshold to consider juveniles (default = 12). If the length is below this value,
+#' the individual is considered juvenile.
+#' @param distance_type Type of distance calculation to the coast (e.g., "haversine"), default is "haversine".
+#' @param window Window parameter to smooth the coastline, default is 0.5.
+#' @param unit Distance unit used in the calculation ("nm", "km", etc.), default is "nm".
+#' @param suppress_warnings Logical. If TRUE (default), warnings are suppressed; otherwise, they are shown.
 #'
-#' @return Un data frame con las siguientes nuevas variables:
+#' @return A data frame with the following new variables:
 #' \itemize{
-#'   \item `juv`: La proporción de juveniles en cada fila.
-#'   \item `muestra`: El total de individuos en la muestra.
-#'   \item `dc`: La distancia a la costa desde las coordenadas de latitud y longitud proporcionadas.
-#'   \item `dc_cat`: La categoría de distancia a la costa (por ejemplo, "05-15 mn", "15-30 mn", etc.).
+#'   \item `juv`: Proportion of juveniles in each row.
+#'   \item `sample`: Total number of individuals in the sample.
+#'   \item `dc`: Distance to the coast based on provided latitude and longitude.
+#'   \item `dc_cat`: Categorical variable for distance to the coast (e.g., "05-15 nm", "15-30 nm").
 #' }
 #' @examples
 #'
-#' # Procesamiento de datos
-#' data_calas <- procesar_calas(data_calas = calas_bitacora)
-#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
-#' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
+#' data(calas_bitacora, faenas_bitacora, tallas_bitacora)
 #'
-#' # Merge de calas, tallas y faenas
-#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
-#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
+#' # Process data
+#' data_hauls <- process_hauls(data_hauls = calas_bitacora)
+#' data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora)
+#' hauls_length <- process_length(data_length = tallas_bitacora)
 #'
-#' # Aplicación de la función
-#' resultados <- agregar_variables(data = data_total)
+#' # Merge hauls, length and fishing trips
+#' data_length_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
+#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_trips)
 #'
-#' print(resultados)
+#' # Apply function
+#' results <- add_variables(data = data_total)
+#'
+#' print(results)
 #' @export
 #' @importFrom dplyr mutate case_when %>%
-agregar_variables <- function(data,
-                              JuvLim = 12,
-                              tipo_distancia = "haversine",
-                              ventana = 0.5,
-                              unidad = "mn",
-                              silenciar_warnings = TRUE) {
+add_variables <- function(data,
+                          JuvLim = 12,
+                          distance_type = "haversine",
+                          window = 0.5,
+                          unit = "nm",
+                          suppress_warnings = TRUE) {
   stopifnot(is.data.frame(data))
-  required_cols <- c("lon_inicial", "lat_inicial")
+  required_cols <- c("lon_initial", "lat_initial")
 
-  # Verificación de columnas necesarias
+  # Check for required columns
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
-    stop("Faltan columnas requeridas: ", paste(missing_cols, collapse = ", "))
+    stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
   }
 
-  # Identificar columnas de tallas
-  tallas <- grep(pattern = "^[1-9][0-9]*$|^[1-9][0-9]*\\.[0-9]+$",
-                 x = names(data),
-                 value = TRUE)
+  # Identify length columns
+  length <- grep(pattern = "^[1-9][0-9]*$|^[1-9][0-9]*\\.[0-9]+$",
+                x = names(data),
+                value = TRUE)
 
-  # Si no se encuentran tallas, emitir un mensaje sin detener el flujo
-  if (length(tallas) == 0) {
-    warning("No se encontraron columnas de tallas con nombres numéricos. No se calculará proporción de juveniles.")
+  # Warn if no length columns found
+  if (length(length) == 0) {
+    warning("No length columns with numeric names found. Juvenile proportion will not be calculated.")
     return(data)
   }
 
-  # Asegurar que las columnas de tallas sean numéricas
-  data[tallas] <- lapply(data[tallas], as.numeric)
+  # Ensure length columns are numeric
+  data[length] <- lapply(data[length], as.numeric)
 
-  # Contador para warnings de frecuencia cero
-  frecuencia_cero_count <- 0
+  zero_frequency_count <- 0
 
-  # Aplicar la función porc_juveniles a cada fila para calcular proporción de juveniles
-  data$juv <- apply(data[, tallas, drop = FALSE],
-                    1,
-                    function(row) {
-                      # Verificar si la suma de frecuencias es cero
-                      if (sum(row, na.rm = TRUE) == 0) {
-                        frecuencia_cero_count <<- frecuencia_cero_count + 1
-                        return(NA_real_)
-                      }
+  # Apply proportion of juveniles
+  data$juv <- apply(data[, length, drop = FALSE], 1, function(row) {
+    if (sum(row, na.rm = TRUE) == 0) {
+      zero_frequency_count <<- zero_frequency_count + 1
+      return(NA_real_)
+    }
 
-                      # Calcular porcentaje de juveniles silenciando warnings individuales
-                      porc_juveniles(
-                        frecuencia = row,
-                        tallas = as.numeric(tallas),
-                        juvLim = JuvLim,
-                        silenciar_warnings = TRUE
-                      )
-                    })
+    juvenile_percentage(
+      frequency = row,
+      length = as.numeric(length),
+      juvLim = JuvLim,
+      silence_warnings = TRUE
+    )
+  })
 
-  # Mostrar un resumen de warnings de frecuencia cero al final
-  if (!silenciar_warnings && frecuencia_cero_count > 0) {
-    warning("Se encontraron ", frecuencia_cero_count,
-            " filas con suma de frecuencias igual a cero. Se asignó NA a juv.")
+  # Show warning summary if needed
+  if (!suppress_warnings && zero_frequency_count > 0) {
+    warning("Found ", zero_frequency_count,
+            " rows with zero frequency. 'juv' was set to NA.")
   }
 
-  # Total de individuos en la muestra
-  data$muestra <- rowSums(data[, tallas], na.rm = TRUE)
+  # Sample length
+  data$sample <- rowSums(data[, length], na.rm = TRUE)
 
-  # Variable para controlar el warning de distancia a la costa
-  distancia_warning_shown <- FALSE
+  distance_warning_shown <- FALSE
 
-  # Calcular distancia a la costa, suprimir warnings y mostrar uno solo
+  # Distance to coast
   data$dc <- tryCatch(
-    Tivy::distancia_costa(
-      lon = data$lon_inicial,
-      lat = data$lat_inicial,
-      linea_costa = Tivy::linea_costa_peru,
-      tipo_distancia = tipo_distancia,
-      ventana = ventana,
-      unidad = unidad
+    coast_distance(
+      lon = data$lon_initial,
+      lat = data$lat_initial,
+      coastline = peru_coastline,
+      distance_type = distance_type,
+      window = window,
+      unit = unit
     ),
     error = function(e) {
-      # Si ya se ha mostrado el warning, no lo volvemos a mostrar
-      if (!silenciar_warnings && !distancia_warning_shown) {
-        warning("Error en cálculo de distancia a costa: ", conditionMessage(e))
-        distancia_warning_shown <<- TRUE  # Marca el warning como mostrado
+      if (!suppress_warnings && !distance_warning_shown) {
+        warning("Error calculating distance to coast: ", conditionMessage(e))
+        distance_warning_shown <<- TRUE
       }
-      return(rep(NA_real_, nrow(data)))  # Retorna valores NA en caso de error
+      return(rep(NA_real_, nrow(data)))
     }
   )
 
-  # Crear categoría de distancia a la costa
+  # Distance categories
   data <- data %>%
     dplyr::mutate(
       dc_cat = dplyr::case_when(
-        !is.na(dc) & dc >= 5  & dc < 15  ~ "05-15 mn",
-        !is.na(dc) & dc >= 15 & dc < 30  ~ "15-30 mn",
-        !is.na(dc) & dc >= 30 & dc < 50  ~ "30-50 mn",
-        !is.na(dc) & dc >= 50 & dc < 100 ~ "50-100 mn",
+        !is.na(dc) & dc >= 5  & dc < 15  ~ "05-15 nm",
+        !is.na(dc) & dc >= 15 & dc < 30  ~ "15-30 nm",
+        !is.na(dc) & dc >= 30 & dc < 50  ~ "30-50 nm",
+        !is.na(dc) & dc >= 50 & dc < 100 ~ "50-100 nm",
         TRUE                             ~ NA_character_
       )
     )

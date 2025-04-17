@@ -1,7 +1,7 @@
 Package: Tivy
 Type: Package
 Title: Tools for Fisheries Data Analysis and Visualization
-Version: 0.1.0
+Version: 0.2.0
 Author: Hans Ttito
 Maintainer: Hans Ttito <kvttitos@gmail.com>
 Description: Provides functions for loading, processing, and analyzing fisheries data,

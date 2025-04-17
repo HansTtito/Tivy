@@ -1,13 +1,22 @@
-#' Procesamiento de datos de faenas pesqueras, archivo sitrapesca de PRODUCE
+#' Processing fishing trip data from PRODUCE sitrapesca files
 #'
 #' @description
-#' Procesa datos de faenas pesqueras provenientes de las bitácoras de PRODUCE,
-#' en formato CSV o XLSX. Devuelve un data frame limpio y estandarizado.
+#' Processes fishing trip data from PRODUCE logbooks,
+#' in CSV or XLSX format. Returns a clean and standardized data frame.
 #'
-#' @param data_faenas Data frame con los datos crudos de faenas.
-#' @param formato Formato del archivo de entrada: "xlsx" (por defecto) o "csv".
+#' @param data_fishing_trips Data frame with raw fishing trip data.
+#' @param format Format of the input file: "xlsx" (default) or "csv".
 #'
-#' @return Un data frame con columnas estandarizadas: codigo_faena, embarcacion, armador, matricula, fecha_inicio (opcional), fecha_fin (opcional).
+#' @return A data frame with the following standardized columns:
+#'   \itemize{
+#'     \item fishing_trip_code: Unique identifier of the fishing trip
+#'     \item vessel: Vessel name
+#'     \item owner: Vessel owner
+#'     \item id_vessel: Vessel registration number
+#'     \item start_date: Start date and time of the fishing trip (optional, only in XLSX format)
+#'     \item end_date: End date and time of the fishing trip (optional, only in XLSX format)
+#'   }
+#' 
 #' @export
 #' @importFrom dplyr select %>%
 #'
@@ -15,21 +24,21 @@
 #'
 #' data(faenas_bitacora)
 #'
-#' faenas = procesar_faenas(data_faenas = faenas_bitacora, formato = "xlsx")
+#' fishing_trips = process_fishing_trips(data_fishing_trips = faenas_bitacora, format = "xlsx")
 #'
-#' print(head(faenas))
-procesar_faenas <- function(data_faenas, formato = "xlsx") {
-  if (!formato %in% c("xlsx", "csv")) {
-    stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
+#' print(head(fishing_trips))
+process_fishing_trips <- function(data_fishing_trips, format = "xlsx") {
+  if (!format %in% c("xlsx", "csv")) {
+    stop("The 'format' parameter must be 'xlsx' or 'csv'.")
   }
-  if (formato == "xlsx") {
-    if (ncol(data_faenas) < 11) stop("Se esperan al menos 11 columnas en archivos XLSX.")
-    data_faenas <- data_faenas %>% dplyr::select(11, 4, 3, 7, 9, 10)
-    names(data_faenas) <- c("codigo_faena", "embarcacion", "armador", "matricula", "fecha_inicio", "fecha_fin")
-  } else if (formato == "csv") {
-    if (ncol(data_faenas) < 8) stop("Se esperan al menos 8 columnas en archivos CSV.")
-    data_faenas <- data_faenas %>% dplyr::select(8, 3, 2, 4)
-    names(data_faenas) <- c("codigo_faena", "embarcacion", "armador", "matricula")
+  if (format == "xlsx") {
+    if (ncol(data_fishing_trips) < 11) stop("At least 11 columns are expected in XLSX files.")
+    data_fishing_trips <- data_fishing_trips %>% dplyr::select(11, 4, 3, 7, 9, 10)
+    names(data_fishing_trips) <- c("fishing_trip_code", "vessel", "owner", "id_vessel", "start_date", "end_date")
+  } else if (format == "csv") {
+    if (ncol(data_fishing_trips) < 8) stop("At least 8 columns are expected in CSV files.")
+    data_fishing_trips <- data_fishing_trips %>% dplyr::select(8, 3, 2, 4)
+    names(data_fishing_trips) <- c("fishing_trip_code", "vessel", "owner", "id_vessel")
   }
-  return(data_faenas)
+  return(data_fishing_trips)
 }

@@ -1,55 +1,55 @@
-#' Procesamiento de datos de tallas de las calas, archivo sitrapesca de PRODUCE
+#' Processing length data from hauls, PRODUCE sitrapesca file
 #'
 #' @description
-#' Procesa datos de tallas provenientes de las bitácoras de PRODUCE en formato CSV o XLSX.
-#' Limpia las columnas relevantes y transforma el formato long a formato wide (filas por cala, columnas por talla).
+#' Processes length data from PRODUCE logbooks in CSV or XLSX format.
+#' Cleans the relevant columns and transforms the long format to wide format (rows by haul, columns by length).
 #'
-#' @param data_tallas Data frame con los datos de tallas.
-#' @param formato Formato de entrada: "xlsx" (por defecto) o "csv".
+#' @param data_length Data frame with length data.
+#' @param format Input format: "xlsx" (default) or "csv".
 #'
-#' @return Un data frame con tallas por cala (formato wide).
+#' @return A data frame with length by haul (wide format).
 #' @export
 #'
 #' @examples
 #'
-#' procesar_tallas(data_tallas = tallas_bitacora, formato = "xlsx")
+#' process_length(data_length = tallas_bitacora, format = "xlsx")
 #'
 #' @importFrom dplyr select mutate %>%
 #' @importFrom stringr str_trim
 #' @importFrom tidyr pivot_wider
-procesar_tallas <- function(data_tallas, formato = "xlsx") {
-  if (!formato %in% c("xlsx", "csv")) {
-    stop("El parámetro 'formato' debe ser 'xlsx' o 'csv'.")
+process_length <- function(data_length, format = "xlsx") {
+  if (!format %in% c("xlsx", "csv")) {
+    stop("The 'format' parameter must be 'xlsx' or 'csv'.")
   }
-  # Seleccionar columnas según formato
-  if (formato == "xlsx") {
-    if (ncol(data_tallas) < 10) stop("Se esperan al menos 10 columnas en archivos XLSX.")
-    data_tallas <- data_tallas %>% dplyr::select(3, 4, 5, 8, 10)
-  } else if (formato == "csv") {
-    if (ncol(data_tallas) < 6) stop("Se esperan al menos 6 columnas en archivos CSV.")
-    data_tallas <- data_tallas[, -c(1, 6)]
+  # Select columns according to format
+  if (format == "xlsx") {
+    if (ncol(data_length) < 10) stop("At least 10 columns are expected in XLSX files.")
+    data_length <- data_length %>% dplyr::select(3, 4, 5, 8, 10)
+  } else if (format == "csv") {
+    if (ncol(data_length) < 6) stop("At least 6 columns are expected in CSV files.")
+    data_length <- data_length[, -c(1, 6)]
   }
-  # Asignar nombres
-  names(data_tallas) <- c("codigo_faena", "n_cala", "descripcion", "talla", "freq")
-  # Limpieza y conversión
-  data_tallas <- data_tallas %>%
+  # Assign names
+  names(data_length) <- c("fishing_trip_code", "haul_number", "description", "length", "freq")
+  # Cleaning and conversion
+  data_length <- data_length %>%
     dplyr::mutate(
-      descripcion = stringr::str_trim(descripcion),
-      talla = suppressWarnings(as.numeric(talla)),
+      description = stringr::str_trim(description),
+      length = suppressWarnings(as.numeric(length)),
       freq = suppressWarnings(as.numeric(freq))
     )
-  # Guardar orden deseado de las tallas
-  orden_tallas <- sort(unique(na.omit(data_tallas$talla)))
-  # Transformar a formato wide
-  data_tallas <- tidyr::pivot_wider(
-    data_tallas,
-    names_from = talla,
+  # Save desired length order
+  length_order <- sort(unique(na.omit(data_length$length)))
+  # Transform to wide format
+  data_length <- tidyr::pivot_wider(
+    data_length,
+    names_from = length,
     values_from = freq,
     values_fill = list(freq = 0)
   )
-  # Reordenar columnas de tallas
-  columnas_fijas <- c("codigo_faena", "n_cala", "descripcion")
-  columnas_tallas_ordenadas <- as.character(orden_tallas)
-  data_tallas <- data_tallas[, c(columnas_fijas, columnas_tallas_ordenadas)]
-  return(data_tallas)
+  # Reorder length columns
+  fixed_columns <- c("fishing_trip_code", "haul_number", "description")
+  ordered_length_columns <- as.character(length_order)
+  data_length <- data_length[, c(fixed_columns, ordered_length_columns)]
+  return(as.data.frame(data_length))
 }

@@ -3,19 +3,19 @@
 \docType{data}
 \name{calas_bitacora}
 \alias{calas_bitacora}
-\title{Calas de pesca}
+\title{Fishing hauls}
 \format{
-Un data.frame con datos de ejemplo de las calas realizadas por embarcaciones en el mar peruano.
+A data.frame with sample data of hauls made by vessels in the Peruvian sea.
 }
 \source{
-Datos generados de manera aleatoria.
+Randomly generated data.
 }
 \usage{
 calas_bitacora
 }
 \description{
-Conjunto de datos que contiene información sobre calas de pesca en el mar peruano.
-Las calas son lugares específicos donde se realizan actividades de pesca.
+Dataset containing information about fishing hauls in the Peruvian sea.
+Hauls are specific locations where fishing activities are conducted.
 }
 \examples{
 data(calas_bitacora)

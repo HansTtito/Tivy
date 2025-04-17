@@ -1,204 +1,203 @@
-## Herramientas para el Análisis de Datos Pesqueros en Perú
+## Tools for Fisheries Data Analysis in Peru
 
-`Tivy` es un paquete R especializado en el procesamiento y análisis de datos pesqueros del Perú. Facilita el manejo de información proveniente de bitácoras de faenas, registros de tallas, calas y comunicados oficiales emitidos por el Ministerio de Producción para cierres preventivos.
+`Tivy` is an R package specialized in processing and analyzing fisheries data from Peru. It facilitates the handling of information from fishing trip logbooks, size records, hauls, and official announcements issued by the Ministry of Production for preventive closures.
 
-## 📋 Características principales
+## 📋 Main Features
 
-- Carga y procesamiento de datos de bitácoras pesqueras
-- Integración de datos de calas, tallas y faenas
-- Estimación de proporciones de juveniles
-- Análisis de cierres preventivos
-- Visualización interactiva de áreas de pesca y resultados
-- Herramientas para modelado estadístico pesquero
+- Loading and processing fishing logbook data
+- Integration of haul, size, and fishing trip data
+- Estimation of juvenile proportions
+- Analysis of preventive closures
+- Interactive visualization of fishing areas and results
+- Tools for fisheries statistical modeling
 
-## 📦 Instalación
+## 📦 Installation
 
-Puedes instalar la versión en desarrollo de `Tivy` desde GitHub:
+You can install the development version of `Tivy` from GitHub:
 
 ```r
 # install.packages("devtools")
 devtools::install_github("HansTtito/Tivy")
 ```
 
-## 🚀 Ejemplos de uso
+## 🚀 Usage Examples
 
-### Carga y procesamiento básico
+### Basic Loading and Processing
 
 ```r
 library(Tivy)
 
-# Cargar y procesar archivos de bitácoras
-data_calas <- procesar_calas(data_calas = calas_bitacora, 
-                            formato = "xlsx", 
-                            corregir_coordenadas = TRUE)
+# Load and process logbook files
+data_hauls <- process_hauls(data_hauls = calas_bitacora, 
+                            format = "xlsx", 
+                            correct_coordinates = TRUE)
 
-data_faenas <- procesar_faenas(data_faenas = faenas_bitacora, 
-                              formato = "xlsx")
+data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora, 
+                              format = "xlsx")
 
-calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora, 
-                               formato = "xlsx")
+hauls_length <- process_length(data_length = tallas_bitacora, 
+                               format = "xlsx")
 ```
 
-### Integración de datos
+### Data Integration
 
 ```r
-# Combinación de datos de tallas y faenas
-data_tallasfaenas <- merge(x = data_faenas, 
-                          y = calas_tallas, 
-                          by = 'codigo_faena')
+# Combination of size and fishing trip data
+data_length_fishing_trips <- merge(x = data_fishing_trips, 
+                          y = hauls_length, 
+                          by = 'fishing_trip_code')
 
-# Integración completa con datos de calas
-data_total <- merge_tallas_faenas_calas(data_calas = data_calas, 
-                                       data_tallas_faenas = data_tallasfaenas)
+# Complete integration with haul data
+data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, 
+                                       data_length_fishing_trips = data_length_fishing_trips)
 
-# Agregar variables derivadas
-datos_final <- agregar_variables(data_total)
+# Add derived variables
+final_data <- add_variables(data_total)
 ```
 
-### Análisis de juveniles
+### Juvenile Analysis
 
 ```r
-# Definir columnas de tallas
-tallas_cols <- as.character(seq(8, 15, 0.5))
+# Define size columns
+length_cols <- as.character(seq(8, 15, 0.5))
 
-# Ponderar tallas según captura
-datos_final_ponderados <- ponderar_tallas_df(
-  datos_final, 
-  tallas_cols = tallas_cols, 
-  captura_col = 'catch_ANCHOVETA', 
-  a = 0.0012,  # Parámetro a de relación longitud-peso
-  b = 3.1242   # Parámetro b de relación longitud-peso
+# Weight length according to catch
+final_data_weighted <- weight_length_df(
+  final_data, 
+  length_cols = length_cols, 
+  catch_col = 'catch_ANCHOVETA', 
+  a = 0.0012,  # Parameter a of length-weight relationship
+  b = 3.1242   # Parameter b of length-weight relationship
 )
 
-# Convertir fechas para agrupación temporal
-datos_final_ponderados$fecha_unica <- convertir_a_fecha(
-  datos_final_ponderados$fecha_inicio_cala, 
-  tipo = "date"
+# Convert dates for temporal grouping
+final_data_weighted$unique_date <- convert_to_date(
+  final_data_weighted$fecha_inicio_cala, 
+  type = "date"
 )
 
-# Calcular proporción de juveniles por fecha
-resultado_juveniles <- juveniles_por_grupo(
-  data = datos_final_ponderados, 
-  group_cols = c("fecha_unica"), 
-  cols_tallas = paste0("pond_", tallas_cols)
-)
-```
-
-### Visualización de resultados
-
-```r
-# Gráfico básico de juveniles por fecha
-graficar_juveniles(
-  datos_juveniles = resultado_juveniles, 
-  var_x = c("fecha_unica"),
-  limite_juv = 12  # Talla mínima legal (cm)
+# Calculate juvenile proportion by date
+juvenile_results <- juveniles_by_group(
+  data = final_data_weighted, 
+  group_cols = c("unique_date"), 
+  cols_length = paste0("pond_", length_cols)
 )
 ```
 
-![Ejemplo de gráfico de juveniles](man/figures/ejemplo_juveniles.png)
+### Visualization of Results
 
 ```r
-# Dashboard completo de análisis de juveniles
-datos_final_ponderados$catch_t = datos_final_ponderados$catch_ANCHOVETA/1000
+# Basic plot of juveniles by date
+plot_juveniles(
+  juvenile_data = juvenile_results, 
+  var_x = c("unique_date"),
+  juv_limit = 12  # Legal minimum size (cm)
+)
+```
 
-dashboard = dashboard_juveniles(
-  data_total = datos_final_ponderados,
-  col_fecha = "fecha_unica", 
-  cols_tallas = paste0("pond_",seq(8,15,0.5)), 
-  limite_juv = 12,
+![Example of juvenile plot](man/figures/ejemplo_juveniles.png)
+
+```r
+# Complete dashboard of juvenile analysis
+final_data_weighted$catch_t = final_data_weighted$catch_ANCHOVETA/1000
+
+dashboard = juveniles_dashboard(
+  data_total = final_data_weighted,
+  col_date = "unique_date", 
+  cols_length = paste0("pond_",seq(8,15,0.5)), 
+  juv_limit = 12,
   a = 0.0001, b = 2.984, 
-  col_latitud = "lat_final",
-  col_longitud = "lon_final", 
-  col_captura = "catch_t",
+  col_latitude = "lat_final",
+  col_longitude = "lon_final", 
+  col_catch = "catch_t",
   col_juveniles = "juv",
   show_limit_juv = TRUE
 )
 
-# Ver componentes individuales del dashboard
-dashboard$comparacion  # Comparación de juveniles
-dashboard$relacion  # Relación juveniles ~ Tiempo
-dashboard$captura_acumulada  # captura acumulada
-dashboard$mapa_juveniles # Mapa de juveniles
+# View individual dashboard components
+dashboard$comparison  # Juvenile comparison
+dashboard$relation  # Relationship juveniles ~ Time
+dashboard$cumulative_catch  # Cumulative catch
+dashboard$juveniles_map # Juvenile map
 
-dashboard$dashboard    # Panel completo con todos los gráficos
+dashboard$dashboard    # Complete panel with all plots
 ```
 
-![Dashboard de análisis de juveniles](man/figures/dashboard_juveniles.png)
+![Juvenile analysis dashboard](man/figures/dashboard_juveniles.png)
 
-### Análisis de comunicados oficiales
+### Analysis of Official Announcements
 
 ```r
-# Ejemplo con URLs de comunicados del Ministerio de Producción
+# Example with URLs of announcements from the Ministry of Production
 pdf_urls <- c(
   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
 )
 
-# Extraer información de los comunicados
-resultados <- extrae_data_comunicados(vector_pdf_names = pdf_urls)
+# Extract information from announcements
+results <- extract_announcement_data(vector_pdf_names = pdf_urls)
 
-# Formatear datos para visualización
-resultados_formateados <- formatear_datos_comunicados(resultados)
+# Format data for visualization
+formatted_results <- format_announcement_data(results)
 
-# Visualizar áreas cerradas con ggplot
-graficar_poligonos_ggplot(datos = resultados_formateados, mostrar_leyenda = TRUE)
+# Visualize closed areas with ggplot
+plot_polygons_ggplot(data = formatted_results, show_legend = TRUE)
 ```
 
-![Visualización de áreas cerradas con ggplot](man/figures/poligonos_ggplot.png)
+![Visualization of closed areas with ggplot](man/figures/poligonos_ggplot.png)
 
 ```r
-# Visualización interactiva con leaflet
-mapa_interactivo <- graficar_poligonos_leaflet(datos = resultados_formateados, mostrar_leyenda = TRUE)
-mapa_interactivo
+# Interactive visualization with leaflet
+interactive_map <- plot_polygons_leaflet(data = formatted_results, show_legend = TRUE)
+interactive_map
 ```
 
-![Visualización interactiva de áreas cerradas](man/figures/poligonos_leaflet.png)
+![Interactive visualization of closed areas](man/figures/poligonos_leaflet.png)
 
-## 📊 Flujo de trabajo recomendado
+## 📊 Recommended Workflow
 
-1. Cargar y procesar los datos de calas, faenas y tallas
-2. Integrar los datos mediante las funciones de fusión
-3. Calcular variables derivadas y realizar ponderaciones
-4. Analizar la proporción de juveniles por zonas o temporadas
-5. Visualizar resultados mediante gráficos o dashboards
-6. Integrar con información de cierres preventivos
+1. Load and process haul, fishing trip, and size data
+2. Integrate the data using the merge functions
+3. Calculate derived variables and perform weightings
+4. Analyze the proportion of juveniles by zones or seasons
+5. Visualize results through plots or dashboards
+6. Integrate with preventive closure information
 
-## 📄 Estructura de datos soportada
+## 📄 Supported Data Structure
 
-`Tivy` está diseñado para trabajar con la estructura de datos del Ministerio de Producción del Perú. Los archivos de entrada típicos incluyen:
+`Tivy` is designed to work with the data structure of Peru's Ministry of Production. Typical input files include:
 
-- **Bitácoras de calas**: Registros de operaciones de pesca.
-- **Bitácoras de faenas**: Información de viajes y embarcaciones.
-- **Registros de tallas**: Mediciones biométricas de especies capturadas.
-- **Comunicados oficiales**: Documentos PDF con información sobre cierres preventivos.
+- **Haul logbooks**: Records of fishing operations.
+- **Fishing trip logbooks**: Information on trips and vessels.
+- **Size records**: Biometric measurements of captured species.
+- **Official announcements**: PDF documents with information on preventive closures.
 
-## 🔧 Funciones principales
+## 🔧 Main Functions
 
-| Categoría | Funciones | Descripción |
+| Category | Functions | Description |
 |-----------|-----------|-------------|
-| Procesamiento | `procesar_calas()`, `procesar_faenas()`, `procesar_tallas()` | Carga y limpieza de datos |
-| Integración | `merge_tallas_faenas_calas()`, `agregar_variables()` | Combinación y enriquecimiento de datos |
-| Juveniles | `ponderar_tallas_df()`, `juveniles_por_grupo()` | Análisis de proporciones de juveniles |
-| Visualización | `graficar_juveniles()`, `dashboard_juveniles()` | Creación de gráficos y dashboards |
-| Comunicados | `extrae_data_comunicados()`, `formatear_datos_comunicados()` | Procesamiento de comunicados oficiales |
-| Mapas | `graficar_poligonos_ggplot()`, `graficar_poligonos_leaflet()` | Visualización geoespacial |
+| Processing | `process_hauls()`, `process_fishing_trips()`, `process_length()` | Data loading and cleaning |
+| Integration | `merge_length_fishing_trips_hauls()`, `add_variables()` | Data combination and enrichment |
+| Juveniles | `weight_length_df()`, `juveniles_by_group()` | Analysis of juvenile proportions |
+| Visualization | `plot_juveniles()`, `juveniles_dashboard()` | Creation of plots and dashboards |
+| Announcements | `extract_announcement_data()`, `format_announcement_data()` | Processing of official announcements |
+| Maps | `plot_polygons_ggplot()`, `plot_polygons_leaflet()` | Geospatial visualization |
 
-## 👩‍💻 Contribuciones
+## 👩‍💻 Contributions
 
-Las contribuciones son bienvenidas. Por favor considera:
+Contributions are welcome. Please consider:
 
-1. Abrir un issue para discutir cambios importantes
-2. Seguir el estilo de código del proyecto
-3. Incluir pruebas para nuevas funcionalidades
-4. Actualizar la documentación correspondiente
+1. Opening an issue to discuss important changes
+2. Following the project's code style
+3. Including tests for new features
+4. Updating the corresponding documentation
 
-## 📚 Cita
+## 📚 Citation
 
-Si utilizas `Tivy` en tu investigación, por favor cítalo como:
+If you use `Tivy` in your research, please cite it as:
 
 ```
-Ttito, H. (2025). Tivy: Herramientas para el Análisis de Datos Pesqueros en Perú. R package version 0.1.0.
+Ttito, H. (2025). Tivy: Tools for Fisheries Data Analysis in Peru. R package version 0.1.0.
 https://github.com/HansTtito/Tivy
 ```
-

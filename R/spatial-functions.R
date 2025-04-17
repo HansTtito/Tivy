@@ -1,502 +1,507 @@
-#' Convertir latitud o longitud a grados decimales
+#' Convert latitude or longitude to decimal degrees
 #'
 #' @description
-#' Convierte coordenadas expresadas en formato grados, minutos y segundos (DMS) o grados y minutos (DM) a grados decimales.
-#' Por defecto, se asume que las coordenadas están en el hemisferio sur (latitudes negativas).
-#' La función puede corregir automáticamente errores comunes como minutos o segundos mayores a 60.
+#' Converts coordinates expressed in degrees, minutes and seconds (DMS) or degrees and minutes (DM) format to decimal degrees.
+#' By default, coordinates are assumed to be in the southern hemisphere (negative latitudes).
+#' The function can automatically correct common errors such as minutes or seconds greater than 60.
 #'
-#' @param coordenadas Vector de caracteres. Cada elemento debe estar en formatos como:
-#'   - Con símbolos: `"G° M' S\""`, `"G° M'"`, `"17°26'S"`
-#'   - Sin símbolos: `"G M S"`, `"G M"`, `"17 26 S"`
-#'   - El hemisferio puede estar incluido en la coordenada
-#' @param hemisferio Caracter `"N"`, `"S"`, `"E"`, `"W"` o `"O"` que indica el hemisferio correspondiente
-#' cuando no está especificado en la coordenada. `"S"` y `"W"`/`"O"` generan valores negativos. Default: `"S"`.
-#' @param corregir_errores Lógico. Si es TRUE (valor por defecto), la función corrige automáticamente
-#' valores fuera de rango, como minutos o segundos mayores a 60, convirtiéndolos apropiadamente
-#' a la unidad superior.
+#' @param coordinates Character vector. Each element should be in formats such as:
+#'   - With symbols: `"D° M' S\""`, `"D° M'"`, `"17°26'S"`
+#'   - Without symbols: `"D M S"`, `"D M"`, `"17 26 S"`
+#'   - The hemisphere can be included in the coordinate
+#' @param hemisphere Character `"N"`, `"S"`, `"E"`, `"W"` or `"O"` indicating the corresponding hemisphere
+#' when not specified in the coordinate. `"S"` and `"W"`/`"O"` generate negative values. Default: `"S"`.
+#' @param correct_errors Logical. If TRUE (default value), the function automatically corrects
+#' out-of-range values, such as minutes or seconds greater than 60, by appropriately converting them
+#' to the higher unit.
 #'
-#' @return Un vector numérico con las coordenadas convertidas a grados decimales.
+#' @return A numeric vector with coordinates converted to decimal degrees.
 #' @export
 #'
 #' @examples
-#' # Convertir coordenadas del sur (formato completo)
-#' dms_a_decimal(c("39° 48' 36\""), hemisferio = "S")
+#' # Convert southern coordinates (complete format)
+#' dms_to_decimal(c("39° 48' 36\""), hemisphere = "S")
 #'
-#' # Convertir coordenadas del oeste (formato completo sin símbolos)
-#' dms_a_decimal(c("73 15 0"), hemisferio = "O")
+#' # Convert western coordinates (complete format without symbols)
+#' dms_to_decimal(c("73 15 0"), hemisphere = "W")
 #'
-#' # Convertir coordenadas con solo grados y minutos
-#' dms_a_decimal(c("39° 48'"), hemisferio = "S")
-#' dms_a_decimal(c("73 15"), hemisferio = "W")
+#' # Convert coordinates with only degrees and minutes
+#' dms_to_decimal(c("39° 48'"), hemisphere = "S")
+#' dms_to_decimal(c("73 15"), hemisphere = "W")
 #'
-#' # Coordenadas con hemisferio incluido
-#' dms_a_decimal(c("17°26'S"))
-#' dms_a_decimal(c("73°15'W"))
-#' dms_a_decimal(c("39 48 N"))
+#' # Coordinates with hemisphere included
+#' dms_to_decimal(c("17°26'S"))
+#' dms_to_decimal(c("73°15'W"))
+#' dms_to_decimal(c("39 48 N"))
 #'
-#' # Corregir automáticamente valores fuera de rango
-#' dms_a_decimal(c("39° 75' 36\""), corregir_errores = TRUE)  # Minutos > 60
-#' dms_a_decimal(c("39° 48' 98\""), corregir_errores = TRUE)  # Segundos > 60
+#' # Automatically correct out-of-range values
+#' dms_to_decimal(c("39° 75' 36\""), correct_errors = TRUE)  # Minutes > 60
+#' dms_to_decimal(c("39° 48' 98\""), correct_errors = TRUE)  # Seconds > 60
 #'
-#' # Desactivar corrección automática
-#' dms_a_decimal(c("39° 75' 36\""), corregir_errores = FALSE)  # Generará advertencia
+#' # Disable automatic correction
+#' dms_to_decimal(c("39° 75' 36\""), correct_errors = FALSE)  # Will generate a warning
 #'
-#' # En un dataframe
-#' # dms_a_decimal(calas_bitacora$Longitud.Fin)
+#' # In a dataframe
+#' 
+#' data(calas_bitacora)
+#' 
+#' dms_to_decimal(calas_bitacora$Longitud.Fin)
 #'
 #' @importFrom stringr str_split str_count str_detect str_extract
-dms_a_decimal <- function(coordenadas, hemisferio = "S", corregir_errores = TRUE) {
-  # Validación de entrada
-  if (missing(coordenadas)) {
-    stop("El parámetro 'coordenadas' es obligatorio.")
+dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE) {
+  # Input validation
+  if (missing(coordinates)) {
+    stop("The 'coordinates' parameter is required.")
   }
 
-  if (length(coordenadas) == 0) {
-    warning("El vector de coordenadas está vacío.")
+  if (length(coordinates) == 0) {
+    warning("The coordinate vector is empty.")
     return(numeric(0))
   }
 
-  # Convertir a character si es factor
-  if (is.factor(coordenadas)) {
-    coordenadas <- as.character(coordenadas)
-    warning("El vector de coordenadas ha sido convertido de factor a character.")
+  # Convert to character if factor
+  if (is.factor(coordinates)) {
+    coordinates <- as.character(coordinates)
+    warning("The coordinate vector has been converted from factor to character.")
   }
 
-  if (!is.character(coordenadas)) {
-    if (is.numeric(coordenadas)) {
-      warning("Las coordenadas proporcionadas ya son numéricas. Se devuelven sin cambios.")
-      return(coordenadas)
+  if (!is.character(coordinates)) {
+    if (is.numeric(coordinates)) {
+      warning("The provided coordinates are already numeric. They are returned unchanged.")
+      return(coordinates)
     } else {
-      stop("Las coordenadas deben ser una cadena de texto o un vector de caracteres.")
+      stop("Coordinates must be a text string or a character vector.")
     }
   }
 
-  if (!hemisferio %in% c("N", "S", "E", "W", "O")) {
-    stop("El hemisferio debe ser uno de: 'N', 'S', 'E', 'W' o 'O'.")
+  if (!hemisphere %in% c("N", "S", "E", "W", "O")) {
+    stop("The hemisphere must be one of: 'N', 'S', 'E', 'W' or 'O'.")
   }
 
-  # Procesar cada coordenada
-  resultados <- vapply(coordenadas, function(coord) {
-    # Manejar NA
+  # Process each coordinate
+  results <- vapply(coordinates, function(coord) {
+    # Handle NA
     if (is.na(coord) || coord == "") {
       return(NA_real_)
     }
 
     tryCatch({
-      # Detectar si la coordenada incluye el hemisferio
-      hemisferio_local <- hemisferio
-      coord_original <- coord
+      # Detect if the coordinate includes the hemisphere
+      local_hemisphere <- hemisphere
+      original_coord <- coord
 
-      # Buscar indicadores de hemisferio (N, S, E, W, O)
-      patron_hemisferio <- "[NSEW]|O"
-      hemisferio_encontrado <- regmatches(coord, regexpr(patron_hemisferio, coord))
+      # Search for hemisphere indicators (N, S, E, W, O)
+      hemisphere_pattern <- "[NSEW]|O"
+      found_hemisphere <- regmatches(coord, regexpr(hemisphere_pattern, coord))
 
-      if (length(hemisferio_encontrado) > 0 && hemisferio_encontrado != "") {
-        hemisferio_local <- hemisferio_encontrado
-        # Eliminar el hemisferio de la coordenada
-        coord <- gsub(patron_hemisferio, "", coord)
+      if (length(found_hemisphere) > 0 && found_hemisphere != "") {
+        local_hemisphere <- found_hemisphere
+        # Remove the hemisphere from the coordinate
+        coord <- gsub(hemisphere_pattern, "", coord)
       }
 
-      # Determinar el signo según el hemisferio
-      signo <- ifelse(hemisferio_local %in% c("S", "W", "O"), -1, 1)
+      # Determine the sign according to the hemisphere
+      sign <- ifelse(local_hemisphere %in% c("S", "W", "O"), -1, 1)
 
-      # Limpiar y normalizar la coordenada
-      # Reemplazar grados, minutos y segundos con espacios
-      coord_limpia <- gsub("[°'\"]", " ", coord)
-      # Eliminar espacios múltiples
-      coord_limpia <- gsub("\\s+", " ", coord_limpia)
-      # Eliminar espacios al inicio y final
-      coord_limpia <- trimws(coord_limpia)
+      # Clean and normalize the coordinate
+      # Replace degrees, minutes and seconds with spaces
+      clean_coord <- gsub("[°'\"]", " ", coord)
+      # Remove multiple spaces
+      clean_coord <- gsub("\\s+", " ", clean_coord)
+      # Remove spaces at beginning and end
+      clean_coord <- trimws(clean_coord)
 
-      # Dividir en componentes
-      componentes <- unlist(strsplit(coord_limpia, " "))
-      # Filtrar componentes no numéricos
-      componentes_num <- componentes[grepl("^[0-9]+(\\.[0-9]+)?$", componentes)]
+      # Split into components
+      components <- unlist(strsplit(clean_coord, " "))
+      # Filter non-numeric components
+      num_components <- components[grepl("^[0-9]+(\\.[0-9]+)?$", components)]
 
-      # Verificar si hay componentes numéricos
-      if (length(componentes_num) == 0) {
-        warning(paste("No se encontraron componentes numéricos en la coordenada:", coord_original))
+      # Check if there are numeric components
+      if (length(num_components) == 0) {
+        warning(paste("No numeric components found in the coordinate:", original_coord))
         return(NA_real_)
       }
 
-      # Convertir a numérico con validación
-      partes <- suppressWarnings(as.numeric(componentes_num))
+      # Convert to numeric with validation
+      parts <- suppressWarnings(as.numeric(num_components))
 
-      # Verificar si algún valor es NA después de la conversión
-      if (any(is.na(partes))) {
-        warning(paste("Error al convertir a numérico algún componente de la coordenada:", coord_original))
+      # Check if any value is NA after conversion
+      if (any(is.na(parts))) {
+        warning(paste("Error converting some component of the coordinate to numeric:", original_coord))
         return(NA_real_)
       }
 
-      # NUEVO: Corregir automáticamente valores fuera de rango
-      if (corregir_errores && length(partes) >= 3) {
-        # Corregir segundos >= 60
-        if (!is.na(partes[3]) && partes[3] >= 60) {
-          minutos_extra <- floor(partes[3] / 60)
-          partes[3] <- partes[3] %% 60
-          partes[2] <- partes[2] + minutos_extra
+      # NEW: Automatically correct out-of-range values
+      if (correct_errors && length(parts) >= 3) {
+        # Correct seconds >= 60
+        if (!is.na(parts[3]) && parts[3] >= 60) {
+          extra_minutes <- floor(parts[3] / 60)
+          parts[3] <- parts[3] %% 60
+          parts[2] <- parts[2] + extra_minutes
         }
 
-        # Corregir minutos >= 60
-        if (!is.na(partes[2]) && partes[2] >= 60) {
-          grados_extra <- floor(partes[2] / 60)
-          partes[2] <- partes[2] %% 60
-          partes[1] <- partes[1] + grados_extra
+        # Correct minutes >= 60
+        if (!is.na(parts[2]) && parts[2] >= 60) {
+          extra_degrees <- floor(parts[2] / 60)
+          parts[2] <- parts[2] %% 60
+          parts[1] <- parts[1] + extra_degrees
         }
       } else {
-        # Emitir warnings pero no corregir
-        if (length(partes) >= 1 && (is.na(partes[1]) || partes[1] < 0 || partes[1] > 180)) {
-          warning(paste("Grados fuera de rango (0-180) en la coordenada:", coord_original))
+        # Issue warnings but don't correct
+        if (length(parts) >= 1 && (is.na(parts[1]) || parts[1] < 0 || parts[1] > 180)) {
+          warning(paste("Degrees out of range (0-180) in the coordinate:", original_coord))
         }
 
-        if (length(partes) >= 2 && (is.na(partes[2]) || partes[2] < 0 || partes[2] >= 60)) {
-          warning(paste("Minutos fuera de rango (0-59) en la coordenada:", coord_original))
+        if (length(parts) >= 2 && (is.na(parts[2]) || parts[2] < 0 || parts[2] >= 60)) {
+          warning(paste("Minutes out of range (0-59) in the coordinate:", original_coord))
         }
 
-        if (length(partes) >= 3 && (is.na(partes[3]) || partes[3] < 0 || partes[3] >= 60)) {
-          warning(paste("Segundos fuera de rango (0-59) en la coordenada:", coord_original))
+        if (length(parts) >= 3 && (is.na(parts[3]) || parts[3] < 0 || parts[3] >= 60)) {
+          warning(paste("Seconds out of range (0-59) in the coordinate:", original_coord))
         }
       }
 
-      # Calcular según el número de componentes
-      if (length(partes) == 3) {
-        # Formato completo: grados, minutos, segundos
-        decimal <- signo * (partes[1] + partes[2] / 60 + partes[3] / 3600)
-      } else if (length(partes) == 2) {
-        # Formato parcial: solo grados y minutos
-        decimal <- signo * (partes[1] + partes[2] / 60)
-      } else if (length(partes) == 1) {
-        # Solo grados
-        decimal <- signo * partes[1]
+      # Calculate according to the number of components
+      if (length(parts) == 3) {
+        # Complete format: degrees, minutes, seconds
+        decimal <- sign * (parts[1] + parts[2] / 60 + parts[3] / 3600)
+      } else if (length(parts) == 2) {
+        # Partial format: only degrees and minutes
+        decimal <- sign * (parts[1] + parts[2] / 60)
+      } else if (length(parts) == 1) {
+        # Only degrees
+        decimal <- sign * parts[1]
       } else {
-        warning(paste("Formato no reconocido para la coordenada:", coord_original))
+        warning(paste("Unrecognized format for coordinate:", original_coord))
         return(NA_real_)
       }
 
-      # Validar el resultado final
+      # Validate the final result
       if (abs(decimal) > 180) {
-        warning(paste("La coordenada decimal calculada está fuera de rango (-180 a 180):", decimal))
+        warning(paste("The calculated decimal coordinate is out of range (-180 to 180):", decimal))
       }
 
       return(decimal)
     }, error = function(e) {
-      warning(paste("Error al procesar la coordenada", coord, ":", e$message))
+      warning(paste("Error processing coordinate", coord, ":", e$message))
       return(NA_real_)
     })
   }, FUN.VALUE = numeric(1))
 
-  # Asegurarse de que el resultado no tenga nombres
-  names(resultados) <- NULL
+  # Ensure the result has no names
+  names(results) <- NULL
 
-  return(resultados)
+  return(results)
 }
 
 
-#' Distancia a la costa vectorizado
+#' Vectorized distance to coast
 #'
 #' @description
-#' Estima la distancia entre un conjunto de puntos (lon, lat) y una línea de costa definida por coordenadas.
-#' Se puede ejecutar de forma secuencial o en paralelo, y retornar también los índices de los puntos costeros más cercanos.
+#' Estimates the distance between a set of points (lon, lat) and a coastline defined by coordinates.
+#' It can be executed sequentially or in parallel, and also return the indices of the nearest coastal points.
 #'
-#' @param lon Vector numérico con las longitudes de los puntos de interés.
-#' @param lat Vector numérico con las latitudes de los puntos de interés.
-#' @param linea_costa Data frame que representa la línea de costa, debe contener columnas llamadas `'Long'` y `'Lat'`. Default `Tivy::linea_costa_peru`.
-#' @param devolver_indices Lógico. Si es `TRUE`, devuelve también los índices de los puntos de la línea de costa más cercanos. Default `FALSE`.
-#' @param tipo_distancia Tipo de distancia geográfica a usar: `"haversine"`, `"euclidean"`, `"grid"` .
-#' @param unidad Unidad de medida para la distancia: `"mn"` (millas náuticas), `"km"`, etc.
-#' @param ventana Ventana de búsqueda en grados alrededor del punto para limitar los cálculos y mejorar eficiencia. Default `1`.
-#' @param paralelo Lógico. Si `TRUE`, realiza el cálculo en paralelo utilizando múltiples núcleos. Default `FALSE`.
-#' @param nucleos Número de núcleos a usar para procesamiento paralelo. Default `4`.
+#' @param lon Numeric vector with the longitudes of the points of interest.
+#' @param lat Numeric vector with the latitudes of the points of interest.
+#' @param coastline Data frame representing the coastline, must contain columns called `'Long'` and `'Lat'`. Default `Tivy::peru_coastline`.
+#' @param return_indices Logical. If `TRUE`, also returns the indices of the nearest coastline points. Default `FALSE`.
+#' @param distance_type Type of geographic distance to use: `"haversine"`, `"euclidean"`, `"grid"`.
+#' @param unit Unit of measurement for distance: `"nm"` (nautical miles), `"km"`, etc.
+#' @param window Search window in degrees around the point to limit calculations and improve efficiency. Default `1`.
+#' @param parallel Logical. If `TRUE`, performs the calculation in parallel using multiple cores. Default `FALSE`.
+#' @param cores Number of cores to use for parallel processing. Default `4`.
 #'
-#' @return Si `devolver_indices = FALSE`, devuelve un vector numérico con las distancias a la costa para cada punto.
-#'         Si `devolver_indices = TRUE`, devuelve una lista con:
+#' @return If `return_indices = FALSE`, returns a numeric vector with distances to the coast for each point.
+#'         If `return_indices = TRUE`, returns a list with:
 #'         \itemize{
-#'           \item \code{distancia}: vector numérico con las distancias a la costa
-#'           \item \code{indice}: vector de índices del punto más cercano en la línea de costa
+#'           \item \code{distance}: numeric vector with distances to the coast
+#'           \item \code{index}: vector of indices of the nearest point on the coastline
 #'         }
 #'
 #' @export
 #' @examples
 #'
-#' data_calas <- procesar_calas(data_calas = calas_bitacora)
+#' data(calas_bitacora)
+#' 
+#' data_hauls <- process_hauls(data_hauls = calas_bitacora)
 #'
-#' distancia_costa(
-#'   lon = data_calas$lon_final,
-#'   lat = data_calas$lat_final,
-#'   linea_costa = Tivy::linea_costa_peru,
-#'   tipo_distancia = "haversine",
-#'   unidad = "mn",
-#'   paralelo = TRUE,
-#'   nucleos = 2
+#' coast_distance(
+#'   lon = data_hauls$lon_final,
+#'   lat = data_hauls$lat_final,
+#'   coastline = peru_coastline,
+#'   distance_type = "haversine",
+#'   unit = "nm",
+#'   parallel = TRUE,
+#'   cores = 2
 #' )
 #'
 #' @importFrom future plan multisession
 #' @importFrom future.apply future_lapply
-distancia_costa <- function(lon,
+coast_distance <- function(lon,
                             lat,
-                            linea_costa = Tivy::linea_costa_peru,
-                            devolver_indices = FALSE,
-                            tipo_distancia = "haversine",
-                            unidad = "mn",
-                            ventana = 1,
-                            paralelo = FALSE,
-                            nucleos = 4) {
-  # Validación de parámetros
-  if (missing(lon) || missing(lat) || missing(linea_costa)) {
-    stop("Los parámetros 'lon', 'lat' y 'linea_costa' son obligatorios.")
+                            coastline = peru_coastline,
+                            return_indices = FALSE,
+                            distance_type = "haversine",
+                            unit = "nm",
+                            window = 1,
+                            parallel = FALSE,
+                            cores = 4) {
+  # Parameter validation
+  if (missing(lon) || missing(lat) || missing(coastline)) {
+    stop("The parameters 'lon', 'lat', and 'coastline' are required.")
   }
 
-  # Validar tipos de datos
-  if (!is.numeric(lon)) stop("El parámetro 'lon' debe ser numérico.")
-  if (!is.numeric(lat)) stop("El parámetro 'lat' debe ser numérico.")
-  if (!is.data.frame(linea_costa)) stop("El parámetro 'linea_costa' debe ser un data.frame.")
-  if (!is.logical(devolver_indices)) stop("El parámetro 'devolver_indices' debe ser lógico (TRUE/FALSE).")
-  if (!is.character(tipo_distancia)) stop("El parámetro 'tipo_distancia' debe ser un texto.")
-  if (!is.character(unidad)) stop("El parámetro 'unidad' debe ser un texto.")
-  if (!is.numeric(ventana)) stop("El parámetro 'ventana' debe ser numérico.")
-  if (!is.logical(paralelo)) stop("El parámetro 'paralelo' debe ser lógico (TRUE/FALSE).")
-  if (!is.numeric(nucleos) || nucleos < 1) stop("El parámetro 'nucleos' debe ser un número entero positivo.")
+  # Validate data types
+  if (!is.numeric(lon)) stop("The 'lon' parameter must be numeric.")
+  if (!is.numeric(lat)) stop("The 'lat' parameter must be numeric.")
+  if (!is.data.frame(coastline)) stop("The 'coastline' parameter must be a data.frame.")
+  if (!is.logical(return_indices)) stop("The 'return_indices' parameter must be logical (TRUE/FALSE).")
+  if (!is.character(distance_type)) stop("The 'distance_type' parameter must be text.")
+  if (!is.character(unit)) stop("The 'unit' parameter must be text.")
+  if (!is.numeric(window)) stop("The 'window' parameter must be numeric.")
+  if (!is.logical(parallel)) stop("The 'parallel' parameter must be logical (TRUE/FALSE).")
+  if (!is.numeric(cores) || cores < 1) stop("The 'cores' parameter must be a positive integer.")
 
-  # Validar longitud de vectores
+  # Validate vector lengths
   if (length(lon) != length(lat)) {
-    stop("Los vectores 'lon' y 'lat' deben tener la misma longitud.")
+    stop("The 'lon' and 'lat' vectors must have the same length.")
   }
 
-  # Validar rangos de coordenadas
+  # Validate coordinate ranges
   if (any(abs(lon) > 180, na.rm = TRUE)) {
-    warning("Se detectaron valores de longitud fuera del rango válido (-180 a 180).")
+    warning("Longitude values outside the valid range (-180 to 180) were detected.")
   }
   if (any(abs(lat) > 90, na.rm = TRUE)) {
-    warning("Se detectaron valores de latitud fuera del rango válido (-90 a 90).")
+    warning("Latitude values outside the valid range (-90 to 90) were detected.")
   }
 
-  # Validar tipo_distancia
-  tipos_validos <- c("haversine", "euclidean", "grid")
-  if (!tipo_distancia %in% tipos_validos) {
-    stop("El parámetro 'tipo_distancia' debe ser uno de: ", paste(tipos_validos, collapse = ", "))
+  # Validate distance_type
+  valid_types <- c("haversine", "euclidean", "grid")
+  if (!distance_type %in% valid_types) {
+    stop("The 'distance_type' parameter must be one of: ", paste(valid_types, collapse = ", "))
   }
 
-  # Validar unidad
-  unidades_conocidas <- c("mn", "km", "m", "mi")
-  if (!unidad %in% unidades_conocidas) {
-    warning("La unidad '", unidad, "' no es una de las unidades comunes: ", paste(unidades_conocidas, collapse = ", "))
+  # Validate unit
+  known_units <- c("nm", "km", "m", "mi")
+  if (!unit %in% known_units) {
+    warning("The unit '", unit, "' is not one of the common units: ", paste(known_units, collapse = ", "))
   }
 
-  # Verificar estructura de linea_costa
-  if (!all(c("Long", "Lat") %in% colnames(linea_costa))) {
-    stop("linea_costa debe contener columnas 'Long' y 'Lat'")
+  # Check coastline structure
+  if (!all(c("Long", "Lat") %in% colnames(coastline))) {
+    stop("coastline must contain columns 'Long' and 'Lat'")
   }
 
-  # Verificar que linea_costa tiene datos
-  if (nrow(linea_costa) == 0) {
-    stop("linea_costa está vacío")
+  # Check that coastline has data
+  if (nrow(coastline) == 0) {
+    stop("coastline is empty")
   }
 
-  # Verificar que linea_costa tiene coordenadas numéricas
-  if (!is.numeric(linea_costa$Long) || !is.numeric(linea_costa$Lat)) {
-    stop("Las columnas 'Long' y 'Lat' de linea_costa deben ser numéricas")
+  # Check that coastline has numeric coordinates
+  if (!is.numeric(coastline$Long) || !is.numeric(coastline$Lat)) {
+    stop("The 'Long' and 'Lat' columns of coastline must be numeric")
   }
 
-  # Manejo de valores NA
-  validos <- !is.na(lon) & !is.na(lat)
-  if (sum(validos) == 0) {
-    warning("Todos los puntos de entrada contienen valores NA")
-    return(rep(NA, length(validos)))
+  # Handle NA values
+  valid <- !is.na(lon) & !is.na(lat)
+  if (sum(valid) == 0) {
+    warning("All input points contain NA values")
+    return(rep(NA, length(valid)))
   }
 
-  lon_validos <- lon[validos]
-  lat_validos <- lat[validos]
+  valid_lon <- lon[valid]
+  valid_lat <- lat[valid]
 
-  # Dividir puntos en lotes
-  n_puntos <- length(lon_validos)
-  nucleos <- min(nucleos, n_puntos)  # Ajustar núcleos si hay menos puntos que núcleos
-  tamanio_lote <- ceiling(n_puntos / nucleos)
-  lotes_indices <- split(seq_len(n_puntos), ceiling(seq_len(n_puntos) / tamanio_lote))
+  # Divide points into batches
+  n_points <- length(valid_lon)
+  cores <- min(cores, n_points)  # Adjust cores if there are fewer points than cores
+  batch_size <- ceiling(n_points / cores)
+  batch_indices <- split(seq_len(n_points), ceiling(seq_len(n_points) / batch_size))
 
-  # Cargar librería future.apply si se va a usar paralelo
-  if (paralelo) {
+  # Load future.apply library if parallel is to be used
+  if (parallel) {
     if (!requireNamespace("future.apply", quietly = TRUE)) {
-      warning("Paquete 'future.apply' no encontrado. Usando procesamiento secuencial.")
-      paralelo <- FALSE
+      warning("Package 'future.apply' not found. Using sequential processing.")
+      parallel <- FALSE
     } else {
-      future::plan(future::multisession, workers = nucleos)
-      on.exit(future::plan(future::sequential), add = TRUE)  # Asegurar que se restaure el plan secuencial
+      future::plan(future::multisession, workers = cores)
+      on.exit(future::plan(future::sequential), add = TRUE)  # Ensure sequential plan is restored
     }
   }
 
-  # Ejecutar en paralelo o secuencialmente
-  apply_fun <- if (paralelo) future.apply::future_lapply else lapply
+  # Execute in parallel or sequentially
+  apply_fun <- if (parallel) future.apply::future_lapply else lapply
 
-  # Función de cálculo envuelta en tryCatch para manejar errores
-  resultados_lotes <- tryCatch({
-    apply_fun(lotes_indices, function(indices_lote) {
-      calcular_distancias_vectorizado(
-        lon_punto = lon_validos[indices_lote],
-        lat_punto = lat_validos[indices_lote],
-        costa_lon = linea_costa$Long,
-        costa_lat = linea_costa$Lat,
-        tipo_distancia = tipo_distancia,
-        ventana = ventana,
-        unidad = unidad
+  # Calculation function wrapped in tryCatch to handle errors
+  batch_results <- tryCatch({
+    apply_fun(batch_indices, function(batch_indices) {
+      calculate_distances_vectorized(
+        lon_point = valid_lon[batch_indices],
+        lat_point = valid_lat[batch_indices],
+        coast_lon = coastline$Long,
+        coast_lat = coastline$Lat,
+        distance_type = distance_type,
+        window = window,
+        unit = unit
       )
     })
   }, error = function(e) {
-    stop("Error en el cálculo de distancias: ", e$message)
+    stop("Error in distance calculation: ", e$message)
   })
 
-  # Combinar resultados
+  # Combine results
   tryCatch({
-    distancias <- unlist(lapply(resultados_lotes, `[[`, "distancias"))
-    indices <- unlist(lapply(resultados_lotes, `[[`, "indices"))
+    distances <- unlist(lapply(batch_results, `[[`, "distances"))
+    indices <- unlist(lapply(batch_results, `[[`, "indices"))
 
-    # Verificar resultados
-    if (length(distancias) != sum(validos)) {
-      warning("El número de distancias calculadas no coincide con el número de puntos válidos.")
+    # Check results
+    if (length(distances) != sum(valid)) {
+      warning("The number of calculated distances does not match the number of valid points.")
     }
 
-    # Resultados con NAs en las posiciones originales
-    resultado_final <- rep(NA_real_, length(validos))
-    resultado_final[validos] <- distancias
+    # Results with NAs in original positions
+    final_result <- rep(NA_real_, length(valid))
+    final_result[valid] <- distances
 
-    if (devolver_indices) {
-      indices_final <- rep(NA_integer_, length(validos))
-      indices_final[validos] <- indices
-      return(list(distancia = resultado_final, indice = indices_final))
+    if (return_indices) {
+      final_indices <- rep(NA_integer_, length(valid))
+      final_indices[valid] <- indices
+      return(list(distance = final_result, index = final_indices))
     } else {
-      return(resultado_final)
+      return(final_result)
     }
   }, error = function(e) {
-    warning("Error al procesar los resultados: ", e$message)
-    return(rep(NA_real_, length(validos)))
+    warning("Error processing results: ", e$message)
+    return(rep(NA_real_, length(valid)))
   })
 }
 
 
 
-#' Puntos en tierra
+#' Points on land
 #'
 #' @description
-#' Esta función clasifica un conjunto de coordenadas geográficas (longitud y latitud) como "tierra" o "mar" según su posición relativa a una línea de costa. Se considera que un punto está en tierra si su longitud es mayor a la de su punto más cercano en la línea de costa. Además, permite el cálculo en paralelo para mejorar el rendimiento en grandes volúmenes de datos.
+#' This function classifies a set of geographic coordinates (longitude and latitude) as "land" or "sea" according to their relative position to a coastline. A point is considered to be on land if its longitude is greater than that of its nearest point on the coastline. Additionally, it allows parallel computation to improve performance with large volumes of data.
 #'
-#' @param x_punto Vector numérico de longitudes (en grados decimales).
-#' @param y_punto Vector numérico de latitudes (en grados decimales).
-#' @param linea_costa `data.frame` con las coordenadas de la línea de costa. Debe tener columnas nombradas `Long` y `Lat`. Por defecto se puede usar `Tivy::linea_costa_peru`.
-#' @param paralelo Lógico. Si `TRUE`, realiza el cálculo en paralelo utilizando múltiples núcleos. Por defecto es `FALSE`.
-#' @param nucleos Número de núcleos a usar en caso de procesamiento paralelo. Por defecto es `4`.
-#' @param tipo_distancia Tipo de distancia geodésica a usar en el cálculo: `"haversine"` (por defecto) u otras si la función interna lo permite.
-#' @param ventana Ventana geográfica en grados para reducir el número de puntos de la línea de costa a considerar por cada punto. Por defecto es `0.5`.
-#' @param unidad Unidad de medida para la distancia: `"km"` (por defecto) u otra si la función interna lo permite.
+#' @param x_point Numeric vector of longitudes (in decimal degrees).
+#' @param y_point Numeric vector of latitudes (in decimal degrees).
+#' @param coastline `data.frame` with coastline coordinates. Must have columns named `Long` and `Lat`. By default, `Tivy::peru_coastline` can be used.
+#' @param parallel Logical. If `TRUE`, performs the calculation in parallel using multiple cores. Default is `FALSE`.
+#' @param cores Number of cores to use for parallel processing. Default is `4`.
+#' @param distance_type Type of geodesic distance to use in the calculation: `"haversine"` (default) or others if the internal function allows it.
+#' @param window Geographic window in degrees to reduce the number of coastline points to consider for each point. Default is `0.5`.
+#' @param unit Unit of measurement for distance: `"km"` (default) or another if the internal function allows it.
 #'
-#' @return Un vector de texto del mismo largo que `x_punto`, indicando si cada punto se encuentra en `"tierra"` o `"mar"`. Los valores `NA` se mantienen como `NA`.
+#' @return A text vector of the same length as `x_point`, indicating whether each point is on `"land"` or `"sea"`. `NA` values are maintained as `NA`.
 #'
 #' @details
-#' Esta función usa internamente `calcular_distancias_vectorizado()` para identificar el punto más cercano en la línea de costa para cada coordenada. Si `paralelo = TRUE`, utiliza los paquetes `future` y `future.apply` para distribuir el trabajo entre varios núcleos.
+#' This function internally uses `calculate_distances_vectorized()` to identify the nearest point on the coastline for each coordinate. If `parallel = TRUE`, it uses the `future` and `future.apply` packages to distribute the work among multiple cores.
 #'
 #' @examples
+#' 
+#' data(calas_bitacora)
 #'
-#' data_calas <- procesar_calas(data_calas = calas_bitacora)
+#' data_hauls <- process_hauls(data_hauls = calas_bitacora)
 #'
-#' resultado <- puntos_tierra(
-#'   x_punto = data_calas$lon_final,
-#'   y_punto = data_calas$lat_final,
-#'   linea_costa = Tivy::linea_costa_peru
+#' result <- land_points(
+#'   x_point = data_hauls$lon_final,
+#'   y_point = data_hauls$lat_final,
+#'   coastline = Tivy::peru_coastline
 #' )
 #'
-#' table(resultado)
+#' table(result)
 #'
 #' @export
-puntos_tierra <- function(x_punto,
-                          y_punto,
-                          linea_costa = Tivy::linea_costa_peru,
-                          paralelo = FALSE,
-                          nucleos = 4,
-                          tipo_distancia = "haversine",
-                          ventana = 0.5,
-                          unidad = "mn") {
-  # --- Validaciones ---
-  if (!is.numeric(x_punto) || !is.numeric(y_punto)) {
-    stop("`x_punto` y `y_punto` deben ser vectores numéricos.")
+land_points <- function(x_point,
+                          y_point,
+                          coastline = peru_coastline,
+                          parallel = FALSE,
+                          cores = 4,
+                          distance_type = "haversine",
+                          window = 0.5,
+                          unit = "nm") {
+  # --- Validations ---
+  if (!is.numeric(x_point) || !is.numeric(y_point)) {
+    stop("`x_point` and `y_point` must be numeric vectors.")
   }
 
-  if (length(x_punto) != length(y_punto)) {
-    stop("`x_punto` y `y_punto` deben tener la misma longitud.")
+  if (length(x_point) != length(y_point)) {
+    stop("`x_point` and `y_point` must have the same length.")
   }
 
-  if (!is.data.frame(linea_costa)) {
-    stop("`linea_costa` debe ser un data.frame.")
+  if (!is.data.frame(coastline)) {
+    stop("`coastline` must be a data.frame.")
   }
 
-  if (!all(c("Long", "Lat") %in% names(linea_costa))) {
-    stop("`linea_costa` debe contener columnas llamadas 'Long' y 'Lat'.")
+  if (!all(c("Long", "Lat") %in% names(coastline))) {
+    stop("`coastline` must contain columns named 'Long' and 'Lat'.")
   }
 
-  if (!is.logical(paralelo)) {
-    stop("`paralelo` debe ser TRUE o FALSE.")
+  if (!is.logical(parallel)) {
+    stop("`parallel` must be TRUE or FALSE.")
   }
 
-  if (!is.numeric(nucleos) || nucleos < 1) {
-    stop("`nucleos` debe ser un número entero positivo.")
+  if (!is.numeric(cores) || cores < 1) {
+    stop("`cores` must be a positive integer.")
   }
 
-  if (!tipo_distancia %in% c("haversine", "manhattan", "grid")) {
-    stop("`tipo_distancia` debe ser uno de: 'haversine', 'manhattan', 'grid'.")
+  if (!distance_type %in% c("haversine", "manhattan", "grid")) {
+    stop("`distance_type` must be one of: 'haversine', 'manhattan', 'grid'.")
   }
 
-  if (!is.numeric(ventana) || ventana < 0) {
-    stop("`ventana` debe ser un número no negativo.")
+  if (!is.numeric(window) || window < 0) {
+    stop("`window` must be a non-negative number.")
   }
 
-  if (!unidad %in% c("km", "mn")) {
-    stop("`unidad` debe ser 'km' o 'mn'.")
+  if (!unit %in% c("km", "nm")) {
+    stop("`unit` must be 'km' or 'nm'.")
   }
 
-  # Convertir factores o cadenas a numéricos si es necesario
-  x_punto <- as.numeric(x_punto)
-  y_punto <- as.numeric(y_punto)
-  linea_costa$Long <- as.numeric(linea_costa$Long)
-  linea_costa$Lat <- as.numeric(linea_costa$Lat)
+  # Convert factors or strings to numeric if necessary
+  x_point <- as.numeric(x_point)
+  y_point <- as.numeric(y_point)
+  coastline$Long <- as.numeric(coastline$Long)
+  coastline$Lat <- as.numeric(coastline$Lat)
 
-  # Eliminar coordenadas NA si existen (mantener NAs en salida)
-  n <- length(x_punto)
+  # Remove NA coordinates if they exist (keep NAs in output)
+  n <- length(x_point)
 
-  procesar_punto <- function(i) {
-    if (is.na(x_punto[i]) || is.na(y_punto[i])) return(NA_character_)
+  process_point <- function(i) {
+    if (is.na(x_point[i]) || is.na(y_point[i])) return(NA_character_)
 
-    resultado <- calcular_distancias_vectorizado(
-      lon_punto = x_punto[i],
-      lat_punto = y_punto[i],
-      costa_lon = linea_costa$Long,
-      costa_lat = linea_costa$Lat,
-      tipo_distancia = tipo_distancia,
-      ventana = ventana,
-      unidad = unidad
+    result <- calculate_distances_vectorized(
+      lon_point = x_point[i],
+      lat_point = y_point[i],
+      coast_lon = coastline$Long,
+      coast_lat = coastline$Lat,
+      distance_type = distance_type,
+      window = window,
+      unit = unit
     )
 
-    idx_costa <- resultado$indices[1]
+    coast_idx <- result$indices[1]
 
-    if (idx_costa >= 2 && idx_costa < nrow(linea_costa)) {
-      p1 <- c(linea_costa$Long[idx_costa - 1], linea_costa$Lat[idx_costa - 1])
-      p2 <- c(linea_costa$Long[idx_costa + 1], linea_costa$Lat[idx_costa + 1])
-      p  <- c(x_punto[i], y_punto[i])
+    if (coast_idx >= 2 && coast_idx < nrow(coastline)) {
+      p1 <- c(coastline$Long[coast_idx - 1], coastline$Lat[coast_idx - 1])
+      p2 <- c(coastline$Long[coast_idx + 1], coastline$Lat[coast_idx + 1])
+      p  <- c(x_point[i], y_point[i])
 
-      direccion <- (p2[1] - p1[1]) * (p[2] - p1[2]) - (p2[2] - p1[2]) * (p[1] - p1[1])
+      direction <- (p2[1] - p1[1]) * (p[2] - p1[2]) - (p2[2] - p1[2]) * (p[1] - p1[1])
 
-      if (direccion > 0) return("mar") else return("tierra")
+      if (direction > 0) return("sea") else return("land")
     }
 
-    return("desconocido")
+    return("unknown")
   }
 
-  # Ejecutar en paralelo o no
-  if (paralelo) {
-    future::plan(future::multisession, workers = nucleos)
-    resultado <- future.apply::future_lapply(seq_len(n), procesar_punto)
+  # Execute in parallel or not
+  if (parallel) {
+    future::plan(future::multisession, workers = cores)
+    result <- future.apply::future_lapply(seq_len(n), process_point)
     future::plan(future::sequential)
   } else {
-    resultado <- lapply(seq_len(n), procesar_punto)
+    result <- lapply(seq_len(n), process_point)
   }
 
-  return(unlist(resultado))
+  return(unlist(result))
 }
-
-

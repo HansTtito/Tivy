@@ -1,217 +1,216 @@
-#' Buscar columnas que contienen un patrón seguido de un número
+#' Search for columns that contain a pattern followed by a number
 #'
-#' Identifica columnas en un dataframe cuyos nombres siguen el patrón
-#' de un prefijo específico seguido de un número.
+#' Identifies columns in a dataframe whose names follow the pattern
+#' of a specific prefix followed by a number.
 #'
-#' @param data Un data frame donde buscar las columnas.
-#' @param patron El patrón o prefijo a buscar (por defecto "pond_").
-#' @param ordenar Indica si las columnas deben ordenarse numéricamente (por defecto TRUE).
-#' @return Vector de caracteres con los nombres de las columnas que coinciden con el patrón.
+#' @param data A data frame to search for columns.
+#' @param pattern The pattern or prefix to search for (default "pond_").
+#' @param sort Indicates if columns should be sorted numerically (default TRUE).
+#' @return Character vector with the names of columns that match the pattern.
 #' @export
 #' @examples
-#' # Identificar todas las columnas pond_X en el dataframe
+#' 
+#' data(calas_bitacora, faenas_bitacora, tallas_bitacora)
+#' 
+#' # Identify all pond_X columns in the dataframe
+#' data_hauls <- process_hauls(data_hauls = calas_bitacora)
+#' data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora)
+#' hauls_length <- process_length(data_length = tallas_bitacora)
 #'
-#' data_calas <- procesar_calas(data_calas = calas_bitacora)
-#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
-#' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
+#' data_length_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
+#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_trips)
+#' final_data <- add_variables(data_total)
 #'
-#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
-#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
-#' datos_final <- agregar_variables(data_total)
+#' length_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+#' length_weighted <- weight_length_df(df = final_data, length_cols = length_cols, catch_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984)
 #'
-#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-#' tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_cols, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#' pond_cols <- search_pattern_columns(data = length_weighted, pattern = "pond_")
 #'
-#' cols_pond <- buscar_columnas_patron(data = tallas_pond, patron = "pond_")
-#'
-#' # Usar las columnas encontradas para cálculos
-#' tallas_pond[, cols_pond]
-buscar_columnas_patron <- function(data, patron = "pond_", ordenar = TRUE) {
-  # Validación de parámetros
-  if (!is.data.frame(data)) stop("El parámetro 'data' debe ser un data.frame.")
-  if (!is.character(patron)) stop("El parámetro 'patron' debe ser una cadena de texto.")
+#' # Use the found columns for calculations
+#' length_weighted[, pond_cols]
+search_pattern_columns <- function(data, pattern = "pond_", sort = TRUE) {
+  # Parameter validation
+  if (!is.data.frame(data)) stop("The 'data' parameter must be a data.frame.")
+  if (!is.character(pattern)) stop("The 'pattern' parameter must be a text string.")
 
-  # Obtener todos los nombres de columnas
-  nombres_columnas <- colnames(data)
+  # Get all column names
+  column_names <- colnames(data)
 
-  # Buscar columnas que contengan el patrón
-  exp_reg <- paste0("^", patron, "[0-9]+(\\.[0-9]+)?$")
-  columnas_coincidentes <- nombres_columnas[grep(exp_reg, nombres_columnas)]
+  # Search for columns that contain the pattern
+  reg_exp <- paste0("^", pattern, "[0-9]+(\\.[0-9]+)?$")
+  matching_columns <- column_names[grep(reg_exp, column_names)]
 
-  if (length(columnas_coincidentes) == 0) {
-    warning("No se encontraron columnas que coincidan con el patrón: ", patron)
+  if (length(matching_columns) == 0) {
+    warning("No columns matching the pattern were found: ", pattern)
     return(character(0))
   }
 
-  # Ordenar numéricamente si es necesario
-  if (ordenar) {
-    # Extraer los valores numéricos de los nombres de columnas
-    valores_numericos <- as.numeric(gsub(patron, "", columnas_coincidentes))
-    # Ordenar las columnas según estos valores
-    columnas_coincidentes <- columnas_coincidentes[order(valores_numericos)]
+  # Sort numerically if necessary
+  if (sort) {
+    # Extract numerical values from column names
+    numerical_values <- as.numeric(gsub(pattern, "", matching_columns))
+    # Sort columns according to these values
+    matching_columns <- matching_columns[order(numerical_values)]
   }
 
-  return(columnas_coincidentes)
+  return(matching_columns)
 }
 
 
 
-#' Extraer valores numéricos desde nombres de columnas
+#' Extract numerical values from column names
 #'
-#' Esta función extrae todos los valores numéricos (incluidos decimales) desde un vector
-#' de nombres de columnas, eliminando cualquier carácter no numérico.
+#' This function extracts all numerical values (including decimals) from a vector
+#' of column names, removing any non-numeric characters.
 #'
-#' @param nombres_columnas Vector de caracteres con los nombres de columnas.
-#' @return Vector numérico con los valores de tallas extraídos.
+#' @param column_names Character vector with column names.
+#' @return Numeric vector with the extracted length values.
 #' @export
 #' @examples
-#' nombres <- c("pond_10.5", "talla_11", "12.5mm", "T14", "13-erróneo")
-#' extraer_valores_tallas(nombres)
-#' # Resultado: 10.5 11.0 12.5 14.0 13.0
-extraer_valores_tallas <- function(nombres_columnas) {
-  if (!is.character(nombres_columnas)) {
-    stop("El parámetro 'nombres_columnas' debe ser un vector de caracteres.")
+#' names <- c("pond_10.5", "length_11", "12.5mm", "T14", "13-error")
+#' extract_length_values(names)
+#' # Result: 10.5 11.0 12.5 14.0 13.0
+extract_length_values <- function(column_names) {
+  if (!is.character(column_names)) {
+    stop("The 'column_names' parameter must be a character vector.")
   }
 
-  # Extrae la primera aparición de número en cada string (soporta decimales)
-  valores <- as.numeric(stringr::str_extract(nombres_columnas, "\\d+\\.?\\d*"))
+  # Extract the first occurrence of a number in each string (supports decimals)
+  values <- as.numeric(stringr::str_extract(column_names, "\\d+\\.?\\d*"))
 
-  if (any(is.na(valores))) {
-    warning("Algunos nombres no contienen valores numéricos y fueron convertidos a NA.")
+  if (any(is.na(values))) {
+    warning("Some names do not contain numerical values and were converted to NA.")
   }
 
-  return(valores)
+  return(values)
 }
 
 
-#' Obtener nombres y posiciones de columnas que coinciden con un patrón
+#' Get names and positions of columns that match a pattern
 #'
-#' Devuelve tanto los nombres como las posiciones de columnas en un dataframe
-#' que siguen el patrón especificado.
+#' Returns both the names and positions of columns in a dataframe
+#' that follow the specified pattern.
 #'
-#' @param data Un data frame donde buscar las columnas.
-#' @param patron El patrón o prefijo a buscar (por defecto "pond_").
-#' @param ordenar Indica si los resultados deben ordenarse numéricamente (por defecto TRUE).
-#' @return Lista con dos elementos: "posiciones" y "nombres" de las columnas coincidentes.
+#' @param data A data frame to search for columns.
+#' @param pattern The pattern or prefix to search for (default "pond_").
+#' @param sort Indicates if results should be sorted numerically (default TRUE).
+#' @return List with two elements: "positions" and "names" of matching columns.
 #' @export
 #' @examples
-#' # Obtener tanto posiciones como nombres
+#' # Get both positions and names
 #'
-#' data(calas_bitacora)
-#' data(faenas_bitacora)
-#' data(tallas_bitacora)
+#' data(calas_bitacora, faenas_bitacora, tallas_bitacora)
 #'
-#' data_calas <- procesar_calas(data_calas = calas_bitacora)
-#' data_faenas <- procesar_faenas(data_faenas = faenas_bitacora)
-#' calas_tallas <- procesar_tallas(data_tallas = tallas_bitacora)
+#' data_hauls <- process_hauls(data_hauls = calas_bitacora)
+#' data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora)
+#' hauls_length <- process_length(data_length = tallas_bitacora)
 #'
-#' data_tallasfaenas <- merge(x = data_faenas, y = calas_tallas, by = 'codigo_faena')
-#' data_total <- merge_tallas_faenas_calas(data_calas = data_calas, data_tallas_faenas = data_tallasfaenas)
-#' datos_final <- agregar_variables(data_total)
+#' data_length_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
+#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_trips)
+#' final_data <- add_variables(data_total)
 #'
-#' tallas_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
-#' tallas_pond <- ponderar_tallas_df(df = datos_final, tallas_cols = tallas_cols, captura_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#' length_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+#' length_weighted <- weight_length_df(df = final_data, length_cols = length_cols, catch_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984)
 #'
-#' resultado <- info_columnas_patron(tallas_pond, "pond_")
+#' result <- pattern_columns_info(length_weighted, "pond_")
 #'
-#' posiciones <- resultado$posiciones
-#' print(posiciones)
+#' positions <- result$positions
+#' print(positions)
 #'
-#' nombres <- resultado$nombres
-#' print(nombres)
-info_columnas_patron <- function(data, patron = "pond_", ordenar = TRUE) {
-  # Validación de parámetros
-  if (!is.data.frame(data)) stop("El parámetro 'data' debe ser un data.frame.")
-  if (!is.character(patron)) stop("El parámetro 'patron' debe ser una cadena de texto.")
+#' names <- result$names
+#' print(names)
+pattern_columns_info <- function(data, pattern = "pond_", sort = TRUE) {
+  # Parameter validation
+  if (!is.data.frame(data)) stop("The 'data' parameter must be a data.frame.")
+  if (!is.character(pattern)) stop("The 'pattern' parameter must be a text string.")
 
-  # Obtener todos los nombres de columnas
-  nombres_columnas <- colnames(data)
+  # Get all column names
+  column_names <- colnames(data)
 
-  # Buscar columnas que contengan el patrón
-  exp_reg <- paste0("^", patron, "[0-9]+(\\.[0-9]+)?$")
-  indices <- grep(exp_reg, nombres_columnas)
+  # Search for columns that contain the pattern
+  reg_exp <- paste0("^", pattern, "[0-9]+(\\.[0-9]+)?$")
+  indices <- grep(reg_exp, column_names)
 
   if (length(indices) == 0) {
-    warning("No se encontraron columnas que coincidan con el patrón: ", patron)
-    return(list(posiciones = integer(0), nombres = character(0)))
+    warning("No columns matching the pattern were found: ", pattern)
+    return(list(positions = integer(0), names = character(0)))
   }
 
-  columnas_coincidentes <- nombres_columnas[indices]
+  matching_columns <- column_names[indices]
 
-  # Ordenar numéricamente si es necesario
-  if (ordenar) {
-    # Extraer los valores numéricos de los nombres de columnas
-    valores_numericos <- as.numeric(gsub(patron, "", columnas_coincidentes))
-    # Ordenar según estos valores
-    orden <- order(valores_numericos)
-    indices <- indices[orden]
-    columnas_coincidentes <- columnas_coincidentes[orden]
+  # Sort numerically if necessary
+  if (sort) {
+    # Extract numerical values from column names
+    numerical_values <- as.numeric(gsub(pattern, "", matching_columns))
+    # Sort according to these values
+    order <- order(numerical_values)
+    indices <- indices[order]
+    matching_columns <- matching_columns[order]
   }
 
   return(list(
-    posiciones = indices,
-    nombres = columnas_coincidentes
+    positions = indices,
+    names = matching_columns
   ))
 }
 
 
 
-#' Calcula porcentajes de juveniles para un conjunto de frecuencias
+#' Calculate juvenile percentages for a set of frequencies
 #'
-#' Función auxiliar que calcula porcentajes de juveniles tanto en número como en peso
-#' a partir de un conjunto de frecuencias de tallas.
+#' Helper function that calculates juvenile percentages both in number and weight
+#' from a set of length frequencies.
 #'
-#' @param frecuencias Vector numérico con las frecuencias por talla.
-#' @param valores_tallas Vector numérico con los valores de las tallas correspondientes.
-#' @param juvLim Talla límite para considerar juveniles (por defecto 12 cm).
-#' @param a Coeficiente de la relación longitud-peso.
-#' @param b Exponente de la relación longitud-peso.
-#' @return Data frame con porcentajes y totales de juveniles.
+#' @param frequencies Numeric vector with frequencies by length.
+#' @param length_values Numeric vector with the corresponding length values.
+#' @param juvLim Length limit to consider juveniles (default 12 cm).
+#' @param a Coefficient of the length-weight relationship.
+#' @param b Exponent of the length-weight relationship.
+#' @return Data frame with juvenile percentages and totals.
 #' @export
 #' @examples
-#' frecuencias <- c(10, 15, 25, 30, 20, 10)
-#' valores_tallas <- c(8, 9, 10, 11, 12, 13)
-#' calcular_juveniles(frecuencias, valores_tallas)
-calcular_juveniles <- function(frecuencias, valores_tallas, juvLim = 12, a = 0.0012, b = 3.1242) {
-  # Validación de parámetros
-  if (!is.numeric(frecuencias)) stop("El parámetro 'frecuencias' debe ser numérico.")
-  if (!is.numeric(valores_tallas)) stop("El parámetro 'valores_tallas' debe ser numérico.")
-  if (length(frecuencias) != length(valores_tallas))
-    stop("Los vectores 'frecuencias' y 'valores_tallas' deben tener la misma longitud.")
+#' frequencies <- c(10, 15, 25, 30, 20, 10)
+#' length_values <- c(8, 9, 10, 11, 12, 13)
+#' calculate_juveniles(frequencies, length_values)
+calculate_juveniles <- function(frequencies, length_values, juvLim = 12, a = 0.0012, b = 3.1242) {
+  # Parameter validation
+  if (!is.numeric(frequencies)) stop("The 'frequencies' parameter must be numeric.")
+  if (!is.numeric(length_values)) stop("The 'length_values' parameter must be numeric.")
+  if (length(frequencies) != length(length_values))
+    stop("The 'frequencies' and 'length_values' vectors must have the same length.")
 
-  # Verificar si hay datos
-  total_numero <- sum(frecuencias, na.rm = TRUE)
+  # Check if there is data
+  total_number <- sum(frequencies, na.rm = TRUE)
 
-  if (total_numero == 0) {
-    # Si no hay datos, devolver NA sin warnings
+  if (total_number == 0) {
+    # If there is no data, return NA without warnings
     return(data.frame(
-      porc_juv_numero = NA_real_,
-      porc_juv_peso = NA_real_,
-      total_numero = 0,
-      total_peso = 0
+      perc_juv_number = NA_real_,
+      perc_juv_weight = NA_real_,
+      total_number = 0,
+      total_weight = 0
     ))
   }
 
-  # Calcular juveniles en número con la función existente
-  # Usamos suppressWarnings para evitar warnings redundantes
-  porc_juv_numero <- suppressWarnings(porc_juveniles(frecuencias, valores_tallas, juvLim))
+  # Calculate juveniles in number with the existing function
+  # We use suppressWarnings to avoid redundant warnings
+  perc_juv_number <- suppressWarnings(juvenile_percentage(frequencies, length_values, juvLim))
 
-  # Calcular pesos
-  pesos <- talla_peso(valores_tallas, a, b) * frecuencias
-  total_peso <- sum(pesos, na.rm = TRUE)
+  # Calculate weights
+  weights <- length_weight(length_values, a, b) * frequencies
+  total_weight <- sum(weights, na.rm = TRUE)
 
-  # Calcular juveniles en peso con la misma función
-  if (total_peso == 0) {
-    porc_juv_peso <- NA_real_
+  # Calculate juveniles in weight with the same function
+  if (total_weight == 0) {
+    perc_juv_weight <- NA_real_
   } else {
-    porc_juv_peso <- suppressWarnings(porc_juveniles(pesos, valores_tallas, juvLim))
+    perc_juv_weight <- suppressWarnings(juvenile_percentage(weights, length_values, juvLim))
   }
 
   return(data.frame(
-    porc_juv_numero = porc_juv_numero,
-    porc_juv_peso = porc_juv_peso,
-    total_numero = total_numero,
-    total_peso = total_peso
+    perc_juv_number = perc_juv_number,
+    perc_juv_weight = perc_juv_weight,
+    total_number = total_number,
+    total_weight = total_weight
   ))
 }
-

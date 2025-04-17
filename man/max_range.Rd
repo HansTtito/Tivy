@@ -2,21 +2,21 @@
 % Please edit documentation in R/statistics.R
 \name{max_range}
 \alias{max_range}
-\title{Talla máxima observada con frecuencia positiva}
+\title{Maximum observed length with positive frequency}
 \usage{
-max_range(frecuencia, tallas)
+max_range(frequency, length)
 }
 \arguments{
-\item{frecuencia}{Un vector numérico con las frecuencias de tallas.}
+\item{frequency}{A numeric vector with the frequencies of length.}
 
-\item{tallas}{Vector de tallas correspondiente.}
+\item{length}{Corresponding length vector.}
 }
 \value{
-Valor máximo de talla con frecuencia mayor que cero.
+Maximum length value with frequency greater than zero.
 }
 \description{
-Talla máxima observada con frecuencia positiva
+Maximum observed length with positive frequency
 }
 \examples{
-max_range(frecuencia = c(0,0,1,2,3), tallas = c(5,6,7,8,9))
+max_range(frequency = c(0,0,1,2,3), length = c(5,6,7,8,9))
 }

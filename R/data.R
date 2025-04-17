@@ -1,100 +1,98 @@
-#' Línea costera de Perú
+#' Peruvian coastline
 #'
-#' Conjunto de datos que contiene la línea costera de Perú representada como un objeto espacial.
+#' Dataset containing the coastline of Peru represented as a spatial object.
 #'
-#' @format Un data.frame con los siguientes campos:
+#' @format A data.frame with the following fields:
 #' \describe{
-#'   \item{Long}{Longitud de la línea de costa del Perú}
-#'   \item{Lat}{Latitud de la línea de costa del Perú}
+#'   \item{Long}{Longitude of the Peruvian coastline}
+#'   \item{Lat}{Latitude of the Peruvian coastline}
 #' }
 #'
-#' @source Instituto del Mar del Perú (IMARPE)
+#' @source Marine Institute of Peru (IMARPE)
 #'
 #' @examples
-#' data(linea_costa_peru)
-"linea_costa_peru"
+#' data(peru_coastline)
+"peru_coastline"
 
 
-#' Áreas isoparalitorales
+#' Isoparalittoral areas
 #'
-#' Conjunto de datos que contiene áreas isoparalitorales de la costa peruana.
-#' Estas áreas representan zonas con características similares a lo largo del litoral.
+#' Dataset containing isoparalittoral areas of the Peruvian coast.
+#' These areas represent zones with similar characteristics along the littoral.
 #'
-#' @format Un data.frame con los siguientes atributos:
+#' @format A data.frame with the following attributes:
 #' \describe{
-#'   \item{lon}{Longitud correspondiente del área isoparalitoral}
-#'   \item{lat}{Latitud correspondiente del área isoparalitoral}
-#'   \item{area}{Código del Área Isoparalitoral}
-#'   \item{grad}{Categoría de la latitud cada 0.5 grados (3 - 19.5)}
-#'   \item{dc}{Categoría de distancia a la costa (10-200)}
+#'   \item{lon}{Longitude corresponding to the isoparalittoral area}
+#'   \item{lat}{Latitude corresponding to the isoparalittoral area}
+#'   \item{area}{Isoparalittoral Area code}
+#'   \item{grad}{Latitude category every 0.5 degrees (3 - 19.5)}
+#'   \item{dc}{Distance to coast category (10-200)}
 #' }
 #'
-#' @source Instituto del Mar del Perú (IMARPE)
+#' @source Marine Institute of Peru (IMARPE)
 #'
 #' @examples
-#' data(areas_isoparalitorales_peru)
-"areas_isoparalitorales_peru"
+#' data(peru_isoparalitoral_areas)
+"peru_isoparalitoral_areas"
 
 
-#' Calas de pesca
+#' Fishing hauls
 #'
-#' Conjunto de datos que contiene información sobre calas de pesca en el mar peruano.
-#' Las calas son lugares específicos donde se realizan actividades de pesca.
+#' Dataset containing information about fishing hauls in the Peruvian sea.
+#' Hauls are specific locations where fishing activities are conducted.
 #'
-#' @format Un data.frame con datos de ejemplo de las calas realizadas por embarcaciones en el mar peruano.
+#' @format A data.frame with sample data of hauls made by vessels in the Peruvian sea.
 #'
-#' @source Datos generados de manera aleatoria.
+#' @source Randomly generated data.
 #'
 #' @examples
 #' data(calas_bitacora)
 "calas_bitacora"
 
 
-#' Faenas de pesca
+#' Fishing trips
 #'
-#' Conjunto de datos que contiene información sobre faenas de pesca realizadas en el litoral peruano.
+#' Dataset containing information about fishing trips conducted along the Peruvian littoral.
 #'
-#' @format Un data.frame con datos de ejemplo de las faenas realizadas por embarcaciones en el mar peruano.
+#' @format A data.frame with sample data of fishing trips made by vessels in the Peruvian sea.
 #'
-#' @source Datos generados de manera aleatoria.
+#' @source Randomly generated data.
 #'
 #' @examples
 #' data(faenas_bitacora)
 "faenas_bitacora"
 
 
-#' Datos de tallas muestreadas provenientes de las calas realizadas por las embarcaciones en el mar peruano.
+#' Length data sampled from hauls made by vessels in the Peruvian sea.
 #'
-#' Conjunto de datos que contiene información sobre tallas de especies marinas
-#' capturadas en el litoral peruano.
+#' Dataset containing information about lengths of marine species
+#' captured along the Peruvian littoral.
 #'
-#' @format Un data.frame con datos de ejemplo de tallas muestreadas provenientes de las calas realizadas por embarcaciones en el mar peruano.
+#' @format A data.frame with sample data of lengths sampled from hauls made by vessels in the Peruvian sea.
 #'
-#' @source Indicar la fuente de los datos
+#' @source Indicate the data source
 #'
 #' @examples
 #' data(tallas_bitacora)
 "tallas_bitacora"
 
 
-#' Líneas paralelas a la costa peruana
+#' Lines parallel to the Peruvian coast
 #'
-#' Conjunto de datos que contiene líneas paralelas a la costa peruana a diferentes distancias.
-#' Estas líneas son útiles para análisis espaciales relacionados con la gestión pesquera.
+#' Dataset containing lines parallel to the Peruvian coast at different distances.
+#' These lines are useful for spatial analyses related to fishery management.
 #'
-#' @format Una lista de data.frames, cada uno representa una línea paralela a la costa peruana.
+#' @format A list of data.frames, each representing a line parallel to the Peruvian coast.
 #' \describe{
-#' Cada data frame contiene:
-#'   \item{lon}{Longitud correspondiente del área isoparalitoral}
-#'   \item{lat}{Latitud correspondiente del área isoparalitoral}
-#'   \item{dc}{Categoría de distancia a la costa (10-200)}
+#' Each data frame contains:
+#'   \item{lon}{Longitude corresponding to the isoparalittoral area}
+#'   \item{lat}{Latitude corresponding to the isoparalittoral area}
+#'   \item{dc}{Distance to coast category (10-200)}
 #' }
 #'
-#' @source Indicar la fuente de los datos
+#' @source Indicate the data source
 #'
 #' @examples
-#' data(paralelas_costa_peru)
-"paralelas_costa_peru"
-
-
+#' data(peru_coast_parallels)
+"peru_coast_parallels"
 
