@@ -529,7 +529,7 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL,
 #'   \item{dashboard}{If the patchwork package is installed, a combined dashboard of all charts}
 #'
 #' @export
-#' @importFrom dplyr group_by reframe arrange mutate filter
+#' @importFrom dplyr group_by reframe arrange mutate filter starts_with %>%
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggplot2 ggplot aes geom_area geom_line geom_point geom_sf labs theme_minimal scale_color_gradient2 scale_size_continuous coord_sf geom_smooth facet_wrap scale_color_manual scale_y_continuous
 #' @importFrom scales comma
@@ -621,45 +621,18 @@ juveniles_dashboard <- function(
     title_relation = NULL
 ) {
 
-  # Initial validations
-  if (!is.data.frame(data_total))
-    stop("data_total must be a data.frame")
+# Validate data
+if (!is.data.frame(data_total)) {
+  stop("data_total must be a data.frame")
+}
 
-  # Try to automatically detect columns if not specified
-  if (is.null(col_date)) {
-    date_cols <- grep("fecha|date", colnames(data_total), ignore.case = TRUE)
-    col_date <- if (length(date_cols) > 0) colnames(data_total)[date_cols[1]] else NULL
-    if (is.null(col_date))
-      stop("Could not automatically detect the date column. Please specify col_date.")
-  }
-
-  if (is.null(cols_length)) {
-    # Try to detect size columns (assuming a common pattern)
-    length_cols_idx <- grep("^talla|^len|^pond_|cm$", colnames(data_total), ignore.case = TRUE)
-    cols_length <- if (length(length_cols_idx) > 0) colnames(data_total)[length_cols_idx] else NULL
-    if (is.null(cols_length))
-      stop("Could not automatically detect size columns. Please specify cols_length.")
-  }
-
-  if (is.null(col_latitude)) {
-    lat_cols <- grep("^lat|^latitude", colnames(data_total), ignore.case = TRUE)
-    col_latitude <- if (length(lat_cols) > 0) colnames(data_total)[lat_cols[1]] else NULL
-  }
-
-  if (is.null(col_longitude)) {
-    lon_cols <- grep("^lon|^longitude", colnames(data_total), ignore.case = TRUE)
-    col_longitude <- if (length(lon_cols) > 0) colnames(data_total)[lon_cols[1]] else NULL
-  }
-
-  if (is.null(col_catch)) {
-    cap_cols <- grep("catch|captura|desembar", colnames(data_total), ignore.case = TRUE)
-    col_catch <- if (length(cap_cols) > 0) colnames(data_total)[cap_cols[1]] else NULL
-  }
-
-  if (is.null(col_juveniles)) {
-    juv_cols <- grep("juv|perc_juv", colnames(data_total), ignore.case = TRUE)
-    col_juveniles <- if (length(juv_cols) > 0) colnames(data_total)[juv_cols[1]] else NULL
-  }
+  # Search and validate of columns
+  col_date       <- get_or_detect_columns(data_total, col_date,       "fecha|date",                   "date")
+  cols_length    <- get_or_detect_columns(data_total, cols_length,    "^talla|^len|^pond_|cm$",       "size (length)")
+  col_latitude   <- get_or_detect_columns(data_total, col_latitude,   "^lat|^latitude",               "latitude")
+  col_longitude  <- get_or_detect_columns(data_total, col_longitude,  "^lon|^longitude",              "longitude")
+  col_catch      <- get_or_detect_columns(data_total, col_catch,      "catch|captura|desembar",       "catch")
+  col_juveniles  <- get_or_detect_columns(data_total, col_juveniles,  "juv|perc_juv",                 "juveniles")
 
   # Create default palette if not provided
   if (is.null(palette)) {
@@ -702,33 +675,44 @@ juveniles_dashboard <- function(
   )
 
   # 2. Cumulative catch plot
-  p2 <- NULL
-  if (!is.null(col_date) && !is.null(col_catch) && col_catch %in% colnames(data_total)) {
-    # Prepare data for cumulative catch
-    catch_data <- data_total %>%
-      dplyr::group_by(.data[[col_date]]) %>%
-      dplyr::reframe(
-        daily_catch = sum(.data[[col_catch]], na.rm = TRUE)
-              ) %>%
-      dplyr::arrange(.data[[col_date]]) %>%
-      dplyr::mutate(cumulative_catch = cumsum(.data[["daily_catch"]]))
 
-    # Create cumulative catch plot
-    p2 <- ggplot2::ggplot(catch_data) +
-      ggplot2::geom_area(ggplot2::aes(x = .data[[col_date]], y = .data[["cumulative_catch"]]),
-                         fill = "#2CA02C", alpha = 0.7) +
-      ggplot2::geom_line(ggplot2::aes(x = .data[[col_date]], y = .data[["cumulative_catch"]]),
-                         color = "#1F77B4", size = 1) +
-      ggplot2::geom_point(ggplot2::aes(x = .data[[col_date]], y = .data[["cumulative_catch"]]),
-                          color = "#1F77B4", size = 2.5) +
-      ggplot2::labs(
-        title = title_catch,
-        x = col_date,
-        y = "Cumulative catch (t)"
-      ) +
-      ggplot2::theme_minimal() +
-      ggplot2::scale_y_continuous(labels = scales::comma)
-  }
+  catch_data_acumulative <- juvenile_data %>%
+  dplyr::arrange(.data$unique_date) %>%
+  dplyr::mutate(
+    cumulative_total_weight = cumsum(.data[["total_weight"]]),
+    cumulative_juvenil_weight = cumsum(.data[["juvenil_weight"]])
+  )
+
+  # Create cumulative catch plot
+  plot_data <- catch_data_acumulative %>%
+    dplyr::select(.data[["unique_date"]], .data[["cumulative_total_weight"]], .data[["cumulative_juvenil_weight"]]) %>%
+    tidyr::pivot_longer(
+      cols = dplyr::starts_with("cumulative"),
+      names_to = "type",
+      values_to = "weight"
+    ) %>%
+    dplyr::mutate(
+      type = dplyr::case_when(
+        type == "cumulative_total_weight" ~ "Total weight",
+        type == "cumulative_juvenil_weight" ~ "Juvenile weight"
+      )
+    )
+
+  # Graficar
+  p2 <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$unique_date, y = .data$weight, fill = .data$type, color = .data$type)) +
+    ggplot2::geom_area(alpha = 0.3, position = "identity") +
+    ggplot2::geom_line(size = 1.2) +
+    ggplot2::geom_point(size = 2) +
+    ggplot2::labs(
+      title = "Cumulative total and juvenile catch over time",
+      x = "Date",
+      y = "Cumulative catch (t)",
+      fill = "Type",
+      color = "Type"
+    ) +
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::theme_minimal()
+
 
   # 3. Juveniles map
   p3 <- NULL

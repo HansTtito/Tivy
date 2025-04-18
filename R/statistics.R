@@ -98,6 +98,7 @@ weighting <- function(frequency, catch, length, a, b, silence_warnings = FALSE) 
   # Weight calculation
   weight <- length_weight(length = length, a = a, b = b) * frequency
   weight_sum <- sum(weight, na.rm = TRUE)
+
   if (weight_sum == 0) {
     warning_messages <- c(warning_messages,
                           "The sum of weights is zero. A vector of zeros will be returned.")
@@ -588,7 +589,9 @@ juveniles_by_group <- function(data, group_cols, cols_length, juvLim = 12, a = 0
         perc_juv_number = NA_real_,
         perc_juv_weight = NA_real_,
         total_number = 0,
-        total_weight = 0
+        total_weight = 0,
+        juvenil_number = 0,
+        juvenil_weight = 0
       ))
     }
 
@@ -601,7 +604,9 @@ juveniles_by_group <- function(data, group_cols, cols_length, juvLim = 12, a = 0
         perc_juv_number = NA_real_,
         perc_juv_weight = NA_real_,
         total_number = 0,
-        total_weight = 0
+        total_weight = 0,
+        juvenil_number = 0,
+        juvenil_weight = 0
       ))
     }
 

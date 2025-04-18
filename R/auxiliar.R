@@ -224,7 +224,9 @@ calculate_juveniles <- function(frequencies, length_values, juvLim = 12, a = 0.0
       perc_juv_number = NA_real_,
       perc_juv_weight = NA_real_,
       total_number = 0,
-      total_weight = 0
+      total_weight = 0,
+      juvenil_number = 0,
+      juvenil_weight = 0
     ))
   }
 
@@ -234,10 +236,10 @@ calculate_juveniles <- function(frequencies, length_values, juvLim = 12, a = 0.0
 
   # Calculate weights
   weights <- length_weight(length_values, a, b) * frequencies
-  total_weight <- sum(weights, na.rm = TRUE)
+  total_catch <- sum(weights, na.rm = TRUE) / 1000
 
   # Calculate juveniles in weight with the same function
-  if (total_weight == 0) {
+  if (total_catch == 0) {
     perc_juv_weight <- NA_real_
   } else {
     perc_juv_weight <- suppressWarnings(juvenile_percentage(weights, length_values, juvLim))
@@ -247,7 +249,9 @@ calculate_juveniles <- function(frequencies, length_values, juvLim = 12, a = 0.0
     perc_juv_number = perc_juv_number,
     perc_juv_weight = perc_juv_weight,
     total_number = total_number,
-    total_weight = total_weight
+    total_weight = total_catch,
+    juvenil_number = total_number * perc_juv_number / 100,
+    juvenil_weight = total_catch * perc_juv_weight / 100
   ))
 }
 
@@ -648,4 +652,38 @@ test_produce_api <- function(verbose = TRUE) {
       message = paste("Error during API test:", e$message)
     ))
   })
+}
+
+
+
+#' Get or detect columns in a data frame
+#'
+#' This helper function is used to either:
+#' (1) detect columns from a data frame using pattern matching (if not explicitly provided), or
+#' (2) validate that the specified columns exist in the data frame.
+#'
+#' It is particularly useful for cleaning up code in functions that require flexible
+#' column naming or support automatic column detection (e.g., "fecha", "date", etc.).
+#'
+#' @param df A data frame where the columns will be detected or validated.
+#' @param cols A character vector of column names. If NULL, the function tries to detect columns based on `patterns`.
+#' @param patterns A regular expression pattern used to detect columns if `cols` is NULL.
+#' @param col_name_friendly A user-friendly name for the column(s), used in error messages.
+#'
+#' @return A character vector with validated or automatically detected column names.
+#' @keywords internal
+get_or_detect_columns <- function(df, cols, patterns, col_name_friendly) {
+  if (is.null(cols)) {
+    idx <- grep(patterns, colnames(df), ignore.case = TRUE)
+    cols <- if (length(idx) > 0) colnames(df)[idx] else NULL
+    if (is.null(cols)) {
+      stop(paste0("Could not automatically detect ", col_name_friendly, " columns. Please specify them explicitly."))
+    }
+  } else {
+    missing <- cols[!cols %in% colnames(df)]
+    if (length(missing) > 0) {
+      stop(paste0("The following ", col_name_friendly, " columns do not exist in the data: ", paste(missing, collapse = ", ")))
+    }
+  }
+  return(cols)
 }
