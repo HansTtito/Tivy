@@ -79,7 +79,7 @@ final_data_weighted$unique_date <- convert_to_date(
 # Calculate juvenile proportion by date
 juvenile_results <- juveniles_by_group(
   data = final_data_weighted, 
-  group_cols = c("unique_date"), 
+  group_cols = c("dc_cat"), 
   cols_length = paste0("pond_", length_cols)
 )
 ```
@@ -90,8 +90,8 @@ juvenile_results <- juveniles_by_group(
 # Basic plot of juveniles by date
 plot_juveniles(
   juvenile_data = juvenile_results, 
-  var_x = c("unique_date"),
-  juv_limit = 12  # Legal minimum size (cm)
+  var_x = c("dc_cat"),
+  juv_limit = 10  # Legal minimum size (cm)
 )
 ```
 
