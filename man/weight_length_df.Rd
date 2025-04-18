@@ -51,20 +51,40 @@ data_hauls <- process_hauls(data_hauls = calas_bitacora)
 data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora)
 hauls_length <- process_length(data_length = tallas_bitacora)
 
-data_length_fishing_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
+data_length_fishing_trips <- merge(
+   x = data_fishing_trips, 
+   y = hauls_length, 
+   by = 'fishing_trip_code'
+)
 
-data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_fishing_trips)
+data_total <- merge_length_fishing_trips_hauls(
+   data_hauls = data_hauls, 
+   data_length_fishing_trips = data_length_fishing_trips
+)
 
-length_columns <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+length_columns <- c("8", "8.5", "9", "9.5", "10", "10.5",
+                    "11", "11.5","12", "12.5", "13", "13.5",
+                    "14", "14.5", "15")
 
 # Sequential processing
-results <- weight_length_df(df = data_total, length_cols = length_columns, catch_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+results <- weight_length_df(
+   df = data_total, 
+   length_cols = length_columns, 
+   catch_col = "catch_ANCHOVETA", 
+   a= 0.0001,
+   b = 2.984
+)
 
 print(head(results))
 
 # Parallel processing for large datasets
 parallel_results <- weight_length_df(
-  df = data_total, length_cols = length_columns, catch_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984, parallel = TRUE
+   df = data_total, 
+   length_cols = length_columns, 
+   catch_col = "catch_ANCHOVETA", 
+   a = 0.0001,
+   b = 2.984,
+   parallel = TRUE
 )
 
 print(head(parallel_results))

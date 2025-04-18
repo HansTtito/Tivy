@@ -74,11 +74,11 @@ process_hauls <- function(data_hauls, format = "xlsx", correct_coordinates = TRU
 
   data_hauls <- data_hauls %>%
     dplyr::mutate(
-      description = stringi::stri_trim(description),
-      lat_initial = dms_to_decimal(start_latitude, correct_errors = correct_coordinates),
-      lon_initial = dms_to_decimal(start_longitude, hemisphere = "W", correct_errors = correct_coordinates),
-      lat_final = dms_to_decimal(end_latitude, correct_errors = correct_coordinates),
-      lon_final = dms_to_decimal(end_longitude, hemisphere = "W", correct_errors = correct_coordinates)
+      description = stringi::stri_trim(.data[["description"]]),
+      lat_initial = dms_to_decimal(.data[["start_latitude"]], correct_errors = correct_coordinates),
+      lon_initial = dms_to_decimal(.data[["start_longitude"]], hemisphere = "W", correct_errors = correct_coordinates),
+      lat_final = dms_to_decimal(.data[["end_latitude"]], correct_errors = correct_coordinates),
+      lon_final = dms_to_decimal(.data[["end_longitude"]], hemisphere = "W", correct_errors = correct_coordinates)
     )
   return(data_hauls)
 }

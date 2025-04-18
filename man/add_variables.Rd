@@ -54,8 +54,15 @@ data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora
 hauls_length <- process_length(data_length = tallas_bitacora)
 
 # Merge hauls, length and fishing trips
-data_length_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
-data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_trips)
+data_length_trips <- merge(
+ x = data_fishing_trips, 
+ y = hauls_length, 
+ by = 'fishing_trip_code'
+)
+data_total <- merge_length_fishing_trips_hauls(
+ data_hauls = data_hauls, 
+ data_length_fishing_trips = data_length_trips
+)
 
 # Apply function
 results <- add_variables(data = data_total)

@@ -274,12 +274,21 @@ plot_polygons <- function(data,
 #' data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora)
 #' hauls_length <- process_length(data_length = tallas_bitacora)
 #'
-#' data_length_fishing_trips <- merge(x = data_fishing_trips, y = hauls_length, by = "fishing_trip_code")
-#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_fishing_trips)
+#' data_length_fishing_trips <- merge(
+#'    x = data_fishing_trips, 
+#'    y = hauls_length,
+#'    by = "fishing_trip_code"
+#' )
+#' 
+#' data_total <- merge_length_fishing_trips_hauls(
+#'    data_hauls = data_hauls, 
+#'    data_length_fishing_trips = data_length_fishing_trips
+#' )
 #'
 #' final_data <- add_variables(data_total)
-#' length_cols <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12",
-#'                  "12.5", "13", "13.5", "14", "14.5", "15")
+#' length_cols <- c("8", "8.5", "9", "9.5", "10", "10.5",
+#'                  "11", "11.5", "12","12.5", "13", 
+#'                  "13.5", "14", "14.5", "15")
 #'
 #' results <- weight_length_df(df = final_data, length_cols = length_cols,
 #'                                 catch_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984)
@@ -330,7 +339,7 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL,
     ) %>%
     dplyr::mutate(
       type = factor(
-        type,
+        .data[["type"]],
         levels = c("perc_juv_number", "perc_juv_weight"),
         labels = c("By number", "By weight")
       )
@@ -353,21 +362,21 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL,
   # Sort data according to the sort_by parameter
   if (sort_by == "number") {
     order <- juvenile_data %>%
-      dplyr::arrange(dplyr::desc(perc_juv_number)) %>%
+      dplyr::arrange(dplyr::desc(.data[["perc_juv_number"]])) %>%
       dplyr::pull(var_x)
     data_long[[var_x]] <- factor(data_long[[var_x]], levels = unique(order))
   } else if (sort_by == "weight") {
     order <- juvenile_data %>%
-      dplyr::arrange(dplyr::desc(perc_juv_weight)) %>%
+      dplyr::arrange(dplyr::desc(.data[["perc_juv_weight"]])) %>%
       dplyr::pull(var_x)
     data_long[[var_x]] <- factor(data_long[[var_x]], levels = unique(order))
   }
 
   # Create plot base
   if (is.null(fill_var)) {
-    p <- ggplot2::ggplot(data_long, ggplot2::aes(x = .data[[var_x]], y = percentage, fill = type))
+    p <- ggplot2::ggplot(data_long, ggplot2::aes(x = .data[[var_x]], y = .data[["percentage"]], fill = .data[["type"]]))
   } else {
-    p <- ggplot2::ggplot(data_long, ggplot2::aes(x = .data[[var_x]], y = percentage,
+    p <- ggplot2::ggplot(data_long, ggplot2::aes(x = .data[[var_x]], y = .data[["percentage"]],
                                                   fill = .data[[fill_var]], color = .data[[fill_var]]))
   }
 
@@ -377,7 +386,7 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL,
       p <- p + ggplot2::geom_bar(stat = "identity", position = "dodge")
     } else {
       p <- p + ggplot2::geom_bar(stat = "identity", position = "dodge") +
-        ggplot2::facet_wrap(~ type, ncol = ncol)
+        ggplot2::facet_wrap(as.formula(paste("~", "type")), ncol = ncol)
     }
   } else if (plot_type == "lines") {
     p <- p + ggplot2::geom_line(ggplot2::aes(group = .data[[if (is.null(fill_var)) "type" else fill_var]]),
@@ -385,20 +394,20 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL,
       ggplot2::geom_point(size = 2)
 
     if (is.null(fill_var)) {
-      p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
+      p <- p + ggplot2::facet_wrap(as.formula(paste("~", "type")), ncol = ncol)
     }
   } else if (plot_type == "points") {
     p <- p + ggplot2::geom_point(size = 3, alpha = 0.7)
 
     if (is.null(fill_var)) {
-      p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
+      p <- p + ggplot2::facet_wrap(as.formula(paste("~", "type")), ncol = ncol)
     }
   } else if (plot_type == "mixed") {
     p <- p + ggplot2::geom_bar(stat = "identity", alpha = 0.5, position = "dodge") +
       ggplot2::geom_point(size = 2, position = ggplot2::position_dodge(width = 0.9))
 
     if (is.null(fill_var)) {
-      p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
+      p <- p + ggplot2::facet_wrap(as.formula(paste("~", "type")), ncol = ncol)
     }
   }
 
@@ -433,9 +442,9 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL,
   # Add additional faceting if provided
   if (!is.null(facet_var)) {
     if (is.null(fill_var)) {
-      p <- p + ggplot2::facet_wrap(~ type + .data[[facet_var]], ncol = ncol)
+      p <- p + ggplot2::facet_wrap(as.formula(paste("~ type +", facet_var)), ncol = ncol)
     } else {
-      p <- p + ggplot2::facet_wrap(~ .data[[facet_var]], ncol = ncol)
+      p <- p + ggplot2::facet_wrap(as.formula(paste("~", facet_var)), ncol = ncol)
     }
   }
 
@@ -517,12 +526,13 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL,
 #'   \item{dashboard}{If the patchwork package is installed, a combined dashboard of all charts}
 #'
 #' @export
-#' @importFrom dplyr group_by summarise arrange mutate filter
+#' @importFrom dplyr group_by reframe arrange mutate filter
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggplot2 ggplot aes geom_area geom_line geom_point geom_sf labs theme_minimal scale_color_gradient2 scale_size_continuous coord_sf geom_smooth facet_wrap scale_color_manual scale_y_continuous
 #' @importFrom scales comma
 #' @importFrom rnaturalearth ne_countries
 #' @importFrom patchwork wrap_plots
+#' @importFrom stats as.formula
 #'
 #' @examples
 #' \dontrun{
@@ -532,9 +542,17 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL,
 #' hauls_length <- process_length(data_length = tallas_bitacora)
 #'
 #' # Integrate data
-#' data_length_fishing_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
-#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls,
-#'                                        data_length_fishing_trips = data_length_fishing_trips)
+#' data_length_fishing_trips <- merge(
+#'    x = data_fishing_trips, 
+#'    y = hauls_length, 
+#'    by = 'fishing_trip_code'
+#' )
+#'  
+#' data_total <- merge_length_fishing_trips_hauls(
+#'    data_hauls = data_hauls,
+#'    data_length_fishing_trips = data_length_fishing_trips
+#' )
+#' 
 #' final_data <- add_variables(data_total)
 #'
 #' # Prepare size data
@@ -599,6 +617,7 @@ juveniles_dashboard <- function(
     title_map = NULL,
     title_relation = NULL
 ) {
+
   # Initial validations
   if (!is.data.frame(data_total))
     stop("data_total must be a data.frame")
@@ -689,15 +708,15 @@ juveniles_dashboard <- function(
         daily_catch = sum(.data[[col_catch]], na.rm = TRUE)
               ) %>%
       dplyr::arrange(.data[[col_date]]) %>%
-      dplyr::mutate(cumulative_catch = cumsum(daily_catch))
+      dplyr::mutate(cumulative_catch = cumsum(.data[["daily_catch"]]))
 
     # Create cumulative catch plot
     p2 <- ggplot2::ggplot(catch_data) +
-      ggplot2::geom_area(ggplot2::aes(x = .data[[col_date]], y = cumulative_catch),
+      ggplot2::geom_area(ggplot2::aes(x = .data[[col_date]], y = .data[["cumulative_catch"]]),
                          fill = "#2CA02C", alpha = 0.7) +
-      ggplot2::geom_line(ggplot2::aes(x = .data[[col_date]], y = cumulative_catch),
+      ggplot2::geom_line(ggplot2::aes(x = .data[[col_date]], y = .data[["cumulative_catch"]]),
                          color = "#1F77B4", size = 1) +
-      ggplot2::geom_point(ggplot2::aes(x = .data[[col_date]], y = cumulative_catch),
+      ggplot2::geom_point(ggplot2::aes(x = .data[[col_date]], y = .data[["cumulative_catch"]]),
                           color = "#1F77B4", size = 2.5) +
       ggplot2::labs(
         title = title_catch,
@@ -764,16 +783,16 @@ juveniles_dashboard <- function(
     ) %>%
     dplyr::mutate(
       type = factor(
-        type,
+        .data[["type"]],
         levels = c("perc_juv_number", "perc_juv_weight"),
         labels = c("By number", "By weight")
       ),
-      total = ifelse(type == "By number", total_number, total_weight)
+      total = ifelse(.data$type == "By number", .data$total_number, .data$total_weight)
     )
 
-  p4 <- ggplot2::ggplot(data_long, ggplot2::aes(x = .data[[col_date]], y = percentage, color = type)) +
+  p4 <- ggplot2::ggplot(data_long, ggplot2::aes(x = .data[[col_date]], y = .data[["percentage"]], color = .data[["type"]])) +
     ggplot2::geom_point(size = 3, alpha = 0.7) +
-    ggplot2::facet_wrap(~ type, scales = "free_x") +
+    ggplot2::facet_wrap(stats::as.formula(paste("~", "type")), scales = "free_x") +
     ggplot2::geom_smooth(method = "loess", se = TRUE, alpha = 0.2) +
     ggplot2::labs(
       title = title_relation,

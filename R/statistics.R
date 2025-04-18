@@ -143,20 +143,40 @@ weighting <- function(frequency, catch, length, a, b, silence_warnings = FALSE) 
 #' data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora)
 #' hauls_length <- process_length(data_length = tallas_bitacora)
 #'
-#' data_length_fishing_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
+#' data_length_fishing_trips <- merge(
+#'    x = data_fishing_trips, 
+#'    y = hauls_length, 
+#'    by = 'fishing_trip_code'
+#' )
 #'
-#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_fishing_trips)
+#' data_total <- merge_length_fishing_trips_hauls(
+#'    data_hauls = data_hauls, 
+#'    data_length_fishing_trips = data_length_fishing_trips
+#' )
 #'
-#' length_columns <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+#' length_columns <- c("8", "8.5", "9", "9.5", "10", "10.5",
+#'                     "11", "11.5","12", "12.5", "13", "13.5",
+#'                     "14", "14.5", "15")
 #'
 #' # Sequential processing
-#' results <- weight_length_df(df = data_total, length_cols = length_columns, catch_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#' results <- weight_length_df(
+#'    df = data_total, 
+#'    length_cols = length_columns, 
+#'    catch_col = "catch_ANCHOVETA", 
+#'    a= 0.0001,
+#'    b = 2.984
+#' )
 #'
 #' print(head(results))
 #'
 #' # Parallel processing for large datasets
 #' parallel_results <- weight_length_df(
-#'   df = data_total, length_cols = length_columns, catch_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984, parallel = TRUE
+#'    df = data_total, 
+#'    length_cols = length_columns, 
+#'    catch_col = "catch_ANCHOVETA", 
+#'    a = 0.0001,
+#'    b = 2.984,
+#'    parallel = TRUE
 #' )
 #'
 #' print(head(parallel_results))
@@ -349,9 +369,17 @@ max_range <- function(frequency, length) {
 #' hauls_length <- process_length(data_length = tallas_bitacora)
 #'
 #' # Integrate data
-#' data_length_fishing_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
-#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls,
-#'                                        data_length_fishing_trips = data_length_fishing_trips)
+#' data_length_fishing_trips <- merge(
+#'    x = data_fishing_trips, 
+#'    y = hauls_length, 
+#'    by = 'fishing_trip_code'
+#' )
+#' 
+#' data_total <- merge_length_fishing_trips_hauls(
+#'    data_hauls = data_hauls,
+#'    data_length_fishing_trips = data_length_fishing_trips
+#' )
+#' 
 #' final_data <- add_variables(data_total)
 #'
 #' # Define length columns
@@ -365,7 +393,11 @@ max_range <- function(frequency, length) {
 #'                                a = 0.0001,
 #'                                b = 2.984)
 #'
-#'number_to_weight(data = results, length = paste0('pond_', length_cols), a = 0.0012, b = 3.1242)
+#'number_to_weight(data = results, 
+#'    length = paste0('pond_', length_cols), 
+#'    a = 0.0012, 
+#'    b = 3.1242
+#' )
 number_to_weight <- function(data, length, a, b) {
   # Parameter validation
   if (!is.data.frame(data)) stop("The 'data' parameter must be a data.frame.")
@@ -411,9 +443,6 @@ number_to_weight <- function(data, length, a, b) {
 }
 
 
-
-
-
 #' Calculation of juvenile percentage by groups
 #'
 #' @description
@@ -441,7 +470,7 @@ number_to_weight <- function(data, length, a, b) {
 #'   }
 #'
 #' @export
-#' @importFrom dplyr group_by_at summarize across everything filter pick
+#' @importFrom dplyr group_by_at reframe across everything filter pick
 #' @importFrom tidyr unnest
 #'
 #' @examples
@@ -454,9 +483,16 @@ number_to_weight <- function(data, length, a, b) {
 #' hauls_length <- process_length(data_length = tallas_bitacora)
 #'
 #' # Integrate data
-#' data_length_fishing_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
-#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls,
-#'                                        data_length_fishing_trips = data_length_fishing_trips)
+#' data_length_fishing_trips <- merge(
+#'    x = data_fishing_trips, 
+#'    y = hauls_length, 
+#'    by = 'fishing_trip_code'
+#' )
+#' 
+#' data_total <- merge_length_fishing_trips_hauls(
+#'    data_hauls = data_hauls,
+#'    data_length_fishing_trips = data_length_fishing_trips
+#' )
 #' final_data <- add_variables(data_total)
 #'
 #' # Define length columns
@@ -592,12 +628,12 @@ juveniles_by_group <- function(data, group_cols, cols_length, juvLim = 12, a = 0
         }
       )
     ) %>%
-    tidyr::unnest(result)
+    tidyr::unnest(.data$result)
 
   # Optionally remove groups without data
   if (remove_empty && any(results$total_number == 0, na.rm = TRUE)) {
     results <- results %>%
-      dplyr::filter(total_number > 0)
+      dplyr::filter(.data$total_number > 0)
   }
 
   return(results)

@@ -26,9 +26,17 @@ data_hauls <- process_hauls(data_hauls = calas_bitacora, format = "xlsx")
 data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora, format = "xlsx")
 data_length <- process_length(data_length = tallas_bitacora, format = "xlsx")
 
-data_length_fishing_trips <- merge(x = data_length, y = data_fishing_trips, by = "fishing_trip_code", all = TRUE)
+data_length_fishing_trips <- merge(
+   x = data_length,
+   y = data_fishing_trips, 
+   by = "fishing_trip_code", 
+   all = TRUE
+)
 
-data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_fishing_trips)
+data_total <- merge_length_fishing_trips_hauls(
+   data_hauls = data_hauls, 
+   data_length_fishing_trips = data_length_fishing_trips
+)
 
 print(head(data_total))
 

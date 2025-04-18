@@ -453,12 +453,13 @@ extract_announcement_data <- function(vector_pdf_names) {
 #'         specified parameters.
 #'
 #' @examples
-#' # Format without filtering
-#'
-#'
-#' pdf_urls <- c("https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
-#' "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
-#' "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf")
+#' 
+#' # Using URLs
+#' pdf_urls <- c(
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
+#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
+#' )
 #'
 #' results <- extract_announcement_data(pdf_urls)
 #'

@@ -17,6 +17,7 @@
 #' @importFrom dplyr select mutate %>%
 #' @importFrom stringr str_trim
 #' @importFrom tidyr pivot_wider
+#' @importFrom stats na.omit
 process_length <- function(data_length, format = "xlsx") {
   if (!format %in% c("xlsx", "csv")) {
     stop("The 'format' parameter must be 'xlsx' or 'csv'.")
@@ -34,17 +35,17 @@ process_length <- function(data_length, format = "xlsx") {
   # Cleaning and conversion
   data_length <- data_length %>%
     dplyr::mutate(
-      description = stringr::str_trim(description),
-      length = suppressWarnings(as.numeric(length)),
-      freq = suppressWarnings(as.numeric(freq))
+      description = stringr::str_trim(.data[["description"]]),
+      length = suppressWarnings(as.numeric(.data[["length"]])),
+      freq = suppressWarnings(as.numeric(.data[["freq"]]))
     )
   # Save desired length order
-  length_order <- sort(unique(na.omit(data_length$length)))
+  length_order <- sort(unique(stats::na.omit(data_length$length)))
   # Transform to wide format
   data_length <- tidyr::pivot_wider(
     data_length,
-    names_from = length,
-    values_from = freq,
+    names_from = .data[["length"]],
+    values_from = .data[["freq"]],
     values_fill = list(freq = 0)
   )
   # Reorder length columns

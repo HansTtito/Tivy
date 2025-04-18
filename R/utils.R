@@ -274,7 +274,7 @@ plot_static <- function(polygons, coastline, title, colors, show_legend = TRUE,
   p <- ggplot2::ggplot()
 
   # Coastline
-  p <- p + ggplot2::geom_path(data = coastline, ggplot2::aes(x = Long, y = Lat),
+  p <- p + ggplot2::geom_path(data = coastline, ggplot2::aes(x = .data[["Long"]], y = .data[["Lat"]]),
                               color = "darkgrey", linewidth = 0.5)
 
   if(is.null(colors)){
@@ -307,7 +307,7 @@ plot_static <- function(polygons, coastline, title, colors, show_legend = TRUE,
   # Polygons with fill by announcement
   p <- p + ggplot2::geom_polygon(
     data = df_polygons,
-    ggplot2::aes(x = Long, y = Lat, fill = group, group = id),
+    ggplot2::aes(x = .data[["Long"]], y = .data[["Lat"]], fill = .data[["group"]], group = .data[["id"]]),
     alpha = 0.7,
     color = "black"
   )
