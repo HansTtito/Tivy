@@ -261,6 +261,7 @@ calculate_coast_longitude <- function(coastline, latitude) {
 #' @param title Main title of the plot.
 #' @param colors Vector of colors to fill the polygons. If `NULL`, colors are automatically assigned.
 #' @param show_legend Logical. If `TRUE`, the legend is displayed.
+#' @param name_legend Name of the legend (optional). If NULL, legend has no title. Default is "Comunicados".
 #' @param labels Vector of labels for the polygons (optional).
 #' @param add_grid Logical. If `TRUE`, adds a geographic grid to the plot.
 #' @param theme `ggplot2` theme to use. Default, `theme_minimal()`.
@@ -268,7 +269,7 @@ calculate_coast_longitude <- function(coastline, latitude) {
 #' @return A `ggplot` object ready to be plotted.
 #' @importFrom RColorBrewer brewer.pal
 #' @keywords internal
-plot_static <- function(polygons, coastline, title, colors, show_legend = TRUE,
+plot_static <- function(polygons, coastline, title, colors, show_legend = TRUE, name_legend = NULL,
                           labels = NULL, add_grid = TRUE, theme = ggplot2::theme_minimal()) {
 
   p <- ggplot2::ggplot()
@@ -313,7 +314,11 @@ plot_static <- function(polygons, coastline, title, colors, show_legend = TRUE,
   )
 
   # Colors
-  p <- p + ggplot2::scale_fill_manual(values = colors, name = "Announcements")
+  if (!is.null(name_legend)) {
+    p <- p + ggplot2::scale_fill_manual(values = colors, name = name_legend)
+  } else {
+    p <- p + ggplot2::scale_fill_manual(values = colors, guide = ggplot2::guide_legend(title = NULL))
+  }
 
   # Labels and theme
   p <- p + ggplot2::labs(
@@ -345,6 +350,7 @@ plot_static <- function(polygons, coastline, title, colors, show_legend = TRUE,
 
   return(p)
 }
+
 
 
 #' Generate interactive plot of polygons with leaflet
