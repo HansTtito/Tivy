@@ -200,6 +200,6 @@ Contributions are welcome. Please consider:
 If you use `Tivy` in your research, please cite it as:
 
 ```
-Ttito, H. (2025). Tivy: Tools for Fisheries Data Analysis in Peru. R package version 0.1.0.
+Ttito, H. (2025). Tivy: Tools for Fisheries Data Analysis in Peru. R package version 0.2.1.
 https://github.com/HansTtito/Tivy
 ```
