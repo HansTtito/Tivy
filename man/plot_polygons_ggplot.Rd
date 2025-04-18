@@ -11,6 +11,7 @@ plot_polygons_ggplot(
   title = NULL,
   colors = NULL,
   show_legend = FALSE,
+  name_legend = NULL,
   labels = NULL,
   add_grid = FALSE
 )
@@ -28,6 +29,8 @@ which can be in text format (like "12°30'S") or decimal degrees.}
 \item{colors}{Vector of colors for the polygons. Default NULL}
 
 \item{show_legend}{Logical. If TRUE, shows the legend. Default FALSE.}
+
+\item{name_legend}{Name of the legend (optional). If NULL, legend has no title.}
 
 \item{labels}{Vector of texts to label each polygon in the legend.}
 

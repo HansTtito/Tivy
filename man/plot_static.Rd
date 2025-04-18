@@ -10,6 +10,7 @@ plot_static(
   title,
   colors,
   show_legend = TRUE,
+  name_legend = NULL,
   labels = NULL,
   add_grid = TRUE,
   theme = ggplot2::theme_minimal()
@@ -25,6 +26,8 @@ plot_static(
 \item{colors}{Vector of colors to fill the polygons. If \code{NULL}, colors are automatically assigned.}
 
 \item{show_legend}{Logical. If \code{TRUE}, the legend is displayed.}
+
+\item{name_legend}{Name of the legend (optional). If NULL, legend has no title.}
 
 \item{labels}{Vector of labels for the polygons (optional).}
 
