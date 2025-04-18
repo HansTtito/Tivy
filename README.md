@@ -130,8 +130,8 @@ dashboard$dashboard    # Complete panel with all plots
 ```r
 # Example with URLs of announcements from the Ministry of Production
 pdf_urls <- get_produce_announcements(
-  start_date = "01/02/2025", 
-  end_date = "28/02/2025",
+  start_date = "01/03/2025", 
+  end_date = "31/03/2025",
   download = FALSE # If you want to donwload the files, change TRUE
 )
 
