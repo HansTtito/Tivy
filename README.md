@@ -16,8 +16,10 @@
 You can install the development version of `Tivy` from GitHub:
 
 ```r
+
 # install.packages("devtools")
 devtools::install_github("HansTtito/Tivy")
+
 ```
 
 ## 🚀 Usage Examples
@@ -25,63 +27,81 @@ devtools::install_github("HansTtito/Tivy")
 ### Basic Loading and Processing
 
 ```r
+
 library(Tivy)
 
 # Load and process logbook files
-data_hauls <- process_hauls(data_hauls = calas_bitacora, 
-                            format = "xlsx", 
-                            correct_coordinates = TRUE)
+data_hauls <- process_hauls(
+  data_hauls          = calas_bitacora,
+  format              = "xlsx",
+  correct_coordinates = TRUE
+  )
 
-data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora, 
-                              format = "xlsx")
+data_fishing_trips <- process_fishing_trips(
+  data_fishing_trips = faenas_bitacora, 
+  format             = "xlsx"
+  )
 
-hauls_length <- process_length(data_length = tallas_bitacora, 
-                               format = "xlsx")
+hauls_length <- process_length(
+  data_length = tallas_bitacora, 
+  format      = "xlsx"
+  )
+  
 ```
 
 ### Data Integration
 
 ```r
+
 # Combination of size and fishing trip data
-data_length_fishing_trips <- merge(x = data_fishing_trips, 
-                          y = hauls_length, 
-                          by = 'fishing_trip_code')
+data_length_fishing_trips <- merge(
+  x  = data_fishing_trips,
+  y  = hauls_length, 
+  by = 'fishing_trip_code'
+  )
 
 # Complete integration with haul data
-data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, 
-                                       data_length_fishing_trips = data_length_fishing_trips)
+data_total <- merge_length_fishing_trips_hauls(
+  data_hauls                = data_hauls, 
+  data_length_fishing_trips = data_length_fishing_trips
+  )
 
 # Add derived variables
-final_data <- add_variables(data_total)
+final_data <- add_variables(
+  data = data_total
+  )
+  
 ```
 
 ### Juvenile Analysis
 
 ```r
+
 # Define size columns
-length_cols <- as.character(seq(8, 15, 0.5))
+length_cols <- as.character(seq(from = 8, to = 15, by = 0.5))
 
 # Weight length according to catch
 final_data_weighted <- weight_length_df(
-  final_data, 
+  df          = final_data, 
   length_cols = length_cols, 
-  catch_col = 'catch_ANCHOVETA', 
-  a = 0.0012,  # Parameter a of length-weight relationship
-  b = 3.1242   # Parameter b of length-weight relationship
-)
+  catch_col   = 'catch_ANCHOVETA', 
+  a           = 0.0012,  # Parameter a of length-weight relationship
+  b           = 3.1242   # Parameter b of length-weight relationship
+  )
 
 # Convert dates for temporal grouping
 final_data_weighted$unique_date <- convert_to_date(
-  final_data_weighted$start_date_haul, 
-  type = "date"
-)
+  date_vector = final_data_weighted$start_date_haul, 
+  type        = "date"
+  )
 
 # Calculate juvenile proportion by date
 juvenile_results <- juveniles_by_group(
-  data = final_data_weighted, 
-  group_cols = c("dc_cat"), 
+  data        = final_data_weighted, 
+  group_cols  = c("dc_cat"), 
   cols_length = paste0("pond_", length_cols)
 )
+
 ```
 
 ### Visualization of Results
@@ -90,27 +110,29 @@ juvenile_results <- juveniles_by_group(
 # Basic plot of juveniles by date
 plot_juveniles(
   juvenile_data = juvenile_results, 
-  var_x = c("dc_cat"),
-  juv_limit = 10  # Legal minimum size (cm)
-)
+  var_x         = c("dc_cat"),
+  juv_limit     = 10  # Legal minimum size (cm)
+  )
 ```
 
 ![Example of juvenile plot](man/figures/ejemplo_juveniles.png)
 
 ```r
+
 # Complete dashboard of juvenile analysis
 final_data_weighted$catch_t = final_data_weighted$catch_ANCHOVETA/1000
 
-dashboard = juveniles_dashboard(
-  data_total = final_data_weighted,
-  col_date = "unique_date", 
-  cols_length = paste0("pond_",seq(8,15,0.5)), 
-  juv_limit = 12,
-  a = 0.0001, b = 2.984, 
-  col_latitude = "lat_final",
-  col_longitude = "lon_final", 
-  col_catch = "catch_t",
-  col_juveniles = "juv",
+dashboard <- juveniles_dashboard(
+  data_total     = final_data_weighted,
+  col_date       = "unique_date", 
+  cols_length    = paste0("pond_",seq(8,15,0.5)), 
+  juv_limit      = 12,
+  a              = 0.0001, 
+  b              = 2.984, 
+  col_latitude   = "lat_final",
+  col_longitude  = "lon_final", 
+  col_catch      = "catch_t",
+  col_juveniles  = "juv",
   show_limit_juv = TRUE
 )
 
@@ -121,6 +143,7 @@ dashboard$cumulative_catch  # Cumulative catch
 dashboard$juveniles_map # Juvenile map
 
 dashboard$dashboard    # Complete panel with all plots
+
 ```
 
 ![Juvenile analysis dashboard](man/figures/dashboard_juveniles.png)
@@ -128,31 +151,46 @@ dashboard$dashboard    # Complete panel with all plots
 ### Analysis of Official Announcements
 
 ```r
+
 # Example with URLs of announcements from the Ministry of Production
 pdf_urls <- get_produce_announcements(
   start_date = "01/03/2025", 
-  end_date = "31/03/2025",
-  download = FALSE # If you want to donwload the files, change TRUE
-)
+  end_date   = "31/03/2025",
+  download   = FALSE # If you want to donwload the files, change TRUE
+  )
 
 print(pdf_urls)
 
 # Extract information from announcements
-results <- extract_announcement_data(vector_pdf_names = pdf_urls$DownloadURL)
+results <- extract_announcement_data(
+  vector_pdf_names = pdf_urls$DownloadURL
+  )
 
 # Format data for visualization
-formatted_results <- format_announcement_data(results)
+formatted_results <- format_announcement_data(
+  data = results
+  )
 
 # Visualize closed areas with ggplot
-plot_polygons_ggplot(data = formatted_results, show_legend = TRUE)
+plot_polygons_ggplot(
+  data = formatted_results, 
+  show_legend = TRUE
+  )
+  
 ```
 
 ![Visualization of closed areas with ggplot](man/figures/poligonos_ggplot.png)
 
 ```r
+
 # Interactive visualization with leaflet
-interactive_map <- plot_polygons_leaflet(data = formatted_results, show_legend = TRUE)
+interactive_map <- plot_polygons_leaflet(
+  data = formatted_results, 
+  show_legend = TRUE
+  )
+
 interactive_map
+
 ```
 
 ![Interactive visualization of closed areas](man/figures/poligonos_leaflet.png)
