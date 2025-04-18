@@ -261,7 +261,7 @@ calculate_coast_longitude <- function(coastline, latitude) {
 #' @param title Main title of the plot.
 #' @param colors Vector of colors to fill the polygons. If `NULL`, colors are automatically assigned.
 #' @param show_legend Logical. If `TRUE`, the legend is displayed.
-#' @param name_legend Name of the legend (optional). If NULL, legend has no title. Default is "Comunicados".
+#' @param name_legend Name of the legend (optional). If NULL, legend has no title.
 #' @param labels Vector of labels for the polygons (optional).
 #' @param add_grid Logical. If `TRUE`, adds a geographic grid to the plot.
 #' @param theme `ggplot2` theme to use. Default, `theme_minimal()`.

@@ -11,6 +11,7 @@
 #' @param title Title for the plot. Default NULL
 #' @param colors Vector of colors for the polygons. Default NULL
 #' @param show_legend Logical. If TRUE, shows the legend. Default FALSE.
+#' @param name_legend Name of the legend (optional). If NULL, legend has no title.
 #' @param labels Vector of texts to label each polygon in the legend.
 #' @param add_grid Logical. If TRUE, adds a grid to the plot. Default FALSE.
 #'
@@ -42,6 +43,7 @@ plot_polygons_ggplot <- function(data,
                                  title = NULL,
                                  colors = NULL,
                                  show_legend = FALSE,
+                                 name_legend = NULL,
                                  labels = NULL,
                                  add_grid = FALSE) {
 
@@ -76,6 +78,7 @@ plot_polygons_ggplot <- function(data,
     title = title,
     colors = colors,
     show_legend = show_legend,
+    name_legend = name_legend,
     labels = labels,
     add_grid = add_grid
   ))
