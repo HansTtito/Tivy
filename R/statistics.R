@@ -636,5 +636,5 @@ juveniles_by_group <- function(data, group_cols, cols_length, juvLim = 12, a = 0
       dplyr::filter(.data$total_number > 0)
   }
 
-  return(results)
+  return(as.data.frame(results))
 }
