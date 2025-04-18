@@ -38,13 +38,13 @@ results <- extract_announcement_data(vector_pdf_names = pdf_files)
 }
 
 # Using URLs
-pdf_urls <- c(
-  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
-  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
-  "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
-)
+announcements <- get_produce_announcements(
+  start_date = "01/02/2025", 
+  end_date = "28/02/2025",
+  download = FALSE
+ )
 
-results <- extract_announcement_data(vector_pdf_names = pdf_urls)
+results <- extract_announcement_data(vector_pdf_names = announcements$DownloadURL)
 
 print(head(results))
 

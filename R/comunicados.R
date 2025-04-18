@@ -1,3 +1,149 @@
+#' @title Get PRODUCE Announcements by Date Range
+#' @description
+#' Retrieves announcements from the PRODUCE website within a specified date range.
+#' @param start_date Character string in "dd/mm/yyyy" format for start date
+#' @param end_date Character string in "dd/mm/yyyy" format for end date
+#' @param download Logical. If TRUE, downloads PDF files
+#' @param download_dir Directory for downloaded files
+#' @param batch_size Records to fetch in each request
+#' @param verbose Print detailed information during execution
+#' @return DataFrame with announcement information and download links
+#' @export 
+#' @examples
+#' 
+#' announcements = get_produce_announcements(
+#'    start_date = "01/01/2023", 
+#'    end_date = "31/12/2023"
+#' )
+#' 
+#' print(announcements)
+#' 
+get_produce_announcements <- function(
+  start_date, 
+  end_date, 
+  download = FALSE,
+  download_dir = "downloads",
+  batch_size = 10,
+  verbose = TRUE
+) {
+  # Verificar paquetes requeridos
+  check_required_packages()
+  
+  # Obtener página principal y extraer token
+  main_response <- get_main_page(verbose)
+  
+  # Verificar estado de respuesta
+  if(status_code(main_response) != 200) {
+    stop("Failed to connect to the PRODUCE website. Status code: ", status_code(main_response))
+  }
+  
+  # Extraer cookies
+  cookies <- extract_cookies(main_response, verbose)
+  
+  # Extraer token
+  html_content <- content(main_response, "text", encoding = "UTF-8")
+  token <- extract_token(html_content, verbose)
+  
+  # URL principal para referencia
+  main_url <- "https://consultasenlinea.produce.gob.pe/ConsultasEnLinea/consultas.web/comunicados/suspensionPreventiva"
+  
+  # Crear directorio de descarga si es necesario
+  if(download) {
+    create_download_dir(download_dir, verbose)
+  }
+  
+  # Proceso principal para recolectar todos los anuncios
+  all_announcements <- data.frame()
+  total_records <- 0
+  start_index <- 0
+  max_records <- 5000 # Máximo de registros a obtener
+  
+  # Obtener anuncios en lotes
+  repeat {
+    batch <- fetch_announcements_batch(
+      start_index, 
+      batch_size, 
+      token, 
+      cookies, 
+      main_url,
+      2,
+      start_date, 
+      end_date, 
+      verbose
+    )
+    
+    if(is.null(batch) || nrow(batch) == 0) {
+      if(verbose) message("No more announcements to fetch or error encountered.")
+      break
+    }
+    
+    # Si filtramos por fecha en el servidor, todos los registros deberían estar en rango
+    # Pero verificamos igualmente
+    in_range <- rep(TRUE, nrow(batch))
+    if(start_date == "" || end_date == "") {
+      in_range <- sapply(batch$Date, is_date_in_range, start_date = start_date, end_date = end_date)
+    }
+    
+    batch_filtered <- batch[in_range, ]
+    
+    if(nrow(batch_filtered) > 0) {
+      # Añadir columna URL de descarga
+      batch_filtered$DownloadURL <- sapply(batch_filtered$InternalFile, generate_download_url)
+      
+      # Añadir a resultados
+      all_announcements <- rbind(all_announcements, batch_filtered)
+      
+      if(verbose) message("Found ", nrow(batch_filtered), " announcements within date range.")
+    }
+    
+    total_records <- total_records + nrow(batch)
+    
+    # Verificar si debemos parar
+    if(total_records >= max_records || nrow(batch) < batch_size) {
+      if(verbose && total_records >= max_records) 
+        message("Reached maximum record limit of ", max_records)
+      break
+    }
+    
+    # Pasar al siguiente lote
+    start_index <- start_index + batch_size
+  }
+  
+  # Descargar archivos si se solicita
+  if(download && nrow(all_announcements) > 0) {
+    if(verbose) message("Starting download of ", nrow(all_announcements), " files...")
+    
+    # Añadir columna de estado de descarga
+    all_announcements$Downloaded <- FALSE
+    
+    for(i in 1:nrow(all_announcements)) {
+      url <- all_announcements$DownloadURL[i]
+      file_name <- all_announcements$FileName[i]
+      
+      if(verbose) message("Downloading (", i, "/", nrow(all_announcements), "): ", file_name)
+      
+      success <- download_announcement_file(url, file_name, download_dir, verbose)
+      all_announcements$Downloaded[i] <- success
+      
+      # Pequeña pausa para no sobrecargar el servidor
+      Sys.sleep(0.5)
+    }
+    
+    if(verbose) {
+      downloaded_count <- sum(all_announcements$Downloaded)
+      message("Downloaded ", downloaded_count, " out of ", nrow(all_announcements), " files.")
+    }
+  }
+  
+  if(nrow(all_announcements) == 0) {
+    message("No announcements found within the specified date range.")
+  }
+  
+  return(all_announcements)
+}
+
+
+
 #' Extract data from PRODUCE announcements in PDF format
 #'
 #' This function processes PDF files containing official announcements and extracts relevant information,
@@ -29,13 +175,13 @@
 #' }
 #'
 #' # Using URLs
-#' pdf_urls <- c(
-#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1542_comunicado1.pdf",
-#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1478_comunicado1.pdf",
-#'   "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/1468_comunicado1.pdf"
-#' )
+#' announcements <- get_produce_announcements(
+#'   start_date = "01/02/2025", 
+#'   end_date = "28/02/2025",
+#'   download = FALSE
+#'  )
 #'
-#' results <- extract_announcement_data(vector_pdf_names = pdf_urls)
+#' results <- extract_announcement_data(vector_pdf_names = announcements$DownloadURL)
 #'
 #' print(head(results))
 #'

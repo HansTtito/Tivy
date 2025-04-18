@@ -250,3 +250,402 @@ calculate_juveniles <- function(frequencies, length_values, juvLim = 12, a = 0.0
     total_weight = total_weight
   ))
 }
+
+
+#' @title Verificar rango de fechas
+#' @description Comprueba si una fecha está dentro del rango especificado
+#' @param date_str Fecha a comprobar
+#' @param start_date Fecha de inicio del rango
+#' @param end_date Fecha de fin del rango
+#' @return Lógico indicando si la fecha está en el rango
+#' @keywords internal
+is_date_in_range <- function(date_str, start_date, end_date) {
+  date_part <- convert_to_date(date_str, type = "date")
+  date <- convert_to_date(date_part, type = "date")
+  start <- convert_to_date(start_date, type = "date")
+  end <- convert_to_date(end_date, type = "date")
+  return(date >= start && date <= end)
+}
+
+# Funciones de conexión y validación
+#' @title Verificar paquetes requeridos
+#' @description Comprueba si están instalados los paquetes necesarios
+#' @return TRUE si los paquetes están disponibles
+#' @keywords internal
+check_required_packages <- function() {
+  if (!requireNamespace("httr", quietly = TRUE)) {
+    stop("Package 'httr' is required. Please install it with install.packages('httr')")
+  }
+  if (!requireNamespace("rvest", quietly = TRUE)) {
+    stop("Package 'rvest' is required. Please install it with install.packages('rvest')")
+  }
+  if (!requireNamespace("jsonlite", quietly = TRUE)) {
+    stop("Package 'jsonlite' is required. Please install it with install.packages('jsonlite')")
+  }
+  return(TRUE)
+}
+
+#' @title Obtener página principal
+#' @description Realiza la petición a la página principal y devuelve la respuesta
+#' @param verbose Mostrar información detallada
+#' @return Objeto de respuesta HTTP
+#' @keywords internal
+#' @importFrom httr GET add_headers
+get_main_page <- function(verbose = TRUE) {
+  main_url <- "https://consultasenlinea.produce.gob.pe/ConsultasEnLinea/consultas.web/comunicados/suspensionPreventiva"
+  
+  if(verbose) message("Fetching main page to extract token...")
+  
+  httr::GET(
+    main_url,
+    httr::add_headers(
+      `User-Agent` = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      `Accept` = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      `Accept-Language` = "en-US,en;q=0.5"
+    )
+  )
+}
+
+#' @title Extraer cookies
+#' @description Extrae las cookies de una respuesta HTTP
+#' @param response Respuesta HTTP
+#' @param verbose Mostrar información detallada
+#' @return DataFrame con cookies
+#' @keywords internal
+#' @importFrom httr cookies
+extract_cookies <- function(response, verbose = TRUE) {
+  cookies <- httr::cookies(response)
+  if(verbose && length(cookies) > 0) {
+    message("Found ", nrow(cookies), " cookies")
+  }
+  return(cookies)
+}
+
+#' @title Extraer token
+#' @description Extrae el token de seguridad de la página HTML
+#' @param html_content Contenido HTML de la página
+#' @param verbose Mostrar información detallada
+#' @return Token extraído
+#' @keywords internal
+#' @importFrom rvest read_html html_node html_attr
+extract_token <- function(html_content, verbose = TRUE) {
+  html_doc <- rvest::read_html(html_content)
+  
+  token_input <- rvest::html_node(html_doc, "input#token")
+  
+  if(is.na(token_input)) {
+    stop("Could not find token input field in the web page. The site structure may have changed.")
+  }
+  
+  token <- rvest::html_attr(token_input, "value")
+  
+  if(is.na(token) || token == "") {
+    stop("Found token input field but couldn't extract the token value.")
+  }
+  
+  if(verbose) message("Successfully extracted token: ", substr(token, 1, 20), "...")
+  
+  return(token)
+}
+
+# Funciones para manejar directorios
+#' @title Crear directorio de descarga
+#' @description Crea el directorio para descargar archivos si no existe
+#' @param download_dir Ruta del directorio de descarga
+#' @param verbose Mostrar información detallada
+#' @return TRUE si se creó el directorio o ya existía
+#' @keywords internal
+create_download_dir <- function(download_dir, verbose = TRUE) {
+  if(!dir.exists(download_dir)) {
+    dir.create(download_dir, recursive = TRUE)
+    if(verbose) message("Created download directory: ", download_dir)
+  }
+  return(TRUE)
+}
+
+# Funciones de API y procesamiento
+#' @title Construir parámetros de solicitud
+#' @description Crea el conjunto de parámetros para la petición API
+#' @param start_index Índice de inicio para paginación
+#' @param batch_size Tamaño del lote
+#' @param token Token de seguridad
+#' @param tipo Tipo de anuncio
+#' @param start_date Fecha de inicio (opcional)
+#' @param end_date Fecha de fin (opcional)
+#' @return Lista de parámetros
+#' @keywords internal
+#' @importFrom stats runif
+build_request_params <- function(start_index, batch_size, token, tipo = 2, start_date = "", end_date = "") {
+  params <- list(
+    draw = as.character(round(stats::runif(1) * 10)),
+    iColumns = "4",
+    sColumns = ",,,",
+    iDisplayStart = as.character(start_index),
+    iDisplayLength = as.character(batch_size),
+    mDataProp_0 = "0",
+    mDataProp_1 = "1",
+    mDataProp_2 = "2",
+    mDataProp_3 = "3",
+    iSortCol_0 = "0",
+    sSortDir_0 = "desc",
+    iSortingCols = "1",
+    tipo = as.character(tipo),
+    token = token,
+    num_comunicado = "",
+    fec_ini = "",
+    fec_fin = ""
+  )
+  
+  # Añadir parámetros de fecha si se proporcionan
+  if(!is.na(start_date) && start_date != "") {
+    params$fec_ini <- start_date
+  }
+  
+  if(!is.na(end_date) && end_date != "") {
+    params$fec_fin <- end_date
+  }
+  
+  return(params)
+}
+
+#' @title Realizar petición API
+#' @description Realiza la petición POST al API con los parámetros proporcionados
+#' @param url URL del endpoint
+#' @param params Parámetros de la petición
+#' @param cookies Cookies para la petición
+#' @param main_url URL de referencia
+#' @return Objeto de respuesta HTTP
+#' @keywords internal
+#' @importFrom httr POST set_cookies add_headers
+make_api_request <- function(url, params, cookies, main_url) {
+  tryCatch({
+    httr::POST(
+      url = url,
+      body = params,
+      encode = "form",
+      httr::set_cookies(setNames(cookies$value, cookies$name)),
+      httr::add_headers(
+        `User-Agent` = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        `Accept` = "application/json, text/javascript, */*; q=0.01",
+        `Content-Type` = "application/x-www-form-urlencoded; charset=UTF-8",
+        `X-Requested-With` = "XMLHttpRequest",
+        `Origin` = "https://consultasenlinea.produce.gob.pe",
+        `Referer` = main_url
+      )
+    )
+  }, error = function(e) {
+    message("Error making request: ", e$message)
+    return(NULL)
+  })
+}
+
+#' @title Procesar respuesta JSON
+#' @description Procesa la respuesta JSON del API y extrae los anuncios
+#' @param content_text Texto de la respuesta
+#' @param verbose Mostrar información detallada
+#' @return DataFrame con los anuncios o NULL si hay error
+#' @keywords internal
+#' @importFrom jsonlite fromJSON
+process_json_response <- function(content_text, verbose = TRUE) {
+  tryCatch({
+    data <- jsonlite::fromJSON(content_text)
+    
+    # Extraer anuncios
+    announcements <- data$aaData
+    
+    # Convertir a data frame
+    if(length(announcements) > 0) {
+      df <- as.data.frame(announcements)
+      
+      if(ncol(df) >= 6) {
+        colnames(df) <- c("ID", "Title", "Date", "FileName", "InternalFile", "Status")
+      }
+      
+      return(df)
+    } else {
+      if(verbose) message("No announcements found in this batch.")
+      return(NULL)
+    }
+  }, error = function(e) {
+    message("Error parsing JSON: ", e$message)
+    message("First 100 chars of response: ", substr(content_text, 1, 100))
+    return(NULL)
+  })
+}
+
+#' @title Obtener lote de anuncios
+#' @description Recupera un lote de anuncios usando el token
+#' @param start_index Índice de inicio para paginación
+#' @param batch_size Tamaño del lote
+#' @param token Token de seguridad
+#' @param cookies Cookies para la petición
+#' @param main_url URL de referencia
+#' @param tipo Tipo de anuncio
+#' @param start_date Fecha de inicio (opcional)
+#' @param end_date Fecha de fin (opcional)
+#' @param verbose Mostrar información detallada
+#' @return DataFrame con los anuncios o NULL si hay error
+#' @keywords internal
+#' @importFrom httr status_code
+fetch_announcements_batch <- function(
+  start_index, 
+  batch_size, 
+  token, 
+  cookies, 
+  main_url,
+  tipo = 2,
+  start_date = "", 
+  end_date = "", 
+  verbose = TRUE
+) {
+  if(verbose) message("Fetching records ", start_index + 1, " to ", start_index + batch_size)
+  
+  url <- "https://consultasenlinea.produce.gob.pe/ConsultasEnLinea/consultas.web/ajax/listado.comunicados.ajax.php"
+  
+  # Construir parámetros
+  params <- build_request_params(start_index, batch_size, token, tipo, start_date, end_date)
+  
+  # Hacer la petición
+  response <- make_api_request(url, params, cookies, main_url)
+  
+  if(is.null(response)) return(NULL)
+  
+  # Verificar respuesta
+  status <- status_code(response)
+  if(status != 200) {
+    message("Request failed with status code: ", status)
+    return(NULL)
+  }
+  
+  # Obtener contenido de la respuesta
+  content_text <- content(response, "text", encoding = "UTF-8")
+  
+  # Información de depuración
+  if(verbose && nchar(content_text) < 50) {
+    message("Warning: Short response received: ", content_text)
+    return(NULL)
+  }
+  
+  # Procesar respuesta JSON
+  return(process_json_response(content_text, verbose))
+}
+
+# Funciones de descarga
+#' @title Generar URL de descarga
+#' @description Construye la URL de descarga para un archivo
+#' @param file_name Nombre del archivo
+#' @return URL completa de descarga
+#' @keywords internal
+generate_download_url <- function(file_name) {
+  base_url <- "https://consultasenlinea.produce.gob.pe/produce/descarga/comunicados/dgsfs/"
+  paste0(base_url, file_name)
+}
+
+#' @title Descargar archivo de anuncio
+#' @description Descarga un archivo desde la URL proporcionada
+#' @param url URL de descarga
+#' @param file_name Nombre del archivo
+#' @param download_dir Directorio de descarga
+#' @param verbose Mostrar información detallada
+#' @return TRUE si se descargó correctamente, FALSE en caso contrario
+#' @keywords internal
+#' @importFrom utils download.file
+download_announcement_file <- function(url, file_name, download_dir, verbose = TRUE) {
+  dest_file <- file.path(download_dir, file_name)
+  
+  result <- tryCatch({
+    utils::download.file(url, destfile = dest_file, mode = "wb", quiet = !verbose)
+    return(TRUE)
+  }, error = function(e) {
+    message("Error downloading ", file_name, ": ", e$message)
+    return(FALSE)
+  })
+  
+  return(result)
+}
+
+# Función principal mejorada
+#' @title Test PRODUCE API Connection
+#' @description Tests the connection to the PRODUCE API by extracting the token and making a test request.
+#' @param verbose Print debug information
+#' @return List with success status and detailed information
+#' @keywords internal
+#' @importFrom httr status_code content
+#' @importFrom jsonlite fromJSON
+test_produce_api <- function(verbose = TRUE) {
+  if(verbose) message("Testing connection to PRODUCE website...")
+  
+  # Verificar paquetes requeridos
+  check_required_packages()
+  
+  # URL principal
+  main_url <- "https://consultasenlinea.produce.gob.pe/ConsultasEnLinea/consultas.web/comunicados/suspensionPreventiva"
+  
+  tryCatch({
+    # Obtener página principal
+    main_response <- get_main_page(verbose)
+    
+    # Verificar estado de respuesta
+    if(httr::status_code(main_response) != 200) {
+      return(list(
+        success = FALSE, 
+        message = paste("Failed to connect to website. Status code:", httr::status_code(main_response))
+      ))
+    }
+    
+    # Extraer cookies
+    cookies <- extract_cookies(main_response, verbose)
+    
+    # Extraer token
+    html_content <- httr::content(main_response, "text", encoding = "UTF-8")
+    token <- extract_token(html_content, verbose)
+    
+    # Realizar petición de prueba al API
+    params <- build_request_params(0, 1, token)
+    url <- "https://consultasenlinea.produce.gob.pe/ConsultasEnLinea/consultas.web/ajax/listado.comunicados.ajax.php"
+    
+    test_response <- make_api_request(url, params, cookies, main_url)
+    
+    # Verificar estado de respuesta
+    if(httr::status_code(test_response) != 200) {
+      return(list(
+        success = FALSE, 
+        message = paste("API request failed. Status code:", httr::status_code(test_response))
+      ))
+    }
+    
+    content_text <- httr::content(test_response, "text", encoding = "UTF-8")
+    
+    if(nchar(content_text) < 10) {
+      return(list(
+        success = FALSE, 
+        message = paste("API returned too short response:", content_text)
+      ))
+    }
+    
+    # Intentar parsear JSON
+    data <- jsonlite::fromJSON(content_text)
+    
+    # Verificar si obtuvimos datos
+    if(!is.list(data) || !("aaData" %in% names(data))) {
+      return(list(
+        success = FALSE, 
+        message = "API response doesn't contain expected data structure."
+      ))
+    }
+    
+    return(list(
+      success = TRUE,
+      message = paste("API test successful! Received", length(data$aaData), "records."),
+      records = data$aaData,
+      token = token,
+      cookies = cookies
+    ))
+    
+  }, error = function(e) {
+    return(list(
+      success = FALSE, 
+      message = paste("Error during API test:", e$message)
+    ))
+  })
+}
