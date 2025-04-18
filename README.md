@@ -183,7 +183,7 @@ interactive_map
 | Integration | `merge_length_fishing_trips_hauls()`, `add_variables()` | Data combination and enrichment |
 | Juveniles | `weight_length_df()`, `juveniles_by_group()` | Analysis of juvenile proportions |
 | Visualization | `plot_juveniles()`, `juveniles_dashboard()` | Creation of plots and dashboards |
-| Announcements | `extract_announcement_data()`, `format_announcement_data()` | Processing of official announcements |
+| Announcements | `get_produce_announcements()`, `extract_announcement_data()`, `format_announcement_data()` | Processing of official announcements |
 | Maps | `plot_polygons_ggplot()`, `plot_polygons_leaflet()` | Geospatial visualization |
 
 ## 👩‍💻 Contributions
