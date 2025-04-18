@@ -7,7 +7,7 @@
 land_points(
   x_point,
   y_point,
-  coastline = peru_coastline,
+  coastline = NULL,
   parallel = FALSE,
   cores = 4,
   distance_type = "haversine",
@@ -20,7 +20,7 @@ land_points(
 
 \item{y_point}{Numeric vector of latitudes (in decimal degrees).}
 
-\item{coastline}{\code{data.frame} with coastline coordinates. Must have columns named \code{Long} and \code{Lat}. By default, \code{Tivy::peru_coastline} can be used.}
+\item{coastline}{\code{data.frame} with coastline coordinates. Must have columns named \code{Long} and \code{Lat}. If \code{NULL} (default), uses internal dataset \code{Tivy::peru_coastline}.}
 
 \item{parallel}{Logical. If \code{TRUE}, performs the calculation in parallel using multiple cores. Default is \code{FALSE}.}
 
@@ -50,7 +50,7 @@ data_hauls <- process_hauls(data_hauls = calas_bitacora)
 result <- land_points(
   x_point = data_hauls$lon_final,
   y_point = data_hauls$lat_final,
-  coastline = Tivy::peru_coastline
+  coastline = NULL
 )
 
 table(result)

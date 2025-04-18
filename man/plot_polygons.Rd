@@ -6,8 +6,8 @@
 \usage{
 plot_polygons(
   data,
-  coastline = peru_coastline,
-  parallels = peru_coast_parallels,
+  coastline = NULL,
+  parallels = NULL,
   type = "static",
   title = "Fishing suspension zones",
   colors = NULL,
@@ -21,9 +21,9 @@ plot_polygons(
 \arguments{
 \item{data}{List of polygons with coordinates and metadata (such as announcement).}
 
-\item{coastline}{Data frame with the coastline to plot. Default \code{Tivy::peru_coastline}.}
+\item{coastline}{\code{data.frame} with coastline coordinates. Must have columns named \code{Long} and \code{Lat}. If \code{NULL} (default), uses internal dataset \code{Tivy::peru_coastline}.}
 
-\item{parallels}{A data frame containing lines parallel to the coast. Default \code{Tivy::peru_coast_parallels}.}
+\item{parallels}{A list containing data frames of lines parallel to the coast. If \code{NULL} (default), uses internal dataset \code{Tivy::peru_coast_parallels}.}
 
 \item{type}{Type of plot to generate: \code{"static"} for ggplot2 or \code{"interactive"} for leaflet.}
 
@@ -60,6 +60,5 @@ pdf_urls <- c(
 
 results <- extract_announcement_data(vector_pdf_names = pdf_urls)
 
-plot_polygons(data = results, coastline = Tivy::peru_coastline)
-
+plot_polygons(data = results)
 }

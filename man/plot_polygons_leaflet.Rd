@@ -6,8 +6,8 @@
 \usage{
 plot_polygons_leaflet(
   data,
-  coastline = peru_coastline,
-  parallels = peru_coast_parallels,
+  coastline = NULL,
+  parallels = NULL,
   title = NULL,
   colors = NULL,
   show_legend = FALSE,
@@ -20,10 +20,9 @@ plot_polygons_leaflet(
 \item{data}{A data frame with latitude and longitude coordinates for start and end points,
 which can be in text format (like "12°30'S") or decimal degrees.}
 
-\item{coastline}{A data frame containing the coastline for visualization.
-Must have columns 'Long' and 'Lat'. Default \code{Tivy::peru_coastline}.}
+\item{coastline}{\code{data.frame} with coastline coordinates. Must have columns named \code{Long} and \code{Lat}. If \code{NULL} (default), uses internal dataset \code{Tivy::peru_coastline}.}
 
-\item{parallels}{A data frame containing lines parallel to the coast. Default \code{Tivy::peru_coast_parallels}.}
+\item{parallels}{A list containing data frames of lines parallel to the coast. If \code{NULL} (default), uses internal dataset \code{Tivy::peru_coast_parallels}.}
 
 \item{title}{Title for the plot. Default NULL}
 
@@ -55,7 +54,7 @@ pdf_urls <- c(
 
 results <- extract_announcement_data(vector_pdf_names = pdf_urls)
 
-m <- plot_polygons_leaflet(data = results, coastline = Tivy::peru_coastline)
+m <- plot_polygons_leaflet(data = results)
 
 # Customize later
 m |>

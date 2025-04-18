@@ -10,6 +10,7 @@ add_variables(
   distance_type = "haversine",
   window = 0.5,
   unit = "nm",
+  coastline = NULL,
   suppress_warnings = TRUE
 )
 }
@@ -25,6 +26,8 @@ the individual is considered juvenile.}
 \item{window}{Window parameter to smooth the coastline, default is 0.5.}
 
 \item{unit}{Distance unit used in the calculation ("nm", "km", etc.), default is "nm".}
+
+\item{coastline}{\code{data.frame} with coastline coordinates. Must have columns named \code{Long} and \code{Lat}. If \code{NULL} (default), uses internal dataset \code{Tivy::peru_coastline}.}
 
 \item{suppress_warnings}{Logical. If TRUE (default), warnings are suppressed; otherwise, they are shown.}
 }

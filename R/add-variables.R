@@ -10,6 +10,7 @@
 #' @param distance_type Type of distance calculation to the coast (e.g., "haversine"), default is "haversine".
 #' @param window Window parameter to smooth the coastline, default is 0.5.
 #' @param unit Distance unit used in the calculation ("nm", "km", etc.), default is "nm".
+#' @param coastline `data.frame` with coastline coordinates. Must have columns named `Long` and `Lat`. If `NULL` (default), uses internal dataset `Tivy::peru_coastline`.
 #' @param suppress_warnings Logical. If TRUE (default), warnings are suppressed; otherwise, they are shown.
 #'
 #' @return A data frame with the following new variables:
@@ -43,7 +44,20 @@ add_variables <- function(data,
                           distance_type = "haversine",
                           window = 0.5,
                           unit = "nm",
+                          coastline = NULL,
                           suppress_warnings = TRUE) {
+
+
+    # Load default coastline if NULL
+  if (is.null(coastline)) {
+    if (!requireNamespace("Tivy", quietly = TRUE)) {
+      stop("Default coastline data (Tivy::peru_coastline) is not available. Please provide a coastline.")
+    }
+    coastline <- Tivy::peru_coastline
+  }
+
+  if (!is.data.frame(coastline)) stop("The 'coastline' parameter must be a data.frame.")
+
   stopifnot(is.data.frame(data))
   required_cols <- c("lon_initial", "lat_initial")
 
@@ -100,7 +114,7 @@ add_variables <- function(data,
     coast_distance(
       lon = data$lon_initial,
       lat = data$lat_initial,
-      coastline = peru_coastline,
+      coastline = coastline,
       distance_type = distance_type,
       window = window,
       unit = unit

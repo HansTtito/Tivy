@@ -7,7 +7,7 @@
 coast_distance(
   lon,
   lat,
-  coastline = peru_coastline,
+  coastline = NULL,
   return_indices = FALSE,
   distance_type = "haversine",
   unit = "nm",
@@ -21,7 +21,7 @@ coast_distance(
 
 \item{lat}{Numeric vector with the latitudes of the points of interest.}
 
-\item{coastline}{Data frame representing the coastline, must contain columns called \code{'Long'} and \code{'Lat'}. Default \code{Tivy::peru_coastline}.}
+\item{coastline}{\code{data.frame} with coastline coordinates. Must have columns named \code{Long} and \code{Lat}. If \code{NULL} (default), uses internal dataset \code{Tivy::peru_coastline}.}
 
 \item{return_indices}{Logical. If \code{TRUE}, also returns the indices of the nearest coastline points. Default \code{FALSE}.}
 
@@ -56,7 +56,7 @@ data_hauls <- process_hauls(data_hauls = calas_bitacora)
 coast_distance(
   lon = data_hauls$lon_final,
   lat = data_hauls$lat_final,
-  coastline = peru_coastline,
+  coastline = NULL,
   distance_type = "haversine",
   unit = "nm",
   parallel = TRUE,

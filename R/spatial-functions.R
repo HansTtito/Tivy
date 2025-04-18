@@ -203,7 +203,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
 #'
 #' @param lon Numeric vector with the longitudes of the points of interest.
 #' @param lat Numeric vector with the latitudes of the points of interest.
-#' @param coastline Data frame representing the coastline, must contain columns called `'Long'` and `'Lat'`. Default `Tivy::peru_coastline`.
+#' @param coastline `data.frame` with coastline coordinates. Must have columns named `Long` and `Lat`. If `NULL` (default), uses internal dataset `Tivy::peru_coastline`.
 #' @param return_indices Logical. If `TRUE`, also returns the indices of the nearest coastline points. Default `FALSE`.
 #' @param distance_type Type of geographic distance to use: `"haversine"`, `"euclidean"`, `"grid"`.
 #' @param unit Unit of measurement for distance: `"nm"` (nautical miles), `"km"`, etc.
@@ -228,7 +228,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
 #' coast_distance(
 #'   lon = data_hauls$lon_final,
 #'   lat = data_hauls$lat_final,
-#'   coastline = peru_coastline,
+#'   coastline = NULL,
 #'   distance_type = "haversine",
 #'   unit = "nm",
 #'   parallel = TRUE,
@@ -239,7 +239,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
 #' @importFrom future.apply future_lapply
 coast_distance <- function(lon,
                             lat,
-                            coastline = peru_coastline,
+                            coastline = NULL,
                             return_indices = FALSE,
                             distance_type = "haversine",
                             unit = "nm",
@@ -249,6 +249,15 @@ coast_distance <- function(lon,
   # Parameter validation
   if (missing(lon) || missing(lat) || missing(coastline)) {
     stop("The parameters 'lon', 'lat', and 'coastline' are required.")
+  }
+
+  # Default coastline if NULL
+  if (is.null(coastline)) {
+    if (requireNamespace("Tivy", quietly = TRUE)) {
+      coastline <- Tivy::peru_coastline
+    } else {
+      stop("Package 'Tivy' is required to use the default coastline. Please install it or provide a coastline manually.")
+    }
   }
 
   # Validate data types
@@ -385,7 +394,7 @@ coast_distance <- function(lon,
 #'
 #' @param x_point Numeric vector of longitudes (in decimal degrees).
 #' @param y_point Numeric vector of latitudes (in decimal degrees).
-#' @param coastline `data.frame` with coastline coordinates. Must have columns named `Long` and `Lat`. By default, `Tivy::peru_coastline` can be used.
+#' @param coastline `data.frame` with coastline coordinates. Must have columns named `Long` and `Lat`. If `NULL` (default), uses internal dataset `Tivy::peru_coastline`.
 #' @param parallel Logical. If `TRUE`, performs the calculation in parallel using multiple cores. Default is `FALSE`.
 #' @param cores Number of cores to use for parallel processing. Default is `4`.
 #' @param distance_type Type of geodesic distance to use in the calculation: `"haversine"` (default) or others if the internal function allows it.
@@ -406,7 +415,7 @@ coast_distance <- function(lon,
 #' result <- land_points(
 #'   x_point = data_hauls$lon_final,
 #'   y_point = data_hauls$lat_final,
-#'   coastline = Tivy::peru_coastline
+#'   coastline = NULL
 #' )
 #'
 #' table(result)
@@ -414,7 +423,7 @@ coast_distance <- function(lon,
 #' @export
 land_points <- function(x_point,
                           y_point,
-                          coastline = peru_coastline,
+                          coastline = NULL,
                           parallel = FALSE,
                           cores = 4,
                           distance_type = "haversine",
@@ -428,6 +437,15 @@ land_points <- function(x_point,
   if (length(x_point) != length(y_point)) {
     stop("`x_point` and `y_point` must have the same length.")
   }
+
+    # Load default coastline if NULL
+  if (is.null(coastline)) {
+    if (!requireNamespace("Tivy", quietly = TRUE)) {
+      stop("Default coastline data (Tivy::peru_coastline) is not available. Please provide a coastline.")
+    }
+    coastline <- Tivy::peru_coastline
+  }
+
 
   if (!is.data.frame(coastline)) {
     stop("`coastline` must be a data.frame.")

@@ -6,9 +6,8 @@
 #'
 #' @param data A data frame with latitude and longitude coordinates for start and end points,
 #'        which can be in text format (like "12°30'S") or decimal degrees.
-#' @param coastline A data frame containing the coastline for visualization.
-#'        Must have columns 'Long' and 'Lat'. Default `Tivy::peru_coastline`.
-#' @param parallels A data frame containing lines parallel to the coast. Default `Tivy::peru_coast_parallels`.
+#' @param coastline `data.frame` with coastline coordinates. Must have columns named `Long` and `Lat`. If `NULL` (default), uses internal dataset `Tivy::peru_coastline`.
+#' @param parallels A list containing data frames of lines parallel to the coast. If `NULL` (default), uses internal dataset `Tivy::peru_coast_parallels`.
 #' @param title Title for the plot. Default NULL
 #' @param colors Vector of colors for the polygons. Default NULL
 #' @param show_legend Logical. If TRUE, shows the legend. Default FALSE.
@@ -28,7 +27,7 @@
 #' )
 #' results <- extract_announcement_data(vector_pdf_names = pdf_urls)
 #'
-#' g <- plot_polygons_ggplot(data = results, coastline = Tivy::peru_coastline)
+#' g <- plot_polygons_ggplot(data = results)
 #'
 #' # Customize later
 #' g +
@@ -38,13 +37,34 @@
 #'
 #' @export
 plot_polygons_ggplot <- function(data,
-                                 coastline = peru_coastline,
-                                 parallels = peru_coast_parallels,
+                                 coastline = NULL,
+                                 parallels = NULL,
                                  title = NULL,
                                  colors = NULL,
                                  show_legend = FALSE,
                                  labels = NULL,
                                  add_grid = FALSE) {
+
+    # Load default coastline if NULL
+  if (is.null(coastline)) {
+    if (!requireNamespace("Tivy", quietly = TRUE)) {
+      stop("Default coastline data (Tivy::peru_coastline) is not available. Please provide a coastline.")
+    }
+    coastline <- Tivy::peru_coastline
+  }
+
+  if (!is.data.frame(coastline)) stop("The 'coastline' parameter must be a data.frame.")
+
+  # Load default parallels if NULL
+  if (is.null(parallels)) {
+    if (!requireNamespace("Tivy", quietly = TRUE)) {
+      stop("Default parallels data (Tivy::peru_coast_parallels) is not available. Please provide a parallels coast data.")
+    }
+    parallels <- Tivy::peru_coast_parallels
+  }
+
+  if (!is.list(parallels)) stop("The 'parallels' parameter must be a list.")
+
 
   # Prepare the polygons (all the data processing is the same)
   polygons <- prepare_polygons(data = data, coastline = coastline, coast_parallels = parallels)
@@ -69,9 +89,8 @@ plot_polygons_ggplot <- function(data,
 #'
 #' @param data A data frame with latitude and longitude coordinates for start and end points,
 #'        which can be in text format (like "12°30'S") or decimal degrees.
-#' @param coastline A data frame containing the coastline for visualization.
-#'        Must have columns 'Long' and 'Lat'. Default `Tivy::peru_coastline`.
-#' @param parallels A data frame containing lines parallel to the coast. Default `Tivy::peru_coast_parallels`.
+#' @param coastline `data.frame` with coastline coordinates. Must have columns named `Long` and `Lat`. If `NULL` (default), uses internal dataset `Tivy::peru_coastline`.
+#' @param parallels A list containing data frames of lines parallel to the coast. If `NULL` (default), uses internal dataset `Tivy::peru_coast_parallels`.
 #' @param title Title for the plot. Default NULL
 #' @param colors Vector of colors for the polygons. Default NULL
 #' @param show_legend Logical. If TRUE, shows the legend. Default FALSE.
@@ -93,7 +112,7 @@ plot_polygons_ggplot <- function(data,
 #'
 #' results <- extract_announcement_data(vector_pdf_names = pdf_urls)
 #'
-#' m <- plot_polygons_leaflet(data = results, coastline = Tivy::peru_coastline)
+#' m <- plot_polygons_leaflet(data = results)
 #'
 #' # Customize later
 #' m |>
@@ -102,14 +121,34 @@ plot_polygons_ggplot <- function(data,
 #'
 #' @export
 plot_polygons_leaflet <- function(data,
-                                  coastline = peru_coastline,
-                                  parallels = peru_coast_parallels,
+                                  coastline = NULL,
+                                  parallels = NULL,
                                   title = NULL,
                                   colors = NULL,
                                   show_legend = FALSE,
                                   labels = NULL,
                                   base_layers = FALSE,
                                   minimap = FALSE) {
+
+    # Load default coastline if NULL
+  if (is.null(coastline)) {
+    if (!requireNamespace("Tivy", quietly = TRUE)) {
+      stop("Default coastline data (Tivy::peru_coastline) is not available. Please provide a coastline.")
+    }
+    coastline <- Tivy::peru_coastline
+  }
+
+  if (!is.data.frame(coastline)) stop("The 'coastline' parameter must be a data.frame.")
+
+  # Load default parallels if NULL
+  if (is.null(parallels)) {
+    if (!requireNamespace("Tivy", quietly = TRUE)) {
+      stop("Default parallels data (Tivy::peru_coast_parallels) is not available. Please provide a parallels coast data.")
+    }
+    parallels <- Tivy::peru_coast_parallels
+  }
+
+  if (!is.list(parallels)) stop("The 'parallels' parameter must be a list.")
 
   # Prepare the polygons (all the data processing is the same)
   polygons <- prepare_polygons(data, coastline, parallels)
@@ -132,8 +171,8 @@ plot_polygons_leaflet <- function(data,
 #' generate a static plot with `ggplot2` or an interactive plot with `leaflet`.
 #'
 #' @param data List of polygons with coordinates and metadata (such as announcement).
-#' @param coastline Data frame with the coastline to plot. Default `Tivy::peru_coastline`.
-#' @param parallels A data frame containing lines parallel to the coast. Default `Tivy::peru_coast_parallels`.
+#' @param coastline `data.frame` with coastline coordinates. Must have columns named `Long` and `Lat`. If `NULL` (default), uses internal dataset `Tivy::peru_coastline`.
+#' @param parallels A list containing data frames of lines parallel to the coast. If `NULL` (default), uses internal dataset `Tivy::peru_coast_parallels`.
 #' @param type Type of plot to generate: `"static"` for ggplot2 or `"interactive"` for leaflet.
 #' @param title Plot title.
 #' @param colors Vector of colors to use to differentiate the polygons (by announcement or other category).
@@ -156,12 +195,11 @@ plot_polygons_leaflet <- function(data,
 #'
 #' results <- extract_announcement_data(vector_pdf_names = pdf_urls)
 #'
-#' plot_polygons(data = results, coastline = Tivy::peru_coastline)
-#'
+#' plot_polygons(data = results)
 #' @export
 plot_polygons <- function(data,
-                          coastline = peru_coastline,
-                          parallels = peru_coast_parallels,
+                          coastline = NULL,
+                          parallels = NULL,
                           type = "static",
                           title = "Fishing suspension zones",
                           colors = NULL,

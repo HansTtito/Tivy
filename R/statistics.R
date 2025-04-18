@@ -117,358 +117,113 @@ weighting <- function(frequency, catch, length, a, b, silence_warnings = FALSE) 
 }
 
 
-#' Prepare polygons from coordinate data
+#' Weighting length in a data frame
 #'
-#' @description
-#' Helper function to process data and prepare polygons using preexisting parallel lines.
-#' The east and west edges of the polygon will follow the shape of the lines parallel
-#' to the coast at the specified nautical miles, while the north and south edges will be
-#' straight lines at the given latitudes.
+#' This function performs the weighting of length frequencies according to the total catch
+#' using the length-weight relationship. It allows parallel processing for large datasets.
 #'
-#' @param data A data frame with coordinates.
-#' @param coastline A data frame with the coastline.
-#' @param coast_parallels List of data frames with lines parallel to the coast at different distances.
-#'        Each element of the list must have a name indicating the distance (e.g. "l5", "l10").
-#' @param column_names A vector with column names in the coast_parallels data frames.
-#'        Must contain: c("lat", "lon", "dc") where "dc" is the distance to the coast.
+#' @param df A data frame containing the length columns and catch.
+#' @param length_cols A character vector with the names of the columns that represent the length.
+#' @param catch_col Name of the column that contains the catch values.
+#' @param a Numeric value of the coefficient of the length-weight relationship.
+#' @param b Numeric value of the exponent of the length-weight relationship.
+#' @param parallel Boolean indicating whether to use parallel processing.
+#' @param num_cores Number of cores to use (if parallel=TRUE).
+#' @param block_size Size of the blocks for processing (if parallel=TRUE).
+#' @param silence_warnings Logical. If TRUE, warning messages are suppressed (default = TRUE).
 #'
-#' @return A list of polygons for visualization.
-#' @keywords internal
-prepare_polygons <- function(data, coastline, coast_parallels = NULL, column_names = c("lat", "lon", "dc")) {
-  # Parameter validation
-  if (missing(data)) {
-    stop("The 'data' parameter is required.")
-  }
-
-  if (!is.data.frame(data)) {
-    stop("'data' must be a data.frame.")
-  }
-
-  if (!is.data.frame(coastline) || !all(c("Long", "Lat") %in% names(coastline))) {
-    stop("'coastline' must be a data.frame with columns 'Long' and 'Lat'.")
-  }
-
-  # Check if there are coordinates to work with
-  if (nrow(data) == 0) {
-    stop("The data frame 'data' contains no rows.")
-  }
-
-  # Validate coast_parallels if provided
-  if (!is.null(coast_parallels)) {
-    if (!is.list(coast_parallels)) {
-      stop("'coast_parallels' must be a list of data.frames.")
-    }
-
-    # Validate that each element of the list is a data.frame with the necessary columns
-    for (name in names(coast_parallels)) {
-      df <- coast_parallels[[name]]
-      if (!is.data.frame(df)) {
-        warning("The element '", name, "' in coast_parallels is not a data.frame.")
-        next
-      }
-      if (!all(column_names %in% names(df))) {
-        warning("The element '", name, "' in coast_parallels does not have all the required columns: ",
-                paste(column_names, collapse = ", "))
-      }
-    }
-
-    # Check that we have at least one valid element
-    valid_elements <- sapply(names(coast_parallels), function(name) {
-      df <- coast_parallels[[name]]
-      is.data.frame(df) && all(column_names %in% names(df))
-    })
-
-    if (!any(valid_elements)) {
-      warning("No element in coast_parallels has the correct format. The original approximation method will be used.")
-      coast_parallels <- NULL
-    }
-  }
-
-  # Prepare the data for visualization
-  prepared_data <- data
-
-  # Convert text coordinates to numeric if necessary
-  if (any(c("StartLatitude", "EndLatitude") %in% names(data))) {
-    if (!"lat_ini" %in% names(data)) {
-      prepared_data$lat_ini <- Tivy::dms_to_decimal(data$StartLatitude)
-    }
-    if (!"lat_fin" %in% names(data)) {
-      prepared_data$lat_fin <- Tivy::dms_to_decimal(data$EndLatitude)
-    }
-  }
-
-  if (any(c("StartLongitude", "EndLongitude") %in% names(data))) {
-    if (!"lon_ini" %in% names(data)) {
-      prepared_data$lon_ini <- Tivy::dms_to_decimal(data$StartLongitude)
-    }
-    if (!"lon_fin" %in% names(data)) {
-      prepared_data$lon_fin <- Tivy::dms_to_decimal(data$EndLongitude)
-    }
-  }
-
-  # Create list to store polygons
-  polygons <- list()
-
-  # Process each row to create polygons
-  for (i in 1:nrow(prepared_data)) {
-    # Check if we have nautical miles instead of longitudes
-    if (!is.na(data$StartNauticalMiles[i]) && !is.na(data$EndNauticalMiles[i]) &&
-        (is.na(prepared_data$lon_ini[i]) || is.na(prepared_data$lon_fin[i]))) {
-
-      # Get decimal latitudes and make sure they are in the correct order
-      lat_north <- max(prepared_data$lat_ini[i], prepared_data$lat_fin[i])
-      lat_south <- min(prepared_data$lat_ini[i], prepared_data$lat_fin[i])
-
-      # Get miles
-      miles_ini <- data$StartNauticalMiles[i]  # Closer to the coast
-      miles_fin <- data$EndNauticalMiles[i]     # Further from the coast
-
-      # Consider using preexisting coast_parallels
-      if (!is.null(coast_parallels)) {
-        lat_name <- column_names[1] # Latitude column
-        lon_name <- column_names[2] # Longitude column
-
-        # Find parallel lines for the initial and final miles
-        line_ini_info <- find_parallel_line(miles_ini, coast_parallels)
-        line_fin_info <- find_parallel_line(miles_fin, coast_parallels)
-
-        line_ini <- line_ini_info$df  # Line closest to the coast
-        line_fin <- line_fin_info$df  # Line furthest from the coast
-
-        # If we find lines for both miles
-        if (!is.null(line_ini) && !is.null(line_fin) &&
-            nrow(line_ini) > 0 && nrow(line_fin) > 0) {
-
-          # Interpolate exact points at the corners
-          point_ne <- interpolate_point(line_ini, lat_north, lat_name, lon_name)
-          point_se <- interpolate_point(line_ini, lat_south, lat_name, lon_name)
-          point_nw <- interpolate_point(line_fin, lat_north, lat_name, lon_name)
-          point_sw <- interpolate_point(line_fin, lat_south, lat_name, lon_name)
-
-          # Extract points from the west line (furthest) between latitudes
-          west_points <- extract_points_between_latitudes(
-            line_fin, lat_south, lat_north, lat_name, lon_name
-          )
-
-          # Extract points from the east line (closest) between latitudes
-          east_points <- extract_points_between_latitudes(
-            line_ini, lat_south, lat_north, lat_name, lon_name
-          )
-
-          # Create coordinates for the complete polygon
-          # 1. Start at the northeast corner and go north along the east edge
-          # 2. Then go from north to south along the west edge
-          # 3. Return to the starting point to close the polygon
-
-          # Sort west points from north to south
-          west_points <- west_points[order(west_points[, 2], decreasing = TRUE), ]
-
-          # Sort east points from south to north
-          east_points <- east_points[order(east_points[, 2]), ]
-
-          # Combine all points to form the polygon
-          coords <- rbind(
-            east_points,          # East edge (south to north)
-            west_points,         # West edge (north to south)
-            east_points[1, ]      # Close the polygon by returning to the first point
-          )
-
-          # Create polygon object
-          polygon <- list(
-            coords = coords,
-            id = i,
-            start_date = if ("StartDateTime" %in% names(data)) data$StartDateTime[i] else NA,
-            end_date = if ("EndDateTime" %in% names(data)) data$EndDateTime[i] else NA,
-            file_name = if ("file_name" %in% names(data)) data$file_name[i] else NA,
-            Start_Long = if ("StartLongitude" %in% names(data)) data$StartLongitude[i] else NA,
-            Start_Lat = if ("StartLatitude" %in% names(data)) data$StartLatitude[i] else NA,
-            End_Long = if ("EndLongitude" %in% names(data)) data$EndLongitude[i] else NA,
-            End_Lat = if ("EndLatitude" %in% names(data)) data$EndLatitude[i] else NA,
-            StartNauticalMiles = miles_ini,
-            EndNauticalMiles = miles_fin,
-            announcement = if ("announcement" %in% names(data)) data$announcement[i] else paste("Polygon", i),
-            actual_mile_ini = line_ini_info$actual_mile,
-            actual_mile_fin = line_fin_info$actual_mile,
-            method = "detailed"
-          )
-
-          polygons[[i]] <- polygon
-          next  # Continue to the next iteration
-        }
-      }
-
-      # If we get here, it's because we couldn't create a detailed polygon with parallel lines
-      # Fall back to the original method with approximation
-      coast_lon_lat_north <- calculate_coast_longitude(coastline, lat_north)
-      coast_lon_lat_south <- calculate_coast_longitude(coastline, lat_south)
-
-      # Conversion factor adjusted by each latitude
-      factor_lat_north <- cos(lat_north * pi/180)
-      factor_lat_south <- cos(lat_south * pi/180)
-
-      # Convert miles to degrees for each latitude
-      offset_ini_lat_north <- miles_ini / 60 / factor_lat_north
-      offset_fin_lat_north <- miles_fin / 60 / factor_lat_north
-      offset_ini_lat_south <- miles_ini / 60 / factor_lat_south
-      offset_fin_lat_south <- miles_fin / 60 / factor_lat_south
-
-      # Create polygon coordinates with 4 corners (original method)
-      coords <- rbind(
-        c(coast_lon_lat_north - offset_ini_lat_north, lat_north),  # Northeast corner
-        c(coast_lon_lat_north - offset_fin_lat_north, lat_north),  # Northwest corner
-        c(coast_lon_lat_south - offset_fin_lat_south, lat_south),  # Southwest corner
-        c(coast_lon_lat_south - offset_ini_lat_south, lat_south),  # Southeast corner
-        c(coast_lon_lat_north - offset_ini_lat_north, lat_north)   # Close the polygon
-      )
-
-      # Create polygon object (original method)
-      polygon <- list(
-        coords = coords,
-        id = i,
-        start_date = if ("StartDateTime" %in% names(data)) data$StartDateTime[i] else NA,
-        end_date = if ("EndDateTime" %in% names(data)) data$EndDateTime[i] else NA,
-        file_name = if ("file_name" %in% names(data)) data$file_name[i] else NA,
-        Start_Long = if ("StartLongitude" %in% names(data)) data$StartLongitude[i] else NA,
-        Start_Lat = if ("StartLatitude" %in% names(data)) data$StartLatitude[i] else NA,
-        End_Long = if ("EndLongitude" %in% names(data)) data$EndLongitude[i] else NA,
-        End_Lat = if ("EndLatitude" %in% names(data)) data$EndLatitude[i] else NA,
-        StartNauticalMiles = miles_ini,
-        EndNauticalMiles = miles_fin,
-        announcement = if ("announcement" %in% names(data)) data$announcement[i] else paste("Polygon", i),
-        method = "approximate"
-      )
-
-      polygons[[i]] <- polygon
-
-    } else if (!is.na(prepared_data$lat_ini[i]) && !is.na(prepared_data$lat_fin[i]) &&
-               !is.na(prepared_data$lon_ini[i]) && !is.na(prepared_data$lon_fin[i])) {
-
-      # Case with explicit coordinates: create rectangular polygon
-      coords <- rbind(
-        c(prepared_data$lon_ini[i], prepared_data$lat_ini[i]),  # Northwest corner
-        c(prepared_data$lon_fin[i], prepared_data$lat_ini[i]),  # Northeast corner
-        c(prepared_data$lon_fin[i], prepared_data$lat_fin[i]),  # Southeast corner
-        c(prepared_data$lon_ini[i], prepared_data$lat_fin[i]),  # Southwest corner
-        c(prepared_data$lon_ini[i], prepared_data$lat_ini[i])   # Close the polygon
-      )
-
-      # Create polygon object
-      polygon <- list(
-        coords = coords,
-        id = i,
-        start_date = if ("StartDateTime" %in% names(data)) data$StartDateTime[i] else NA,
-        end_date = if ("EndDateTime" %in% names(data)) data$EndDateTime[i] else NA,
-        file_name = if ("file_name" %in% names(data)) data$file_name[i] else NA,
-        Start_Long = if ("StartLongitude" %in% names(data)) data$StartLongitude[i] else NA,
-        Start_Lat = if ("StartLatitude" %in% names(data)) data$StartLatitude[i] else NA,
-        End_Long = if ("EndLongitude" %in% names(data)) data$EndLongitude[i] else NA,
-        End_Lat = if ("EndLatitude" %in% names(data)) data$EndLatitude[i] else NA,
-        StartNauticalMiles = if ("StartNauticalMiles" %in% names(data)) data$StartNauticalMiles[i] else NA,
-        EndNauticalMiles = if ("EndNauticalMiles" %in% names(data)) data$EndNauticalMiles[i] else NA,
-        announcement = if ("announcement" %in% names(data)) data$announcement[i] else paste("Polygon", i),
-        method = "explicit"
-      )
-
-      polygons[[i]] <- polygon
-    } else {
-      warning("Row ", i, " does not have sufficient data to create a valid polygon.")
-    }
-  }
-
-  # Filter NA polygons
-  polygons <- polygons[!sapply(polygons, is.null)]
-
-  if (length(polygons) == 0) {
-    stop("No valid polygons could be created with the provided data.")
-  }
-
-  return(polygons)
-}
-
-
-
-#' Process a block of rows for size weighting
+#' @return A data frame with the original columns and the weighted length columns.
+#'         The weighted columns will have the prefix "pond_" followed by the original name.
 #'
-#' Helper function that processes a set of rows to calculate weighted sizes.
-#' Can be used directly to process data subsets.
+#' @examples
 #'
-#' @param df_block Data frame to process
-#' @param sizes_cols Names of the size columns
-#' @param catch_col Name of the catch column
-#' @param a Coefficient of the length-weight relationship
-#' @param b Exponent of the length-weight relationship
-#' @param silence_warnings Whether to suppress warnings
-#' @return Data frame with weighted columns added with the prefix "pond_"
+#' data(calas_bitacora, faenas_bitacora, tallas_bitacora)
 #'
-#' @keywords internal
-process_block <- function(df, sizes_cols, catch_col, a, b, silence_warnings = FALSE) {
-  # Get list of sizes
-  size_values <- as.numeric(sub(".*_", "", sizes_cols))
-  if (all(is.na(size_values))) {
-    size_values <- as.numeric(sizes_cols)
+#' data_hauls <- process_hauls(data_hauls = calas_bitacora)
+#' data_fishing_trips <- process_fishing_trips(data_fishing_trips = faenas_bitacora)
+#' hauls_length <- process_length(data_length = tallas_bitacora)
+#'
+#' data_length_fishing_trips <- merge(x = data_fishing_trips, y = hauls_length, by = 'fishing_trip_code')
+#'
+#' data_total <- merge_length_fishing_trips_hauls(data_hauls = data_hauls, data_length_fishing_trips = data_length_fishing_trips)
+#'
+#' length_columns <- c("8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5","12", "12.5", "13", "13.5", "14", "14.5", "15")
+#'
+#' # Sequential processing
+#' results <- weight_length_df(df = data_total, length_cols = length_columns, catch_col = "catch_ANCHOVETA", a= 0.0001, b = 2.984)
+#'
+#' print(head(results))
+#'
+#' # Parallel processing for large datasets
+#' parallel_results <- weight_length_df(
+#'   df = data_total, length_cols = length_columns, catch_col = "catch_ANCHOVETA", a = 0.0001, b = 2.984, parallel = TRUE
+#' )
+#'
+#' print(head(parallel_results))
+#'
+#' @import parallel
+#' @export
+weight_length_df <- function(df, length_cols, catch_col, a, b,
+                               parallel = FALSE, num_cores = NULL, block_size = 10000,
+                               silence_warnings = TRUE) {
+  # Initial validations
+  if (!is.data.frame(df)) {
+    stop("The first argument must be a data frame.")
+  }
+  if (!all(length_cols %in% names(df))) {
+    stop("Some length columns do not exist in the data frame.")
+  }
+  if (!(catch_col %in% names(df))) {
+    stop("The catch column does not exist in the data frame.")
   }
 
-  # If there are still NAs, use sequence
-  if (any(is.na(size_values))) {
-    warning("Could not extract numerical size values, using sequence 1:n")
-    size_values <- seq_along(sizes_cols)
-  }
+  # If parallel processing is requested
+  if (parallel) {
+    # Check required packages
+    if (!requireNamespace("future", quietly = TRUE) ||
+        !requireNamespace("future.apply", quietly = TRUE)) {
+      stop("future and future.apply packages needed for parallel processing. Install them.")
+    }
 
-  # Counter for warnings
-  warning_counter <- list(
-    catch_na = 0,
-    freq_zero = 0,
-    weight_zero = 0,
-    sizes_zero = 0
-  )
+    # Configure parallel processing
+    if (is.null(num_cores)) {
+      num_cores <- max(1, parallel::detectCores() / 2)
+    }
+    future::plan(future::multisession, workers = num_cores)
 
-  # Process each row
-  result <- df
-  for (i in 1:nrow(df)) {
-    catch_i <- df[i, catch_col]
-    frequencies_i <- as.numeric(df[i, sizes_cols])
+    # Split into blocks
+    num_rows <- nrow(df)
+    block_indices <- split(1:num_rows,
+                             ceiling(seq_along(1:num_rows) / block_size))
 
-    # Count possible warnings
-    if (is.na(catch_i) || catch_i <= 0) warning_counter$catch_na <- warning_counter$catch_na + 1
-    if (sum(frequencies_i, na.rm = TRUE) == 0) warning_counter$freq_zero <- warning_counter$freq_zero + 1
-    if (any(size_values <= 0, na.rm = TRUE)) warning_counter$sizes_zero <- warning_counter$sizes_zero + 1
-
-    # Calculate weighting (silencing individual warnings)
-    weighted <- Tivy::weighting(
-      frequency = frequencies_i,
-      catch = catch_i,
-      sizes = size_values,
-      a = a,
-      b = b,
-      silence_warnings = TRUE
+    # Process blocks in parallel
+    results <- future.apply::future_lapply(
+      block_indices,
+      function(indices) {
+        block <- df[indices, ]
+        process_block(block, length_cols, catch_col, a, b, silence_warnings = TRUE)
+      },
+      future.seed = TRUE
     )
 
-    # Add results
-    for (j in seq_along(sizes_cols)) {
-      result[i, paste0("pond_", size_values[j])] <- weighted[j]
+    # Combine results
+    final_result <- do.call(rbind, results)
+    future::plan(future::sequential)
+
+    # Show warnings summary at the end if not silenced
+    if (!silence_warnings) {
+      # Here we could add a summary message if needed
+      # but as the processing is parallel, it would be more complex to get exact counts
+      message("Parallel processing completed. Some rows might have NA or zero values for weighted length.")
     }
+
+    return(final_result)
+  } else {
+    # Sequential processing
+    return(process_block(df, length_cols, catch_col, a, b, silence_warnings))
   }
-
-  # Show warning summary at the end
-  if (silence_warnings == FALSE) {
-    warnings_text <- character(0)
-    if (warning_counter$catch_na > 0)
-      warnings_text <- c(warnings_text,
-                         paste0(warning_counter$catch_na, " rows with catch NA or <= 0"))
-    if (warning_counter$freq_zero > 0)
-      warnings_text <- c(warnings_text,
-                         paste0(warning_counter$freq_zero, " rows with sum of frequencies = 0"))
-    if (warning_counter$sizes_zero > 0)
-      warnings_text <- c(warnings_text,
-                         paste0("There are sizes <= 0 that could produce invalid results"))
-
-    if (length(warnings_text) > 0) {
-      warning("Summary of problems found: ", paste(warnings_text, collapse = "; "))
-    }
-  }
-
-  return(result)
 }
+
 
 
 #' Percentage of juveniles
@@ -728,6 +483,8 @@ number_to_weight <- function(data, length, a, b) {
 #'   b = 3.1242
 #' )
 #'
+#' head(results_by_date)
+#'
 #' # Calculate juveniles by date and distance to coast
 #' results_date_dc <- juveniles_by_group(
 #'   data = results,
@@ -739,7 +496,7 @@ number_to_weight <- function(data, length, a, b) {
 #' )
 #'
 #' # View results
-#' head(results_by_date)
+#' head(results_date_dc)
 juveniles_by_group <- function(data, group_cols, cols_length, juvLim = 12, a = 0.0012, b = 3.1242,
                                 remove_empty = TRUE) {
   # Parameter validation
