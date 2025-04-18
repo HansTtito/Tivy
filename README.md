@@ -72,7 +72,7 @@ final_data_weighted <- weight_length_df(
 
 # Convert dates for temporal grouping
 final_data_weighted$unique_date <- convert_to_date(
-  final_data_weighted$fecha_inicio_cala, 
+  final_data_weighted$start_date_haul, 
   type = "date"
 )
 
