@@ -313,7 +313,7 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
                            a = NULL, b = NULL,
                            plot_type = "bars", title = NULL, sort_by = "x",
                            palette = NULL, facet_var = NULL, ncol = 2,
-                           position = "dodge", y_limits = c(0, 100)) {
+                           position = "dodge", y_limits = c(0, 100), use_facet_wrap = TRUE) {
 
   # Parameter validation
   if (!is.data.frame(juvenile_data))
@@ -441,21 +441,42 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
       p <- p + ggplot2::aes(group = .data[["type"]], color = .data[["type"]])
     }
   } else {
-    # When fill_var is provided, always facet by 'type' to distinguish between number and weight
-    p <- ggplot2::ggplot(
-      data_long,
-      ggplot2::aes(
-        x = .data[[var_x]],
-        y = .data[["percentage"]],
-        fill = .data[[fill_var]]
+    # When fill_var is provided, we have two options for the interaction between fill_var and type
+    if (use_facet_wrap) {
+      # Option 1: Use fill_var for fill and facet by type (original behavior)
+      p <- ggplot2::ggplot(
+        data_long,
+        ggplot2::aes(
+          x = .data[[var_x]],
+          y = .data[["percentage"]],
+          fill = .data[[fill_var]]
+        )
       )
-    )
-    # For line and point plots, also use fill_var for grouping and color
-    if (plot_type %in% c("lines", "points", "mixed")) {
-      p <- p + ggplot2::aes(group = .data[[fill_var]], color = .data[[fill_var]])
+      # For line and point plots, also use fill_var for grouping and color
+      if (plot_type %in% c("lines", "points", "mixed")) {
+        p <- p + ggplot2::aes(group = .data[[fill_var]], color = .data[[fill_var]])
+      }
+      # Facet by type when requested
+      p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
+    } else {
+      # Option 2: Use fill_var for fill and type as either position or pattern
+      # This creates a combined plot without faceting
+      p <- ggplot2::ggplot(
+        data_long,
+        ggplot2::aes(
+          x = .data[[var_x]],
+          y = .data[["percentage"]],
+          fill = interaction(.data[[fill_var]], .data[["type"]])
+        )
+      )
+      # For line and point plots
+      if (plot_type %in% c("lines", "points", "mixed")) {
+        p <- p + ggplot2::aes(
+          group = interaction(.data[[fill_var]], .data[["type"]]),
+          color = interaction(.data[[fill_var]], .data[["type"]])
+        )
+      }
     }
-    # Always facet by type when a fill variable is provided
-    p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
   }
 
   # Add geoms according to plot type
@@ -466,23 +487,23 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
       p <- p + ggplot2::geom_bar(stat = "identity", position = position)
     }
 
-    # Add faceting if fill_var is NULL (otherwise it's already added)
-    if (is.null(fill_var) && is.null(facet_var)) {
+    # Add faceting if needed (for NULL fill_var or when explicitly requested)
+    if ((is.null(fill_var) || use_facet_wrap) && is.null(facet_var) && is.null(fill_var)) {
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
     }
   } else if (plot_type == "lines") {
     p <- p + ggplot2::geom_line(size = 1) +
       ggplot2::geom_point(size = 2)
 
-    # Add faceting if fill_var is NULL and no facet_var (otherwise it's already added)
-    if (is.null(fill_var) && is.null(facet_var)) {
+    # Add faceting if needed (for NULL fill_var or when explicitly requested)
+    if ((is.null(fill_var) || use_facet_wrap) && is.null(facet_var) && is.null(fill_var)) {
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
     }
   } else if (plot_type == "points") {
     p <- p + ggplot2::geom_point(size = 3, alpha = 0.7)
 
-    # Add faceting if fill_var is NULL and no facet_var (otherwise it's already added)
-    if (is.null(fill_var) && is.null(facet_var)) {
+    # Add faceting if needed (for NULL fill_var or when explicitly requested)
+    if ((is.null(fill_var) || use_facet_wrap) && is.null(facet_var) && is.null(fill_var)) {
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
     }
   } else if (plot_type == "mixed") {
@@ -497,8 +518,8 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
         ggplot2::geom_point(size = 2)
     }
 
-    # Add faceting if fill_var is NULL and no facet_var (otherwise it's already added)
-    if (is.null(fill_var) && is.null(facet_var)) {
+    # Add faceting if needed (for NULL fill_var or when explicitly requested)
+    if ((is.null(fill_var) || use_facet_wrap) && is.null(facet_var) && is.null(fill_var)) {
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
     }
   }
@@ -506,14 +527,15 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
   # Add additional faceting if provided
   if (!is.null(facet_var)) {
     # Create facet formula with appropriate variables
-    if (is.null(fill_var)) {
-      # When no fill_var, facet by type and facet_var
+    if (use_facet_wrap) {
+      # Include type in faceting when facet_wrap is enabled
       facet_formula <- stats::as.formula(paste("~ type +", facet_var))
+      p <- p + ggplot2::facet_wrap(facet_formula, ncol = ncol)
     } else {
-      # When fill_var is present, we already facet by type, so just add facet_var
-      facet_formula <- stats::as.formula(paste("~ type +", facet_var))
+      # Only facet by facet_var when facet_wrap is disabled
+      facet_formula <- stats::as.formula(paste("~", facet_var))
+      p <- p + ggplot2::facet_wrap(facet_formula, ncol = ncol)
     }
-    p <- p + ggplot2::facet_wrap(facet_formula, ncol = ncol)
   }
 
   # Set y-axis limits
@@ -554,7 +576,6 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
 
   return(p)
 }
-
 
 #' Create visual dashboard for juvenile analysis
 #'
@@ -744,9 +765,12 @@ if (!is.data.frame(data_total)) {
 
   # 1. Comparison plot by date
   p1 <- plot_juveniles(
-    juvenile_data = juvenile_data,
+    juvenile_data = data_total,
     var_x = col_date,
     plot_type = "bars",
+    cols_length = cols_length,
+    a = a,
+    b = b,
     title = title_comp,
     sort_by = if(sort_comparison) "weight" else "x",
     palette = c("#3498DB", "#E74C3C")
