@@ -291,7 +291,7 @@ coast_distance <- function(lon,
   }
 
   # Validate unit
-  known_units <- c("nm", "km", "m", "mi")
+  known_units <- c("nm", "km")
   if (!unit %in% known_units) {
     stop("The unit '", unit, "' is not one of the common units: ", paste(known_units, collapse = ", "))
   }
