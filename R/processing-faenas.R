@@ -16,7 +16,7 @@
 #'     \item start_date: Start date and time of the fishing trip (optional, only in XLSX format)
 #'     \item end_date: End date and time of the fishing trip (optional, only in XLSX format)
 #'   }
-#' 
+#'
 #' @export
 #' @importFrom dplyr select %>%
 #'
@@ -37,8 +37,8 @@ process_fishing_trips <- function(data_fishing_trips, format = "xlsx") {
     names(data_fishing_trips) <- c("fishing_trip_code", "vessel", "owner", "id_vessel", "start_date", "end_date")
   } else if (format == "csv") {
     if (ncol(data_fishing_trips) < 8) stop("At least 8 columns are expected in CSV files.")
-    data_fishing_trips <- data_fishing_trips %>% dplyr::select(8, 3, 2, 4)
-    names(data_fishing_trips) <- c("fishing_trip_code", "vessel", "owner", "id_vessel")
+    data_fishing_trips <- data_fishing_trips %>% dplyr::select(8, 3, 2, 4, 6, 7)
+    names(data_fishing_trips) <- c("fishing_trip_code", "vessel", "owner", "id_vessel", "start_date", "end_date")
   }
   return(data_fishing_trips)
 }
