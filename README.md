@@ -102,7 +102,7 @@ juvenile_results <- juveniles_by_group(
   data        = final_data_weighted, 
   group_cols  = c("dc_cat"), 
   cols_length = paste0("pond_", length_cols)
-)
+  )
 
 print(juvenile_results)
 
@@ -124,7 +124,7 @@ plot_juveniles(
   plot_type      = "bars",
   use_facet_wrap = TRUE, 
   reference_line = 10
-)
+  )
 
 ```
 
