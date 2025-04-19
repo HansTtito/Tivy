@@ -8,7 +8,6 @@ juveniles_dashboard(
   data_total,
   col_date = NULL,
   cols_length = NULL,
-  juv_limit = 12,
   a = 1e-04,
   b = 2.984,
   col_latitude = NULL,
@@ -17,8 +16,8 @@ juveniles_dashboard(
   col_juveniles = NULL,
   xlim = c(-85, -70),
   ylim = c(-20, 0),
-  show_limit_juv = TRUE,
   palette = NULL,
+  step_x_date = NULL,
   sort_comparison = FALSE,
   title_comp = NULL,
   title_catch = NULL,
@@ -35,9 +34,6 @@ the function will try to detect it automatically.}
 
 \item{cols_length}{Vector with names of columns containing size
 frequencies. If NULL, the function will try to detect them automatically.}
-
-\item{juv_limit}{Numeric value representing the legal limit for defining
-juveniles (in cm). The default value is 12.}
 
 \item{a}{Parameter 'a' of the length-weight relationship (W = a*L^b). The default value
 is 0.0001.}
@@ -63,11 +59,10 @@ Default c(-85, -70) to cover the Peruvian coast.}
 \item{ylim}{Numeric vector of length 2 defining the limits of the y-axis for the map.
 Default c(-20, 0) to cover the Peruvian coast.}
 
-\item{show_limit_juv}{Logical. If TRUE, a reference line for the
-juvenile limit will be shown in the appropriate graphs.}
-
 \item{palette}{Custom color vector for the graphs. If NULL,
 a default palette will be used.}
+
+\item{step_x_date}{Optional. Interval for date breaks (e.g., "1 day", "1 month").}
 
 \item{sort_comparison}{Logical. If TRUE, the percentage comparison chart
 will be sorted from highest to lowest. The default value is FALSE.}
@@ -107,11 +102,11 @@ hauls_length <- process_length(data_length = tallas_bitacora)
 
 # Integrate data
 data_length_fishing_trips <- merge(
-   x = data_fishing_trips, 
-   y = hauls_length, 
+   x = data_fishing_trips,
+   y = hauls_length,
    by = 'fishing_trip_code'
 )
- 
+
 data_total <- merge_length_fishing_trips_hauls(
    data_hauls = data_hauls,
    data_length_fishing_trips = data_length_fishing_trips
@@ -141,7 +136,6 @@ dashboard <- juveniles_dashboard(
   data_total = results,
   col_date = "unique_date",
   cols_length = paste0("pond_", seq(8, 15, 0.5)),
-  juv_limit = 12,
   a = 0.0001,
   b = 2.984,
   col_latitude = "lat_final",

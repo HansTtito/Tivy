@@ -238,8 +238,6 @@ plot_polygons <- function(data,
   }
 }
 
-
-
 #' Plot juvenile percentages (by number and weight)
 #'
 #' Generates visualizations to explore juvenile percentages based on
@@ -252,18 +250,29 @@ plot_polygons <- function(data,
 #' It is also possible to add a reference line corresponding to the legal
 #' juvenile limit.
 #'
-#' @param juvenile_data Data frame with results from `juveniles_by_group`.
-#' @param var_x Name of the variable to use on the X axis of the plot (e.g., "unique_date").
-#' @param fill_var (Optional) Variable to group and color the bars or lines (e.g., "vessel").
-#' @param cols_length Vector of length columns to use for juvenile analysis.
-#' @param a Parameter for the weight-length relationship (default 0.0001).
-#' @param b Parameter for the weight-length relationship (default 2.984).
-#' @param plot_type Type of plot to show: "bars" (default), "lines", "points", "mixed", or "boxplot".
-#' @param title (Optional) Main title of the plot.
-#' @param sort_by Criterion to sort the X axis: "x" (default, sort by var_x), "number", "weight" or "total".
-#' @param palette (Optional) Vector of custom colors.
-#' @param facet_var (Optional) Variable to divide the plot into subplots (facets).
-#' @param ncol Number of columns for faceting (default 2).
+#' @param df Data frame containing juvenile data
+#' @param var_x Name of the variable for the X axis
+#' @param fill_var Optional. Name of the variable for fill color
+#' @param cols_length Vector of column names containing length frequencies
+#' @param a Parameter 'a' for the length-weight relationship
+#' @param b Parameter 'b' for the length-weight relationship
+#' @param step_x_date Optional. Interval for date breaks (e.g., "1 day", "1 month")
+#' @param plot_type Type of chart: "bars", "lines", "points", or "mixed"
+#' @param title Optional. Chart title
+#' @param subtitle Optional. Chart subtitle
+#' @param sort_by How to sort data: "x", "number", or "weight"
+#' @param palette Optional. Vector of colors for the chart
+#' @param facet_var Optional. Name of variable for additional faceting
+#' @param ncol Number of columns in the facet grid
+#' @param position Position adjustment for bars: "dodge", "stack", or "fill"
+#' @param y_limits Optional. Numeric vector with min and max for Y axis
+#' @param use_facet_wrap Logical. Whether to use facet_wrap to separate by type
+#' @param group_by_type Logical. When use_facet_wrap=FALSE, whether to use transparency to distinguish by type
+#' @param reference_line Optional. Value for reference line (e.g., legal limit)
+#' @param theme_type Type of theme: "classic", "minimal", "light", or "dark"
+#' @param legend_position Legend position: "bottom", "right", "left", or "top"
+#' @param rotate_x_labels Logical. Whether to rotate X axis labels
+#' @param na_to_zero Logical. Whether to convert NA values to zeros (to complete categories)
 #'
 #' @return A `ggplot` object representing the generated plot. It can be customized or printed directly.
 #' @export
@@ -272,6 +281,7 @@ plot_polygons <- function(data,
 #'             facet_wrap scale_fill_manual scale_color_manual labs theme_minimal
 #' @importFrom dplyr arrange mutate
 #' @importFrom tidyr pivot_longer
+#' @importFrom rlang syms
 #'
 #' @examples
 #' # Data processing
@@ -300,46 +310,56 @@ plot_polygons <- function(data,
 #'
 #' results$unique_date <- convert_to_date(results$start_date_haul, type = "date")
 #'
-#' juvenile_results <- juveniles_by_group(data = results,
-#'                                            group_cols = c("unique_date"),
-#'                                            cols_length = length_cols)
 #'
 #' # Bar chart of juvenile percentages by date
 #' plot_juveniles(
-#'   juvenile_data = juvenile_results,
-#'   var_x = "unique_date"
+#'   df = results,
+#'   var_x = "unique_date",
+#'   cols_length = paste0("pond_", length_cols),
+#'   a = 0.0001,
+#'   b = 2.984
 #' )
-plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = NULL,
-                           a = NULL, b = NULL,
-                           plot_type = "bars", title = NULL, sort_by = "x",
+plot_juveniles <- function(df, var_x, fill_var = NULL, cols_length = NULL,
+                           a = 0.0012, b = 3.1242, step_x_date = NULL,
+                           plot_type = "bars", title = NULL, subtitle = NULL, sort_by = "x",
                            palette = NULL, facet_var = NULL, ncol = 2,
-                           position = "dodge", y_limits = c(0, 100), use_facet_wrap = TRUE) {
+                           position = "dodge", y_limits = c(0, 100),
+                           use_facet_wrap = TRUE, group_by_type = TRUE,
+                           reference_line = NULL, theme_type = "light",
+                           legend_position = "bottom", rotate_x_labels = TRUE,
+                           na_to_zero = FALSE) {
 
-  # Parameter validation
-  if (!is.data.frame(juvenile_data))
-    stop("juvenile_data must be a data.frame")
+  # validations
+  if (!is.data.frame(df))
+    stop("df must be a data.frame")
 
-  if (!var_x %in% colnames(juvenile_data))
-    stop(paste("The variable", var_x, "does not exist in the data.frame"))
+  if (!var_x %in% colnames(df))
+    stop(paste("Variable", var_x, "doesn't exist in the data.frame"))
 
-  if (!is.null(fill_var) && !fill_var %in% colnames(juvenile_data))
-    stop(paste("The variable", fill_var, "does not exist in the data.frame"))
+  if (!is.null(fill_var) && !fill_var %in% colnames(df))
+    stop(paste("Variable", fill_var, "doesn't exist in the data.frame"))
 
-  if (!is.null(facet_var) && !facet_var %in% colnames(juvenile_data))
-    stop(paste("The variable", facet_var, "does not exist in the data.frame"))
+  if (!is.null(facet_var) && !facet_var %in% colnames(df))
+    stop(paste("Variable", facet_var, "doesn't exist in the data.frame"))
 
   if (!plot_type %in% c("bars", "lines", "points", "mixed"))
     stop("plot_type must be one of: 'bars', 'lines', 'points' or 'mixed'")
 
   if (!sort_by %in% c("x", "number", "weight"))
-    stop("sort_by must be one of: 'x', 'number', 'weight'")
+    stop("sort_by must be one of: 'x', 'number', or 'weight'")
 
   if (!position %in% c("dodge", "stack", "fill"))
     stop("position must be one of: 'dodge', 'stack', or 'fill'")
 
+  if (!theme_type %in% c("classic", "minimal", "light", "dark"))
+    stop("theme_type must be one of: 'classic', 'minimal', 'light', or 'dark'")
+
+  if (!legend_position %in% c("bottom", "right", "left", "top", "none"))
+    stop("legend_position must be one of: 'bottom', 'right', 'left', 'top', or 'none'")
+
   if(!is.null(cols_length)){
-    if(!all(cols_length %in% colnames(juvenile_data))){
-      stop(paste("The columns", paste(cols_length, collapse = ", "), "do not exist in the data.frame"))
+    if(!all(cols_length %in% colnames(df))){
+      stop(paste("Columns", paste(cols_length, collapse = ", "), "don't exist in the data.frame"))
     }
   } else {
     stop("cols_length must be provided")
@@ -353,26 +373,25 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
     stop("a and b must be provided")
   }
 
-  # Apply juveniles_by_group function to calculate percentages
-  if(!is.null(fill_var)){
-    juvenile_data <- juveniles_by_group(
-      data = juvenile_data,
-      group_cols = c(var_x, fill_var),
-      cols_length = cols_length,
-      a = a,
-      b = b
-    )
-  } else {
-    juvenile_data <- juveniles_by_group(
-      data = juvenile_data,
-      group_cols = c(var_x),
-      cols_length = cols_length,
-      a = a,
-      b = b
-    )
+  # Apply juveniles_by_group to calculate percentages
+  group_cols <- var_x
+
+  if (!is.null(fill_var)) {
+    group_cols <- c(group_cols, fill_var)
   }
 
-  # Data preparation
+  if (!is.null(facet_var) && !(facet_var %in% group_cols)) {
+    group_cols <- c(group_cols, facet_var)
+  }
+
+  juvenile_data <- juveniles_by_group(
+    data = df,
+    group_cols = group_cols,
+    cols_length = cols_length,
+    a = a,
+    b = b
+  )
+
   # Convert to long format to facilitate visualization
   data_long <- juvenile_data %>%
     tidyr::pivot_longer(
@@ -388,11 +407,31 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
       )
     )
 
-  # Remove NA percentages to avoid plotting issues
-  data_long <- data_long %>%
-    dplyr::filter(!is.na(.data[["percentage"]]))
+  # Complete missing combinations
+  if (!is.null(fill_var) || !is.null(facet_var)) {
+    # Identify all grouping variables
+    group_vars <- c(var_x, "type")
+    if (!is.null(fill_var)) {
+      group_vars <- c(group_vars, fill_var)
+    }
+    if (!is.null(facet_var) && !(facet_var %in% group_vars)) {
+      group_vars <- c(group_vars, facet_var)
+    }
 
-  # Check if X variable is date type and convert if necessary
+    # Complete all possible combinations
+    data_long <- data_long %>%
+      tidyr::complete(!!!rlang::syms(group_vars),
+                      fill = list(percentage = NA_real_))
+
+    # Optionally replace NAs with zeros
+    # (only if we want to explicitly show bars with value 0)
+    if (na_to_zero) {
+      data_long <- data_long %>%
+        dplyr::mutate(percentage = tidyr::replace_na(.data$percentage, 0))
+    }
+  }
+
+  # Check if X variable is a date type and convert if necessary
   if (is.character(data_long[[var_x]]) &&
       (grepl("fecha", var_x, ignore.case = TRUE) ||
        grepl("date", var_x, ignore.case = TRUE))) {
@@ -425,7 +464,7 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
     }
   }
 
-  # Create the plot with the appropriate mapping
+  # Create the plot with appropriate mapping
   if (is.null(fill_var)) {
     # When no fill_var is provided, use 'type' as the fill
     p <- ggplot2::ggplot(
@@ -441,9 +480,9 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
       p <- p + ggplot2::aes(group = .data[["type"]], color = .data[["type"]])
     }
   } else {
-    # When fill_var is provided, we have two options for the interaction between fill_var and type
+    # When fill_var is provided, we have options for handling visualization
     if (use_facet_wrap) {
-      # Option 1: Use fill_var for fill and facet by type (original behavior)
+      # Option 1: Use fill_var for fill and facet by type
       p <- ggplot2::ggplot(
         data_long,
         ggplot2::aes(
@@ -458,9 +497,27 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
       }
       # Facet by type when requested
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
+    } else if (group_by_type) {
+      # Option 2: Group by type and then fill_var (better visual separation)
+      p <- ggplot2::ggplot(
+        data_long,
+        ggplot2::aes(
+          x = .data[[var_x]],
+          y = .data[["percentage"]],
+          fill = .data[[fill_var]],
+          group = interaction(.data[["type"]], .data[[fill_var]])
+        )
+      )
+
+      # For line and point plots
+      if (plot_type %in% c("lines", "points", "mixed")) {
+        p <- p + ggplot2::aes(
+          group = interaction(.data[["type"]], .data[[fill_var]]),
+          color = interaction(.data[[fill_var]], .data[["type"]])
+        )
+      }
     } else {
-      # Option 2: Use fill_var for fill and type as either position or pattern
-      # This creates a combined plot without faceting
+      # Option 3: Use interaction between fill_var and type for the fill
       p <- ggplot2::ggplot(
         data_long,
         ggplot2::aes(
@@ -469,6 +526,7 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
           fill = interaction(.data[[fill_var]], .data[["type"]])
         )
       )
+
       # For line and point plots
       if (plot_type %in% c("lines", "points", "mixed")) {
         p <- p + ggplot2::aes(
@@ -481,33 +539,54 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
 
   # Add geoms according to plot type
   if (plot_type == "bars") {
-    if (position == "dodge") {
+    if (!is.null(fill_var) && !use_facet_wrap && group_by_type) {
+      # Special case for stacked bars with type distinction
+      if (position == "dodge") {
+        p <- p + ggplot2::geom_bar(
+          stat = "identity",
+          position = ggplot2::position_dodge2(width = 0.9, preserve = "single"),
+          ggplot2::aes(alpha = .data[["type"]])
+        )
+        # Add alpha scale for type
+        p <- p + ggplot2::scale_alpha_manual(values = c(1, 0.6), name = "Type")
+      } else {
+        p <- p + ggplot2::geom_bar(
+          stat = "identity",
+          position = position,
+          ggplot2::aes(alpha = .data[["type"]])
+        )
+        # Add alpha scale for type
+        p <- p + ggplot2::scale_alpha_manual(values = c(1, 0.6), name = "Type")
+      }
+    } else if (position == "dodge") {
       p <- p + ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(width = 0.9))
     } else {
       p <- p + ggplot2::geom_bar(stat = "identity", position = position)
     }
 
     # Add faceting if needed (for NULL fill_var or when explicitly requested)
-    if ((is.null(fill_var) || use_facet_wrap) && is.null(facet_var) && is.null(fill_var)) {
+    if (is.null(fill_var) && is.null(facet_var)) {
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
     }
   } else if (plot_type == "lines") {
     p <- p + ggplot2::geom_line(size = 1) +
       ggplot2::geom_point(size = 2)
 
-    # Add faceting if needed (for NULL fill_var or when explicitly requested)
-    if ((is.null(fill_var) || use_facet_wrap) && is.null(facet_var) && is.null(fill_var)) {
+    # Add faceting if needed
+    if (is.null(fill_var) && is.null(facet_var)) {
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
     }
   } else if (plot_type == "points") {
     p <- p + ggplot2::geom_point(size = 3, alpha = 0.7)
 
-    # Add faceting if needed (for NULL fill_var or when explicitly requested)
-    if ((is.null(fill_var) || use_facet_wrap) && is.null(facet_var) && is.null(fill_var)) {
+    # Add faceting if needed
+    if (is.null(fill_var) && is.null(facet_var)) {
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
     }
   } else if (plot_type == "mixed") {
-    if (position == "dodge") {
+    if (!is.null(fill_var) && !use_facet_wrap && group_by_type) {
+      # Special case already handled above
+    } else if (position == "dodge") {
       p <- p +
         ggplot2::geom_bar(stat = "identity", alpha = 0.7,
                           position = ggplot2::position_dodge(width = 0.9)) +
@@ -518,9 +597,29 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
         ggplot2::geom_point(size = 2)
     }
 
-    # Add faceting if needed (for NULL fill_var or when explicitly requested)
-    if ((is.null(fill_var) || use_facet_wrap) && is.null(facet_var) && is.null(fill_var)) {
+    # Add faceting if needed
+    if (is.null(fill_var) && is.null(facet_var)) {
       p <- p + ggplot2::facet_wrap(~ type, ncol = ncol)
+    }
+  }
+
+  # Ensure all X values are shown and handle axis tick formatting
+  if (is.factor(data_long[[var_x]]) || is.character(data_long[[var_x]])) {
+    # For categorical variables, explicitly show all values
+    p <- p + ggplot2::scale_x_discrete(drop = FALSE)
+  } else if (inherits(data_long[[var_x]], "Date")) {
+    if(!is.null(step_x_date)){
+      # For dates, use specific formatting
+      p <- p + ggplot2::scale_x_date(date_breaks = step_x_date, date_labels = "%d %b %Y")
+    } else {
+      # For dates, use default formatting
+      p <- p + ggplot2::scale_x_date(date_breaks = "1 day", date_labels = "%d %b %Y")
+    }
+  } else if (is.numeric(data_long[[var_x]])) {
+    # For numeric variables, ensure a reasonable number of breaks
+    unique_vals <- length(unique(data_long[[var_x]]))
+    if (unique_vals <= 20) {
+      p <- p + ggplot2::scale_x_continuous(breaks = unique(data_long[[var_x]]))
     }
   }
 
@@ -538,7 +637,7 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
     }
   }
 
-  # Set y-axis limits
+  # Set Y-axis limits
   if (!is.null(y_limits)) {
     p <- p + ggplot2::ylim(y_limits)
   }
@@ -560,22 +659,68 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
 
   p <- p + ggplot2::labs(
     title = title,
+    subtitle = subtitle,
     y = "Juvenile percentage (%)",
     x = var_x,
     fill = if (is.null(fill_var)) "Type" else fill_var,
     color = if (plot_type %in% c("bars") || is.null(fill_var)) NULL else fill_var
-  ) +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      legend.position = "bottom",
-      panel.grid.minor = ggplot2::element_blank(),
-      strip.background = ggplot2::element_rect(fill = "lightgray", color = NA),
-      strip.text = ggplot2::element_text(face = "bold")
-    )
+  )
+
+  # Apply the selected theme
+  if (theme_type == "classic") {
+    p <- p + ggplot2::theme_classic()
+  } else if (theme_type == "minimal") {
+    p <- p + ggplot2::theme_minimal()
+  } else if (theme_type == "light") {
+    p <- p + ggplot2::theme_light()
+  } else if (theme_type == "dark") {
+    p <- p + ggplot2::theme_dark()
+  }
+
+  # Adjust theme style
+  p <- p + ggplot2::theme(
+    legend.position = legend_position,
+    panel.grid.minor = ggplot2::element_blank(),
+    strip.background = ggplot2::element_rect(fill = "lightgray", color = NA),
+    strip.text = ggplot2::element_text(face = "bold")
+  )
+
+  # Rotate X axis labels if requested
+  if (rotate_x_labels) {
+    p <- p + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+  }
+
+  # Add reference line if provided
+  if (!is.null(reference_line)) {
+    # Find a suitable x-position for the label
+    if (inherits(data_long[[var_x]], "Date") || is.numeric(data_long[[var_x]])) {
+      x_point <- mean(data_long[[var_x]], na.rm = TRUE)
+    } else {
+      # For factors or characters, get the middle level
+      unique_levels <- unique(as.character(data_long[[var_x]]))
+      x_point <- unique_levels[ceiling(length(unique_levels) / 2)]
+    }
+
+    p <- p + ggplot2::geom_hline(
+      yintercept = reference_line,
+      linetype = "dashed",
+      color = "red",
+      size = 1
+    ) +
+      ggplot2::annotate(
+        "text",
+        x = x_point,
+        y = reference_line + 2,
+        label = paste("Limit:", reference_line, "%"),
+        hjust = 0,
+        color = "red",
+        fontface = "bold"
+      )
+  }
 
   return(p)
 }
+
 
 #' Create visual dashboard for juvenile analysis
 #'
@@ -610,10 +755,9 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
 #'   Default c(-85, -70) to cover the Peruvian coast.
 #' @param ylim Numeric vector of length 2 defining the limits of the y-axis for the map.
 #'   Default c(-20, 0) to cover the Peruvian coast.
-#' @param show_limit_juv Logical. If TRUE, a reference line for the
-#'   juvenile limit will be shown in the appropriate graphs.
 #' @param palette Custom color vector for the graphs. If NULL,
 #'   a default palette will be used.
+#' @param step_x_date Optional. Interval for date breaks (e.g., "1 day", "1 month").
 #' @param sort_comparison Logical. If TRUE, the percentage comparison chart
 #'   will be sorted from highest to lowest. The default value is FALSE.
 #' @param title_comp Title for the juvenile comparison graph.
@@ -680,7 +824,6 @@ plot_juveniles <- function(juvenile_data, var_x, fill_var = NULL, cols_length = 
 #'   data_total = results,
 #'   col_date = "unique_date",
 #'   cols_length = paste0("pond_", seq(8, 15, 0.5)),
-#'   juv_limit = 12,
 #'   a = 0.0001,
 #'   b = 2.984,
 #'   col_latitude = "lat_final",
@@ -703,7 +846,6 @@ juveniles_dashboard <- function(
     data_total,
     col_date = NULL,
     cols_length = NULL,
-    juv_limit = 12,
     a = 0.0001,
     b = 2.984,
     col_latitude = NULL,
@@ -712,8 +854,8 @@ juveniles_dashboard <- function(
     col_juveniles = NULL,
     xlim = c(-85, -70),
     ylim = c(-20, 0),
-    show_limit_juv = TRUE,
     palette = NULL,
+    step_x_date = NULL,
     sort_comparison = FALSE,
     title_comp = NULL,
     title_catch = NULL,
@@ -734,6 +876,10 @@ if (!is.data.frame(data_total)) {
   col_catch      <- get_or_detect_columns(data_total, col_catch,      "catch|captura|desembar",       "catch")
   col_juveniles  <- get_or_detect_columns(data_total, col_juveniles,  "juv|perc_juv",                 "juveniles")
 
+  if(is.null(step_x_date)){
+    step_x_date <- "1 day"
+  }
+
   # Create default palette if not provided
   if (is.null(palette)) {
     palette <- c("#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD",
@@ -745,7 +891,6 @@ if (!is.data.frame(data_total)) {
     data = data_total,
     group_cols = col_date,
     cols_length = cols_length,
-    juvLim = juv_limit,
     a = a,
     b = b
   )
@@ -765,12 +910,13 @@ if (!is.data.frame(data_total)) {
 
   # 1. Comparison plot by date
   p1 <- plot_juveniles(
-    juvenile_data = data_total,
+    df = data_total,
     var_x = col_date,
     plot_type = "bars",
     cols_length = cols_length,
     a = a,
     b = b,
+    step_x_date = step_x_date,
     title = title_comp,
     sort_by = if(sort_comparison) "weight" else "x",
     palette = c("#3498DB", "#E74C3C")
@@ -813,7 +959,10 @@ if (!is.data.frame(data_total)) {
       color = "Type"
     ) +
     ggplot2::scale_y_continuous(labels = scales::comma) +
-    ggplot2::theme_minimal()
+    ggplot2::scale_x_date(date_breaks = step_x_date, date_labels = "%d %b %Y") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+
 
 
   # 3. Juveniles map
@@ -857,8 +1006,7 @@ if (!is.data.frame(data_total)) {
         ylim = ylim    # Adjust according to Peruvian coast
       ) +
       ggplot2::labs(
-        title = title_map,
-        subtitle = paste("Juvenile limit:", juv_limit, "cm")
+        title = title_map
       ) +
       ggplot2::theme_minimal()
   }

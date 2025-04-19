@@ -79,14 +79,16 @@ final_data <- add_variables(
 
 # Define size columns
 length_cols <- as.character(seq(from = 8, to = 15, by = 0.5))
+a <- 0.0001
+b <- 2.983
 
 # Weight length according to catch
 final_data_weighted <- weight_length_df(
   df          = final_data, 
   length_cols = length_cols, 
   catch_col   = 'catch_ANCHOVETA', 
-  a           = 0.0012,  # Parameter a of length-weight relationship
-  b           = 3.1242   # Parameter b of length-weight relationship
+  a           = a,  # Parameter a of length-weight relationship
+  b           = b   # Parameter b of length-weight relationship
   )
 
 # Convert dates for temporal grouping
@@ -102,17 +104,28 @@ juvenile_results <- juveniles_by_group(
   cols_length = paste0("pond_", length_cols)
 )
 
+print(juvenile_results)
+
 ```
 
 ### Visualization of Results
 
 ```r
+
 # Basic plot of juveniles by date
 plot_juveniles(
-  juvenile_data = juvenile_results, 
-  var_x         = c("dc_cat"),
-  juv_limit     = 10  # Legal minimum size (cm)
-  )
+  df             = final_data_weighted, 
+  var_x          = "unique_date",
+  fill_var       = "dc_cat",
+  cols_length    = paste0("pond_", length_cols),
+  a              = a,
+  b              = b,
+  step_x_date    = "1 day",
+  plot_type      = "bars",
+  use_facet_wrap = TRUE, 
+  reference_line = 10
+)
+
 ```
 
 ![Example of juvenile plot](man/figures/ejemplo_juveniles.png)
@@ -125,16 +138,15 @@ final_data_weighted$catch_t = final_data_weighted$catch_ANCHOVETA/1000
 dashboard <- juveniles_dashboard(
   data_total     = final_data_weighted,
   col_date       = "unique_date", 
-  cols_length    = paste0("pond_",seq(8,15,0.5)), 
-  juv_limit      = 12,
-  a              = 0.0001, 
-  b              = 2.984, 
+  cols_length    = paste0("pond_", length_cols), 
+  a              = a, 
+  b              = b, 
   col_latitude   = "lat_final",
   col_longitude  = "lon_final", 
   col_catch      = "catch_t",
   col_juveniles  = "juv",
-  show_limit_juv = TRUE
-)
+  step_x_date    = "1 day",
+  )
 
 # View individual dashboard components
 dashboard$comparison  # Juvenile comparison
@@ -155,7 +167,7 @@ dashboard$dashboard    # Complete panel with all plots
 # Example with URLs of announcements from the Ministry of Production
 pdf_urls <- get_produce_announcements(
   start_date = "01/03/2025", 
-  end_date   = "31/03/2025",
+  end_date   = "31/03/2025",  
   download   = FALSE # If you want to donwload the files, change TRUE
   )
 
