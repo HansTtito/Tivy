@@ -42,9 +42,9 @@
 #' dms_to_decimal(c("39° 75' 36\""), correct_errors = FALSE)  # Will generate a warning
 #'
 #' # In a dataframe
-#' 
+#'
 #' data(calas_bitacora)
-#' 
+#'
 #' dms_to_decimal(calas_bitacora$Longitud.Fin)
 #'
 #' @importFrom stringr str_split str_count str_detect str_extract
@@ -222,7 +222,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
 #' @examples
 #'
 #' data(calas_bitacora)
-#' 
+#'
 #' data_hauls <- process_hauls(data_hauls = calas_bitacora)
 #'
 #' coast_distance(
@@ -247,7 +247,7 @@ coast_distance <- function(lon,
                             parallel = FALSE,
                             cores = 4) {
   # Parameter validation
-  if (missing(lon) || missing(lat) || missing(coastline)) {
+  if (missing(lon) || missing(lat)) {
     stop("The parameters 'lon', 'lat', and 'coastline' are required.")
   }
 
@@ -293,7 +293,7 @@ coast_distance <- function(lon,
   # Validate unit
   known_units <- c("nm", "km", "m", "mi")
   if (!unit %in% known_units) {
-    warning("The unit '", unit, "' is not one of the common units: ", paste(known_units, collapse = ", "))
+    stop("The unit '", unit, "' is not one of the common units: ", paste(known_units, collapse = ", "))
   }
 
   # Check coastline structure
@@ -407,7 +407,7 @@ coast_distance <- function(lon,
 #' This function internally uses `calculate_distances_vectorized()` to identify the nearest point on the coastline for each coordinate. If `parallel = TRUE`, it uses the `future` and `future.apply` packages to distribute the work among multiple cores.
 #'
 #' @examples
-#' 
+#'
 #' data(calas_bitacora)
 #'
 #' data_hauls <- process_hauls(data_hauls = calas_bitacora)
