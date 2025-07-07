@@ -1,39 +1,45 @@
 Package: Tivy
 Type: Package
 Title: Tools for Fisheries Data Analysis and Visualization
-Version: 0.2.1
-Author: Hans Ttito
-Maintainer: Hans Ttito <kvttitos@gmail.com>
-Depends: R (>= 3.5.0)
-Description: Provides functions for loading, processing, and analyzing fisheries data,
-    including information from fishing logbooks, size measurements, and fishing grounds 
-    from Peru's Ministry of Production, as well as notifications issued for preventive
-    closures. The package includes tools for geographical visualization of fishing areas,
-    statistical modeling of fish populations, and processing of regulatory documents.
-    Contains built-in datasets for Peruvian coastal coordinates and parallel lines at
-    different nautical mile distances from shore, which are useful for analyzing fishing
-    activities within restricted zones.
+Version: 0.1.0
+Authors@R: person("Hans", "Ttito", 
+                  email = "kvttitos@gmail.com", 
+                  role = c("aut", "cre"),
+                  comment = c(ORCID = "0000-0003-3732-9419"))
+Description: Comprehensive toolkit for processing, analyzing, and visualizing fisheries data from Peru's Ministry of Production (PRODUCE). Handles fishing logbooks, length frequency data, vessel tracking, and regulatory announcements including preventive closure notifications. Features include automated data processing from multiple file formats, coordinate conversion and validation, spatial analysis of fishing zones, juvenile fish analysis, and interactive/static visualization tools. Contains built-in datasets of Peruvian coastal coordinates and parallel lines at different nautical mile distances for analyzing fishing activities within regulatory zones. Supports both English and Spanish data formats commonly used in Latin American fisheries management.
+URL: https://github.com/yourusername/Tivy
+BugReports: https://github.com/yourusername/Tivy/issues
+Depends: R (>= 4.0.0)
 Imports:
-  dplyr,
-  tidyr,
-  lubridate,
-  stringi,
-  pdftools,
-  stringr,
-  future,
-  future.apply,
-  leaflet,
-  ggplot2,
-  RColorBrewer,
-  patchwork,
-  rnaturalearth,
-  scales,
-  httr,
-  jsonlite,
-  rvest,
-  rlang
+    dplyr (>= 1.0.0),
+    tidyr (>= 1.0.0),
+    lubridate (>= 1.7.0),
+    stringr (>= 1.4.0),
+    stringi (>= 1.4.0),
+    ggplot2 (>= 3.3.0),
+    leaflet (>= 2.0.0),
+    RColorBrewer (>= 1.1.0),
+    rlang (>= 0.4.0),
+    httr (>= 1.4.0),
+    rvest (>= 1.0.0),
+    jsonlite (>= 1.6.0),
+    pdftools (>= 3.0.0),
+    stats,
+    utils,
+    future (>= 1.21.0),
+    future.apply (>= 1.7.0),
+    patchwork (>= 1.1.0),
+    scales (>= 1.1.0)
+Suggests:
+    rnaturalearth (>= 0.1.0),
+    rnaturalearthdata,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Language: en-US
