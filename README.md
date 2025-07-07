@@ -1,4 +1,4 @@
-# Tivy <img src="man/figures/logo.png" align="right" height="139" />
+# Tivy
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/HansTtito/Tivy/workflows/R-CMD-check/badge.svg)](https://github.com/HansTtito/Tivy/actions)
