@@ -1,11 +1,5 @@
 # Tivy
 
-<!-- badges: start -->
-[![R-CMD-check](https://github.com/HansTtito/Tivy/workflows/R-CMD-check/badge.svg)](https://github.com/HansTtito/Tivy/actions)
-[![CRAN status](https://www.r-pkg.org/badges/version/Tivy)](https://CRAN.R-project.org/package=Tivy)
-[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-<!-- badges: end -->
-
 ## Tools for Fisheries Data Analysis in Peru
 
 `Tivy` is an R package specialized in processing and analyzing fisheries data from Peru's Ministry of Production (PRODUCE). It facilitates the handling of information from fishing trip logbooks, size records, hauls, and official announcements issued for preventive closures.
