@@ -142,9 +142,9 @@ plot_fishing_zones(
 
 ## Tips for Spatial Analysis
 
-1. **Coordinate validation**: Always check coordinate ranges for your region
-2. **Distance units**: Choose appropriate units (nautical miles for marine data)
-3. **Performance**: Use parallel processing for large datasets
-4. **Error correction**: Enable coordinate error correction when data quality is uncertain
+1.  **Coordinate validation**: Always check coordinate ranges for your region
+2.  **Distance units**: Choose appropriate units (nautical miles for marine data)
+3.  **Performance**: Use parallel processing for large datasets
+4.  **Error correction**: Enable coordinate error correction when data quality is uncertain
 
 For detailed parameter descriptions, see the function documentation.
