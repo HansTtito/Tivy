@@ -292,7 +292,7 @@ R package version 0.1.0. https://github.com/HansTtito/Tivy
 
 ## License
 
-This project is licensed under the GPL-3 License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
