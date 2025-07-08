@@ -224,7 +224,7 @@ interactive_map
 
 ## 📄 Supported Data Structure
 
-`Tivy` is designed to work with the data structure of Peru's Ministry of Production (PRODUCE). Typical input files include:
+`Tivy` is designed to work with the data structure of fishery data of Peru. Typical input files include:
 
 - **Haul logbooks** (`calas`): Records of fishing operations with coordinates and catch data
 - **Fishing trip logbooks** (`faenas`): Information on trips, vessels, and dates
@@ -249,16 +249,16 @@ Comprehensive documentation is available through vignettes:
 
 ```r
 # Overview and quick start
-vignette("00-introduction", package = "Tivy")
+vignette("introduction", package = "Tivy")
 
 # Detailed data processing workflows  
-vignette("01-data-processing", package = "Tivy")
+vignette("data-processing", package = "Tivy")
 
 # Spatial analysis and mapping
-vignette("02-spatial-analysis", package = "Tivy")
+vignette("spatial-analysis", package = "Tivy")
 
 # Fish population analysis
-vignette("03-fish-analysis", package = "Tivy")
+vignette("fish-analysis", package = "Tivy")
 ```
 
 ## Built-in Datasets
@@ -303,6 +303,5 @@ This project is licensed under the GPL-3 License - see the [LICENSE](LICENSE) fi
 
 ## Acknowledgments
 
-- Peru's Ministry of Production (PRODUCE) for providing access to fisheries data
 - The R community for excellent packages that make this work possible
 - Fisheries researchers and managers who provided feedback and requirements

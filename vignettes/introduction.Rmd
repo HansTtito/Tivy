@@ -21,7 +21,7 @@ library(Tivy)
 
 ## Overview
 
-Tivy is an R package for processing and analyzing fisheries data from Peru's Ministry of Production (PRODUCE). It provides tools for:
+Tivy is an R package for processing and analyzing fisheries data from Peru. It provides tools for:
 
 - Processing fishing hauls, trips, and length frequency data
 - Converting coordinates from DMS to decimal degrees
