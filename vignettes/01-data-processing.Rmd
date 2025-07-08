@@ -1,0 +1,149 @@
+---
+title: "Data Processing with Tivy"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Data Processing with Tivy}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(Tivy)
+```
+
+## Data Processing Workflow
+
+This vignette demonstrates the basic workflow for processing fisheries data with Tivy.
+
+### Step 1: Process Individual Datasets
+
+```{r}
+# Process hauls data
+hauls <- process_hauls(
+  data_hauls = raw_hauls,
+  correct_coordinates = TRUE,
+  verbose = TRUE
+)
+
+# Process trips data  
+trips <- process_fishing_trips(
+  data_fishing_trips = raw_trips,
+  verbose = TRUE
+)
+
+# Process length data
+lengths <- process_length(
+  data_length = raw_lengths,
+  verbose = TRUE
+)
+```
+
+### Step 2: Data Validation
+
+```{r}
+# Check data quality
+haul_quality <- validate_haul_data(hauls)
+trip_quality <- validate_fishing_trip_data(trips)
+length_quality <- validate_length_data(lengths)
+
+# Print quality scores
+print(paste("Hauls quality:", haul_quality$quality_score, "%"))
+print(paste("Trips quality:", trip_quality$quality_score, "%"))
+print(paste("Lengths quality:", length_quality$quality_score, "%"))
+```
+
+### Step 3: Merge Datasets
+
+```{r}
+# Merge length and trip data first
+length_trips <- merge(
+  x = lengths,
+  y = trips,
+  by = "fishing_trip_code",
+  all = TRUE
+)
+
+# Then merge with hauls data
+complete_data <- merge_length_fishing_trips_hauls(
+  data_hauls = hauls,
+  data_length_fishing_trips = length_trips
+)
+```
+
+### Step 4: Add Derived Variables
+
+```{r}
+# Add juvenile analysis and distance variables
+enhanced_data <- add_variables(
+  data = complete_data,
+  JuvLim = 12,
+  distance_type = "haversine",
+  unit = "nm"
+)
+```
+
+## Coordinate Processing
+
+Convert various coordinate formats:
+
+```{r}
+# Example coordinates in different formats
+coords <- c(
+  "15°30'25\"S",     # Complete DMS
+  "75°45'W",         # DM format  
+  "16 15 30 S"       # Space-separated
+)
+
+# Convert to decimal degrees
+decimal <- dms_to_decimal(
+  coordinates = coords,
+  hemisphere = "S",
+  correct_errors = TRUE
+)
+```
+
+## Error Handling
+
+```{r}
+# Handle missing columns gracefully
+tryCatch({
+  processed <- process_hauls(incomplete_data)
+}, error = function(e) {
+  message("Processing failed: ", e$message)
+})
+```
+
+## Column Detection
+
+The package automatically detects columns using pattern matching:
+
+```{r}
+# Find columns by pattern
+species_col <- find_column(
+  patterns = c("especie", "species", "sp"),
+  column_names = names(your_data)
+)
+
+# Find numeric length columns
+length_cols <- find_columns_by_pattern(
+  data = your_data,
+  pattern = "^[0-9]+(\\.[0-9]+)?$"
+)
+```
+
+## Tips
+
+1. **Consistent naming**: Use consistent column names across files
+2. **Data validation**: Always validate data quality after processing
+3. **Error correction**: Enable coordinate error correction for better results
+4. **Pattern matching**: The package is flexible with column name variations
+
+For function-specific details, see the individual function documentation.

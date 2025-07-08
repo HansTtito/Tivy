@@ -1,0 +1,154 @@
+---
+title: "Juvenile Fish Analysis with Tivy"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Juvenile Fish Analysis with Tivy}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(Tivy)
+```
+
+## Juvenile Fish Analysis
+
+Analyze juvenile fish proportions in catches using length-weight relationships and catch data.
+
+### Basic Juvenile Analysis
+
+Calculate juvenile percentages from length frequency data:
+
+```{r}
+# Calculate juvenile percentages
+juvenile_results <- summarize_juveniles_by_group(
+  data = your_length_data,
+  group_cols = c("date", "fishing_zone"),
+  length_cols = c("8", "9", "10", "11", "12", "13"),
+  juvenile_limit = 12,  # Size threshold in cm
+  a = 0.0012,          # Length-weight coefficient
+  b = 3.1242           # Length-weight exponent
+)
+```
+
+### Length-Weight Relationships
+
+Use species-specific parameters for weight calculations:
+
+```{r}
+# Calculate fish weights from lengths
+weights <- calculate_fish_weight(
+  length = c(8, 10, 12, 14),
+  a = 0.0048,  # Coefficient for anchoveta
+  b = 3.067    # Exponent for anchoveta
+)
+
+# Apply catch weighting to length frequencies
+weighted_data <- apply_catch_weighting(
+  data = your_data,
+  length_cols = c("8", "9", "10", "11", "12"),
+  catch_col = "total_catch",
+  a = 0.0048,
+  b = 3.067
+)
+```
+
+### Juvenile Percentage Calculation
+
+Calculate juvenile proportions:
+
+```{r}
+# Single sample calculation
+juv_percent <- calculate_juvenile_percentage(
+  frequency = c(10, 25, 40, 30, 15),  # Frequencies by length
+  length = c(8, 9, 10, 11, 12),       # Length classes
+  juvenile_limit = 10                  # Juvenile threshold
+)
+
+# Get length ranges from frequency data
+min_length <- get_length_range(
+  frequency = c(0, 5, 10, 20, 15, 0),
+  length = c(8, 9, 10, 11, 12, 13),
+  type = "min"
+)
+```
+
+### Convert Numbers to Weight
+
+Convert length frequencies to weight estimates:
+
+```{r}
+# Convert frequency data to weight
+weight_data <- convert_numbers_to_weight(
+  data = your_frequency_data,
+  length_cols = c("8", "9", "10", "11", "12"),
+  a = 0.0012,
+  b = 3.1242
+)
+```
+
+### Visualization
+
+Create juvenile analysis plots:
+
+```{r}
+# Plot juvenile analysis
+juvenile_plot <- plot_juvenile_analysis(
+  data = your_data,
+  x_var = "date",
+  length_cols = c("8", "9", "10", "11", "12"),
+  plot_type = "bars",
+  title = "Juvenile Analysis Over Time"
+)
+
+# Create comprehensive dashboard
+dashboard <- create_fishery_dashboard(
+  data = complete_data,
+  date_col = "date",
+  length_cols = find_columns_by_pattern(complete_data, "^[0-9]")
+)
+```
+
+### Length-Weight Parameters
+
+Common parameters for Peruvian species:
+
+| Species | a | b | Juvenile Limit (cm) |
+|---------|---|---|-------------------|
+| Anchoveta | 0.0048 | 3.067 | 12 |
+| Sardina | 0.0091 | 3.152 | 15 |
+| Jurel | 0.0079 | 3.089 | 20 |
+
+### Parallel Processing
+
+For large datasets:
+
+```{r}
+# Use parallel processing for catch weighting
+weighted_data <- apply_catch_weighting(
+  data = large_dataset,
+  length_cols = length_columns,
+  catch_col = "catch",
+  a = 0.0048,
+  b = 3.067,
+  parallel = TRUE,
+  num_cores = 4
+)
+```
+
+## Analysis Tips
+
+1. **Juvenile thresholds**: Base on biological criteria (size at maturity)
+2. **Species parameters**: Use species-specific length-weight coefficients
+3. **Data quality**: Validate length frequency data before analysis
+4. **Both metrics**: Consider both number and weight-based percentages
+
+For parameter recommendations and detailed examples, see the function documentation.

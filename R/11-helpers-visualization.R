@@ -395,7 +395,7 @@ add_juvenile_geoms <- function(p, plot_type, bar_position, fill_var, use_facet_w
     } else {
       p <- p + ggplot2::aes(group = .data[[fill_var]], color = .data[[fill_var]])
     }
-    p <- p + ggplot2::geom_line(size = 1) + ggplot2::geom_point(size = 2)
+    p <- p + ggplot2::geom_line(linewidth = 1) + ggplot2::geom_point(size = 2)
   } else if (plot_type == "points") {
     if (is.null(fill_var)) {
       p <- p + ggplot2::aes(color = .data[["type"]])

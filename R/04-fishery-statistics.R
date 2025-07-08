@@ -309,9 +309,9 @@ convert_numbers_to_weight <- function(data, length_cols, a, b) {
   if (!is.numeric(b)) stop("'b' must be numeric.")
   
   if (is.character(length_cols)) {
-    length_values <- extract_numeric_values(length_cols)
+    length_values <- extract_numeric_values(length_cols, use_fallback = FALSE)
   } else {
-    length_values <- as.numeric(length_cols)
+    length_values <- safe_numeric_conversion(length_cols)
   }
   
   missing_cols <- setdiff(length_cols, colnames(data))
@@ -321,7 +321,7 @@ convert_numbers_to_weight <- function(data, length_cols, a, b) {
   
   for (col in length_cols) {
     if (!is.numeric(data[[col]])) {
-      data[[col]] <- as.numeric(data[[col]])
+      data[[col]] <- safe_numeric_conversion(data[[col]])
       warning("Column '", col, "' converted to numeric.")
     }
   }
@@ -403,12 +403,12 @@ summarize_juveniles_by_group <- function(data,
     
     if (length(length_cols) == 0) {
       numeric_cols <- names(data)[sapply(names(data), function(x) {
-        !is.na(suppressWarnings(as.numeric(x))) && 
+        !is.na(safe_numeric_conversion(x)) && 
         grepl("^[0-9]+(\\.[0-9]+)?$", x)
       })]
       
       if (length(numeric_cols) > 0) {
-        numeric_values <- as.numeric(numeric_cols)
+        numeric_values <- safe_numeric_conversion(numeric_cols)
         length_cols <- numeric_cols[order(numeric_values)]
         pattern_used <- "numeric column names"
       }
@@ -449,9 +449,9 @@ summarize_juveniles_by_group <- function(data,
   }
   
   data <- data %>%
-    dplyr::mutate(dplyr::across(dplyr::all_of(cols_names), ~as.numeric(.x)))
+    dplyr::mutate(dplyr::across(dplyr::all_of(cols_names), ~safe_numeric_conversion(.x)))
   
-  length_values <- extract_numeric_values(cols_names, verbose = verbose)
+  length_values <- extract_numeric_values(cols_names, use_fallback = FALSE, verbose = verbose)
   
   if (verbose) {
     message(sprintf("Length values range: %.1f to %.1f", 

@@ -174,7 +174,7 @@ calculate_grid_distance <- function(lon1, lat1, lon2, lat2, resolution = 0.25, u
 #' @param unit Distance unit.
 #'
 #' @return List with distance vectors and corresponding indices.
-#' @keywords internal
+#' @export
 calculate_distances_vectorized <- function(lon_point, lat_point, coast_lon, coast_lat, 
                                            distance_type, window, unit) {
   
@@ -207,7 +207,7 @@ calculate_distances_vectorized <- function(lon_point, lat_point, coast_lon, coas
         lon_point[i], lat_point[i], filtered_coast_lon, filtered_coast_lat, unit
       ),
       "grid" = calculate_grid_distance(
-        lon_point[i], lat_point[i], filtered_coast_lon, filtered_coast_lat, unit
+        lon_point[i], lat_point[i], filtered_coast_lon, filtered_coast_lat, unit = unit
       ),
       stop("Invalid distance type: ", distance_type)
     )

@@ -18,12 +18,23 @@
 #'
 #' @export
 #' @importFrom lubridate parse_date_time
-convert_to_date <- function(date_vector, output_type = "datetime") {
-  if (length(date_vector) == 0) {
-    return(date_vector)
+convert_to_date <- function(date_vector, output_type = c("date", "datetime")) {
+  output_type <- match.arg(output_type)
+
+  if (length(date_vector) == 0 || all(is.na(date_vector))) {
+    return(if (output_type == "datetime") as.POSIXct(NA) else as.Date(NA))
   }
-  
-  orders <- c(
+
+  # If already Date or POSIXct
+  if (inherits(date_vector, "Date")) {
+    return(if (output_type == "datetime") as.POSIXct(date_vector) else date_vector)
+  }
+  if (inherits(date_vector, "POSIXct")) {
+    return(if (output_type == "date") as.Date(date_vector) else date_vector)
+  }
+
+  # Vectorize parsing for character input
+  formats <- c(
     "Ymd HMS", "Ymd HM", "Ymd",
     "Y/m/d HMS", "Y/m/d HM", "Y/m/d",
     "dmy HMS", "dmy HM", "dmy",
@@ -33,15 +44,22 @@ convert_to_date <- function(date_vector, output_type = "datetime") {
     "bd Y HMS", "bd Y HM", "bd Y",
     "db Y HMS", "db Y HM", "db Y"
   )
-  
-  converted_dates <- lubridate::parse_date_time(date_vector, orders = orders, quiet = TRUE)
-  
-  if (output_type == "date") {
-    converted_dates <- as.Date(converted_dates)
+
+  result <- suppressWarnings(
+    lubridate::parse_date_time(date_vector, orders = formats, quiet = TRUE)
+  )
+
+  if (all(is.na(result))) {
+    warning("Some or all dates could not be parsed.")
   }
-  
-  return(converted_dates)
+
+  if (output_type == "date") {
+    return(as.Date(result))
+  } else {
+    return(result)
+  }
 }
+
 
 #' Find column by pattern matching
 #'
@@ -136,12 +154,13 @@ find_columns_by_pattern <- function(data, pattern = "weighted_", sort = TRUE) {
   }
   
   if (sort) {
-    numerical_values <- as.numeric(gsub(pattern, "", matching_columns))
+    numerical_values <- safe_numeric_conversion(gsub(pattern, "", matching_columns))
     matching_columns <- matching_columns[order(numerical_values)]
   }
   
   return(matching_columns)
 }
+
 
 #' Create download directory
 #'

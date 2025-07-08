@@ -1,0 +1,150 @@
+---
+title: "Spatial Analysis with Tivy"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Spatial Analysis with Tivy}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(Tivy)
+```
+
+## Spatial Analysis
+
+Tivy provides tools for spatial analysis of fisheries data, including distance calculations and coordinate processing.
+
+### Distance to Coast
+
+Calculate distances from fishing locations to the coastline:
+
+```{r}
+# Basic distance calculation
+distances <- coast_distance(
+  lon = your_data$longitude,
+  lat = your_data$latitude,
+  distance_type = "haversine",
+  unit = "nm"
+)
+
+# With custom coastline data
+distances <- coast_distance(
+  lon = your_data$longitude,
+  lat = your_data$latitude,
+  coastline = custom_coastline,
+  unit = "km"
+)
+```
+
+### Coordinate Conversion
+
+Convert coordinates between formats:
+
+```{r}
+# Convert DMS to decimal degrees
+decimal_coords <- dms_to_decimal(
+  coordinates = c("15°30'S", "75°45'W"),
+  hemisphere = "S",
+  correct_errors = TRUE
+)
+
+# Handle coordinate errors automatically
+problematic_coords <- c("15°70'S", "invalid")  # Invalid minutes
+corrected <- dms_to_decimal(
+  coordinates = problematic_coords,
+  correct_errors = TRUE
+)
+```
+
+### Land vs Sea Classification
+
+Determine if coordinates are on land or at sea:
+
+```{r}
+# Classify points
+classification <- land_points(
+  x_point = your_data$longitude,
+  y_point = your_data$latitude,
+  parallel = TRUE,
+  cores = 2
+)
+```
+
+### Built-in Coastline Data
+
+Use the included Peru coastline:
+
+```{r}
+# Load Peru coastline
+data("peru_coastline")
+
+# Use in calculations
+distances <- coast_distance(
+  lon = c(-77.0, -76.5),
+  lat = c(-12.0, -11.5),
+  coastline = peru_coastline
+)
+```
+
+### Distance Categories
+
+Create distance categories for analysis:
+
+```{r}
+# Add distance categories to your data
+enhanced_data <- add_variables(
+  data = your_data,
+  distance_type = "haversine",
+  unit = "nm"
+)
+
+# The function adds:
+# - dc: distance to coast
+# - dc_cat: distance categories (05-15 nm, 15-30 nm, etc.)
+```
+
+### Parallel Processing
+
+For large datasets, use parallel processing:
+
+```{r}
+# Enable parallel processing
+distances <- coast_distance(
+  lon = large_dataset$longitude,
+  lat = large_dataset$latitude,
+  parallel = TRUE,
+  cores = 4
+)
+```
+
+## Fishing Zone Analysis
+
+Create and analyze fishing zones:
+
+```{r}
+# Plot fishing zones (if you have zone data)
+plot_fishing_zones(
+  data = zone_data,
+  coastline = peru_coastline,
+  type = "static",
+  title = "Fishing Zones"
+)
+```
+
+## Tips for Spatial Analysis
+
+1. **Coordinate validation**: Always check coordinate ranges for your region
+2. **Distance units**: Choose appropriate units (nautical miles for marine data)
+3. **Performance**: Use parallel processing for large datasets
+4. **Error correction**: Enable coordinate error correction when data quality is uncertain
+
+For detailed parameter descriptions, see the function documentation.

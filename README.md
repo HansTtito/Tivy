@@ -2,7 +2,7 @@
 
 ## Tools for Fisheries Data Analysis in Peru
 
-`Tivy` is an R package specialized in processing and analyzing fisheries data from Peru's Ministry of Production (PRODUCE). It facilitates the handling of information from fishing trip logbooks, size records, hauls, and official announcements issued for preventive closures.
+`Tivy` is an R package specialized in processing and analyzing fisheries data from Peru. It facilitates the handling of information from fishing trip logbooks, size records, hauls, and official announcements issued for preventive closures.
 
 ## 📋 Main Features
 
@@ -11,7 +11,6 @@
 - 📊 **Juvenile Analysis**: Fish population structure analysis with length-weight relationships
 - 📈 **Visualization**: Static (ggplot2) and interactive (leaflet) mapping capabilities
 - 📋 **Regulatory Integration**: Processing of official fishing closure announcements
-- 🇵🇪 **Peru-Specific**: Tailored for PRODUCE's SITRAPESCA system and Peruvian waters
 
 ## 📦 Installation
 
@@ -62,6 +61,14 @@ data_length_fishing_trips <- merge(
 data_total <- merge_length_fishing_trips_hauls(
   data_hauls = data_hauls,
   data_length_fishing_trips = data_length_fishing_trips
+)
+
+
+# Calculate distances to coast
+distances <- coast_distance(
+  lon = processed_hauls$lon_initial,
+  lat = processed_hauls$lat_initial,
+  unit = "nm"
 )
 
 # Add derived variables (juveniles, distance to coast, etc.)
@@ -245,16 +252,16 @@ Comprehensive documentation is available through vignettes:
 
 ```r
 # Overview and quick start
-vignette("introduction", package = "Tivy")
+vignette("00-introduction", package = "Tivy")
 
 # Detailed data processing workflows  
-vignette("data-processing", package = "Tivy")
+vignette("01-data-processing", package = "Tivy")
 
 # Spatial analysis and mapping
-vignette("spatial-analysis", package = "Tivy")
+vignette("02-spatial-analysis", package = "Tivy")
 
 # Fish population analysis
-vignette("juvenile-analysis", package = "Tivy")
+vignette("03-fish-analysis", package = "Tivy")
 ```
 
 ## Built-in Datasets

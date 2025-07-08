@@ -84,7 +84,7 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
     tryCatch({
       catch_sps <- data_hauls %>%
         dplyr::filter(!is.na(.data[["species"]]), .data[["species"]] != "") %>%
-        dplyr::mutate(catch = as.numeric(.data[["catch"]])) %>%
+        dplyr::mutate(catch = safe_numeric_conversion(.data[["catch"]])) %>%
         dplyr::group_by(.data[["fishing_trip_code"]], .data[["haul_number"]], .data[["species"]]) %>%
         dplyr::reframe(catch = sum(.data[["catch"]], na.rm = TRUE))
 
@@ -107,7 +107,7 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
     data_length_numeric <- data_length_fishing_trips
     for (col in length) {
       if (!is.numeric(data_length_numeric[[col]])) {
-        data_length_numeric[[col]] <- as.numeric(data_length_numeric[[col]])
+        data_length_numeric[[col]] <- safe_numeric_conversion(data_length_numeric[[col]])
       }
     }
 
@@ -116,11 +116,11 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
       dplyr::rowwise() %>%
       dplyr::mutate(
         min_range = tryCatch(
-          get_length_range(dplyr::c_across(dplyr::all_of(length)), as.numeric(length), "min"),
+          get_length_range(dplyr::c_across(dplyr::all_of(length)), safe_numeric_conversion(length), "min"),
           error = function(e) NA_real_
         ),
         max_range = tryCatch(
-          get_length_range(dplyr::c_across(dplyr::all_of(length)), as.numeric(length), "max"),
+          get_length_range(dplyr::c_across(dplyr::all_of(length)), safe_numeric_conversion(length), "max"),
           error = function(e) NA_real_
         )
       ) %>%

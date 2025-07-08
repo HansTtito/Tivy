@@ -1,5 +1,3 @@
-# Tests for data processing functions (corrected version)
-
 # Helper functions to create sample data
 create_sample_hauls <- function() {
   data.frame(
@@ -109,17 +107,19 @@ test_that("process_fishing_trips works correctly", {
   
   sample_data <- create_sample_trips()
   
-  result <- process_fishing_trips(
+  result <- expect_warning(
+    process_fishing_trips(
     data_fishing_trips = sample_data,
     verbose = FALSE
+  ),
+  "Multiple columns found for pattern"
   )
-  
   # Check structure
   expect_s3_class(result, "data.frame")
   
   # Check required columns
   expected_cols <- c("fishing_trip_code", "vessel", "id_vessel", 
-                    "start_date_fishing_trip", "end_date_fishing_trip")
+                    "start_date_fishing_trip", "end_date_fishing_trip", "owner")
   expect_true(all(expected_cols %in% names(result)))
   
   # Check data types
@@ -214,7 +214,7 @@ test_that("merge_length_fishing_trips_hauls works correctly", {
   
   # Create processed sample data
   hauls <- process_hauls(create_sample_hauls(), verbose = FALSE)
-  trips <- process_fishing_trips(create_sample_trips(), verbose = FALSE)
+  trips <- expect_warning(process_fishing_trips(create_sample_trips(), verbose = FALSE), "Multiple columns found for pattern")
   lengths <- process_length(create_sample_length(), verbose = FALSE)
   
   # Merge trips and lengths first
@@ -303,10 +303,9 @@ test_that("validate_haul_data handles invalid input", {
 test_that("validate_fishing_trip_data works correctly", {
   skip_if_not_installed("dplyr")
   skip_if_not_installed("stringi")
-  
-  sample_data <- create_sample_trips()
-  processed_data <- process_fishing_trips(sample_data, verbose = FALSE)
-  
+
+  processed_data <- expect_warning(process_fishing_trips(create_sample_trips(), verbose = FALSE), "Multiple columns found for pattern")
+
   validation <- validate_fishing_trip_data(processed_data)
   
   # Check structure
@@ -362,7 +361,7 @@ test_that("data processing workflow integration", {
   
   # Process each dataset
   processed_hauls <- process_hauls(raw_hauls, verbose = FALSE)
-  processed_trips <- process_fishing_trips(raw_trips, verbose = FALSE)
+  processed_trips <- expect_warning(process_fishing_trips(raw_trips, verbose = FALSE), "Multiple columns found for pattern")
   processed_lengths <- process_length(raw_lengths, verbose = FALSE)
   
   # Merge data

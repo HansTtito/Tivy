@@ -50,6 +50,10 @@ fetch_fishing_announcements <- function(start_date,
     if (verbose) message("Using default source URL: ", source_url)
   }
 
+  if (!is.numeric(batch_size) || batch_size <= 0) {
+  stop("batch_size must be a positive integer.")
+  }
+  
   check_required_packages(c("httr", "rvest", "jsonlite"))
   
   main_response <- get_main_page(source_url, verbose)
@@ -175,21 +179,21 @@ fetch_fishing_announcements <- function(start_date,
 #' @importFrom pdftools pdf_text
 #' @importFrom stringr str_squish str_split str_extract_all str_extract
 #' @importFrom utils download.file
-extract_pdf_data <- function(pdf_sources, temp_dir = NULL, verbose = TRUE, max_retries = 3) {
+extract_pdf_data <- function(pdf_sources = NULL, temp_dir = NULL, verbose = TRUE, max_retries = 3) {
   
-  if (missing(pdf_sources)) {
-    stop("'pdf_sources' parameter is required.")
+  # Input validation
+  if (is.null(pdf_sources) || length(pdf_sources) == 0) {
+    stop("'pdf_sources' is required and cannot be NULL or empty.")
   }
-  
-  if (length(pdf_sources) == 0) {
-    warning("No PDF sources provided for processing.")
-    return(data.frame())
-  }
-  
+
   if (!is.character(pdf_sources)) {
-    stop("'pdf_sources' must be a character vector with PDF file names or URLs.")
+    stop("'pdf_sources' must be a character vector of file paths or URLs.")
   }
-  
+
+  if (!is.numeric(max_retries) || max_retries < 1) {
+    stop("'max_retries' must be a positive integer.")
+  }
+
   if (is.null(temp_dir)) {
     temp_dir <- tempdir()
   }
@@ -360,7 +364,7 @@ format_extracted_data <- function(data, min_date = NULL, max_date = NULL, conver
           hemisphere <- ifelse(grepl("Lon", col), "W", "S")
           fmt_data[[paste0(col, "_decimal")]] <- sapply(fmt_data[[col]], function(x) {
             if (is.na(x) || x == "") return(NA)
-            tryCatch(convert_coordinates(x, hemisphere = hemisphere), error = function(e) NA)
+            tryCatch(dms_to_decimal(x, hemisphere = hemisphere), error = function(e) NA)
           })
         }
       }

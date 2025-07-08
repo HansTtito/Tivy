@@ -36,4 +36,3 @@ List with distance vectors and corresponding indices.
 Internal function to calculate distances between multiple points and a coastline.
 Supports different distance calculation methods and spatial filtering.
 }
-\keyword{internal}

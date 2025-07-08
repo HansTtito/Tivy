@@ -82,7 +82,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
         return(NA_real_)
       }
 
-      parts <- suppressWarnings(as.numeric(num_components))
+      parts <- safe_numeric_conversion(num_components)
 
       if (any(is.na(parts))) {
         warning(paste("Error converting some component of the coordinate to numeric:", original_coord))
@@ -382,10 +382,10 @@ land_points <- function(x_point,
     stop("`unit` must be 'km' or 'nm'.")
   }
 
-  x_point <- as.numeric(x_point)
-  y_point <- as.numeric(y_point)
-  coastline$Long <- as.numeric(coastline$Long)
-  coastline$Lat <- as.numeric(coastline$Lat)
+  x_point <- safe_numeric_conversion(x_point)
+  y_point <- safe_numeric_conversion(y_point)
+  coastline$Long <- safe_numeric_conversion(coastline$Long)
+  coastline$Lat <- safe_numeric_conversion(coastline$Lat)
 
   n <- length(x_point)
 

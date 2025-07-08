@@ -52,7 +52,9 @@ add_variables <- function(data,
 
   if (!is.data.frame(coastline)) stop("The 'coastline' parameter must be a data.frame.")
 
-  stopifnot(is.data.frame(data))
+  if (!is.data.frame(data)) {
+  stop("'data' must be a data.frame.")
+  }
   required_cols <- c("lon_initial", "lat_initial")
 
   missing_cols <- setdiff(required_cols, names(data))
@@ -69,7 +71,7 @@ add_variables <- function(data,
     return(data)
   }
 
-  data[length] <- lapply(data[length], as.numeric)
+  data[length] <- lapply(data[length], safe_numeric_conversion)
 
   zero_frequency_count <- 0
 
@@ -81,7 +83,7 @@ add_variables <- function(data,
 
     calculate_juvenile_percentage(
       frequency = row,
-      length = as.numeric(length),
+      length = safe_numeric_conversion(length),
       juvenile_limit = JuvLim,
       silence_warnings = TRUE
     )

@@ -1,0 +1,105 @@
+---
+title: "Introduction to Tivy"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to Tivy}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(Tivy)
+```
+
+## Overview
+
+Tivy is an R package for processing and analyzing fisheries data from Peru's Ministry of Production (PRODUCE). It provides tools for:
+
+- Processing fishing hauls, trips, and length frequency data
+- Converting coordinates from DMS to decimal degrees
+- Calculating distances to coast
+- Analyzing juvenile fish proportions
+
+## Basic Usage
+
+### Processing Fishing Data
+
+```{r}
+# Process fishing hauls
+processed_hauls <- process_hauls(
+  data_hauls = your_hauls_data,
+  verbose = TRUE
+)
+
+# Process fishing trips
+processed_trips <- process_fishing_trips(
+  data_fishing_trips = your_trips_data,
+  verbose = TRUE
+)
+
+# Process length frequency data
+processed_lengths <- process_length(
+  data_length = your_length_data,
+  verbose = TRUE
+)
+```
+
+### Coordinate Conversion
+
+```{r}
+# Convert DMS coordinates to decimal degrees
+coordinates <- c("15°30'S", "75°45'W")
+decimal_coords <- dms_to_decimal(coordinates, hemisphere = "S")
+```
+
+### Distance Calculations
+
+```{r}
+# Calculate distance to coast
+distances <- coast_distance(
+  lon = c(-77.0, -76.5),
+  lat = c(-12.0, -11.5),
+  unit = "nm"
+)
+```
+
+### Juvenile Analysis
+
+```{r}
+# Calculate juvenile percentages
+juvenile_results <- summarize_juveniles_by_group(
+  data = your_data,
+  group_cols = "date",
+  length_cols = c("8", "9", "10", "11", "12"),
+  juvenile_limit = 12
+)
+```
+
+## Data Requirements
+
+The package expects data with specific column patterns:
+
+- **Hauls**: `codigo_faena`, `numero_cala`, `latitud_inicial`, `longitud_inicial`, `especie`, `captura`
+- **Trips**: `codigo_faena`, `embarcacion`, `fecha_inicio`, `fecha_fin`
+- **Lengths**: `codigo_faena`, `numero_cala`, `especie`, `talla`, `frecuencia`
+
+Column names are automatically detected using pattern matching.
+
+## Built-in Data
+
+The package includes Peru coastline data:
+
+```{r}
+data("peru_coastline")
+head(peru_coastline)
+```
+
+For more detailed examples, see the function documentation.

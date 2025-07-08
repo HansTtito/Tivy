@@ -33,59 +33,50 @@
 #' @export
 #' @importFrom stringr str_extract
 extract_numeric_values <- function(column_names, 
-                                  use_fallback = TRUE, 
-                                  fallback_type = "sequential",
-                                  verbose = FALSE) {
+                                   use_fallback = TRUE, 
+                                   fallback_type = "sequential",
+                                   verbose = FALSE) {
   
   if (!is.character(column_names)) {
     stop("'column_names' must be a character vector.")
   }
   
-  if (all(grepl("^(length_|weighted_|pond_)([0-9]+(\\.[0-9]+)?)$", column_names))) {
-    values <- as.numeric(gsub("^(length_|weighted_|pond_)", "", column_names))
-    if (verbose) {
-      message("Extracted values using specific prefix pattern")
-    }
+  # 1. Specific prefix patterns
+  if (all(grepl("^(length_|weighted_|pond_)[0-9]+(\\.[0-9]+)?$", column_names))) {
+    values <- safe_numeric_conversion(gsub("^(length_|weighted_|pond_)", "", column_names))
+    if (verbose) message("Extracted values using specific prefix pattern")
     return(values)
   }
   
+  # 2. Pure numeric names
   if (all(grepl("^[0-9]+(\\.[0-9]+)?$", column_names))) {
-    values <- as.numeric(column_names)
-    if (verbose) {
-      message("Extracted values from purely numeric column names")
-    }
+    values <- safe_numeric_conversion(column_names)
+    if (verbose) message("Extracted values from purely numeric column names")
     return(values)
   }
   
-  values <- suppressWarnings(as.numeric(stringr::str_extract(column_names, "\\d+\\.?\\d*")))
+  # 3. General numeric pattern (first number found)
+  values <- safe_numeric_conversion(stringr::str_extract(column_names, "[0-9]+\\.?[0-9]*"))
   
-  if (!anyNA(values)) {
-    if (verbose) {
-      message("Extracted values using general numeric pattern")
-    }
+  if (!all(is.na(values))) {
+    if (verbose) message("Extracted values using general numeric pattern")
     return(values)
   }
   
+  # 4. Fallback
   if (use_fallback) {
-    if (verbose) {
-      message("⚠ Some names don't contain numbers. Using fallback strategy.")
-    }
+    if (verbose) message("No numeric values found. Using fallback strategy: ", fallback_type)
     
     fallback_values <- switch(fallback_type,
       "sequential" = seq_along(column_names),
-      "position" = seq_along(column_names),
       "ones" = rep(1, length(column_names)),
       "zeros" = rep(0, length(column_names)),
       stop("Invalid fallback_type. Use 'sequential', 'ones', or 'zeros'.")
     )
     
-    values[is.na(values)] <- fallback_values[is.na(values)]
-    return(values)
-    
+    return(fallback_values)
   } else {
-    if (anyNA(values)) {
-      warning("Some names do not contain numerical values and were converted to NA.")
-    }
+    if (verbose) warning("Some names do not contain numbers. Returning NAs.")
     return(values)
   }
 }
@@ -103,10 +94,14 @@ extract_numeric_values <- function(column_names,
 #' @keywords internal
 is_date_in_range <- function(date_str, start_date, end_date) {
   date_part <- convert_to_date(date_str, output_type = "date")
-  date <- convert_to_date(date_part, output_type = "date")
   start <- convert_to_date(start_date, output_type = "date")
   end <- convert_to_date(end_date, output_type = "date")
-  return(date >= start && date <= end)
+
+  if (any(is.na(c(date_part, start, end)))) {
+    return(FALSE)
+  }
+
+  return(date_part >= start & date_part <= end)
 }
 
 #' Check required packages
@@ -144,9 +139,9 @@ check_required_packages <- function(packages = c("httr", "rvest", "jsonlite")) {
 #' @keywords internal
 process_weighting_block <- function(data, length_cols, catch_col, a, b, silence_warnings = FALSE) {
   
-  length_values <- as.numeric(sub(".*_", "", length_cols))
+  length_values <- safe_numeric_conversion(sub(".*_", "", length_cols))
   if (all(is.na(length_values))) {
-    length_values <- as.numeric(length_cols)
+    length_values <- safe_numeric_conversion(length_cols)
   }
   
   if (any(is.na(length_values))) {
@@ -164,7 +159,7 @@ process_weighting_block <- function(data, length_cols, catch_col, a, b, silence_
   result <- data
   for (i in 1:nrow(data)) {
     catch_i <- data[i, catch_col]
-    frequencies_i <- as.numeric(data[i, length_cols])
+    frequencies_i <- safe_numeric_conversion(data[i, length_cols])
     
     if (is.na(catch_i) || catch_i <= 0) warning_counter$catch_na <- warning_counter$catch_na + 1
     if (sum(frequencies_i, na.rm = TRUE) == 0) warning_counter$freq_zero <- warning_counter$freq_zero + 1

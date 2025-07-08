@@ -4,7 +4,12 @@
 \alias{extract_pdf_data}
 \title{Extract data from PDF announcements}
 \usage{
-extract_pdf_data(pdf_sources, temp_dir = NULL, verbose = TRUE, max_retries = 3)
+extract_pdf_data(
+  pdf_sources = NULL,
+  temp_dir = NULL,
+  verbose = TRUE,
+  max_retries = 3
+)
 }
 \arguments{
 \item{pdf_sources}{Character vector of PDF file paths or URLs.}

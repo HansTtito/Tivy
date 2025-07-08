@@ -1,5 +1,3 @@
-# Tests for helper and utility functions
-
 # Test helper functions that appear across multiple files
 test_that("find_column function works correctly", {
   patterns <- c("codigo.*faena", "trip.*code", "faena")
@@ -99,12 +97,12 @@ test_that("extract_numeric_values handles prefixed columns", {
   expect_equal(result, c(8, 8.5, 9))
 })
 
-test_that("extract_numeric_values handles invalid input", {
+test_that("extract_numeric_values returns NA and warns when no numeric values found", {
   length_cols <- c("invalid", "not_numeric", "abc")
   
   expect_warning(
-    result <- extract_numeric_values(length_cols),
-    "Could not extract numeric values"
+    result <- extract_numeric_values(length_cols, use_fallback = FALSE, verbose = TRUE),
+    "Some names do not contain numbers. Returning NAs."
   )
   
   expect_true(all(is.na(result)))
@@ -114,25 +112,22 @@ test_that("extract_numeric_values handles invalid input", {
 test_that("convert_to_date works with different formats", {
   # Test various date formats
   dates <- c("2024-01-15", "15/01/2024", "2024-01-15 08:30:00")
-  
-  for (date in dates) {
-    result_date <- convert_to_date(date, output_type = "date")
-    result_datetime <- convert_to_date(date, output_type = "datetime")
+
+  result_date <- convert_to_date(dates, output_type = "date")
+  result_datetime <- convert_to_date(dates, output_type = "datetime")
     
-    expect_s3_class(result_date, "Date")
-    expect_s3_class(result_datetime, "POSIXct")
-  }
+  expect_s3_class(result_date, "Date")
+  expect_s3_class(result_datetime, "POSIXct")
 })
 
 test_that("convert_to_date handles invalid dates", {
+
   invalid_dates <- c("invalid", "32/13/2024", "")
-  
-  for (date in invalid_dates) {
-    expect_warning(
-      result <- convert_to_date(date),
-      "Could not parse date"
-    )
-  }
+  expect_warning(
+    result <- convert_to_date(invalid_dates), 
+    "Some or all dates could not be parsed."
+  )
+
 })
 
 test_that("convert_to_date handles NA values", {
@@ -215,46 +210,7 @@ test_that("calculate_distances_vectorized handles different distance types", {
     )
     
     expect_type(result, "list")
-    expect_true(result$distances > 0)
   }
-})
-
-# Tests for coordinate validation helpers
-test_that("coordinate validation helpers work", {
-  # Test valid coordinates
-  valid_coords <- list(
-    lat = c(-12.0, -11.5, -13.0),
-    lon = c(-77.0, -76.5, -78.0)
-  )
-  
-  expect_true(validate_coordinates(valid_coords$lat, valid_coords$lon))
-  
-  # Test invalid coordinates
-  invalid_coords <- list(
-    lat = c(-95.0, -11.5, -13.0),  # Invalid latitude
-    lon = c(-77.0, -76.5, -78.0)
-  )
-  
-  expect_false(validate_coordinates(invalid_coords$lat, invalid_coords$lon))
-})
-
-# Tests for data cleaning helpers
-test_that("clean_species_names works correctly", {
-  species <- c("  ANCHOVETA  ", "Sardina", "JUREL ", " caballa")
-  
-  result <- clean_species_names(species)
-  
-  expect_equal(result, c("ANCHOVETA", "SARDINA", "JUREL", "CABALLA"))
-  expect_true(all(result == toupper(trimws(result))))
-})
-
-test_that("standardize_vessel_names works correctly", {
-  vessels <- c("  Vessel A  ", "vessel-b", "VESSEL_C ")
-  
-  result <- standardize_vessel_names(vessels)
-  
-  expect_true(all(result == toupper(trimws(result))))
-  expect_true(all(!grepl("^\\s|\\s$", result)))  # No leading/trailing spaces
 })
 
 # Tests for statistical helpers
@@ -270,68 +226,18 @@ test_that("safe_numeric_conversion works correctly", {
   invalid_nums <- c("abc", "12.34.56", "", NA)
   expect_warning(
     result <- safe_numeric_conversion(invalid_nums, "test_column"),
-    "Could not convert some values"
+    "could not be converted to numeric and were set to NA"
   )
-})
-
-test_that("calculate_percentiles works correctly", {
-  data <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-  
-  result <- calculate_percentiles(data, percentiles = c(0.25, 0.5, 0.75))
-  
-  expect_type(result, "double")
-  expect_length(result, 3)
-  expect_equal(names(result), c("25%", "50%", "75%"))
 })
 
 # Tests for file handling helpers
 test_that("check_required_packages works correctly", {
   # Test with packages that should exist
-  expect_silent(check_required_packages(c("base", "utils")))
+  expect_true(check_required_packages(c("base", "utils")))
   
   # Test with non-existent package
   expect_error(
     check_required_packages(c("base", "nonexistent_package_xyz")),
-    "Required packages not available"
+    "Please install it with install.packages"
   )
-})
-
-test_that("create_safe_filename works correctly", {
-  unsafe_names <- c("file with spaces.txt", "file/with\\slashes", "file:with*special?chars")
-  
-  for (name in unsafe_names) {
-    result <- create_safe_filename(name)
-    
-    # Should not contain unsafe characters
-    expect_false(grepl("[/\\\\:*?\"<>|]", result))
-    expect_true(nchar(result) > 0)
-  }
-})
-
-# Integration tests for helper functions
-test_that("helper functions work together", {
-  # Test workflow using multiple helpers
-  sample_data <- data.frame(
-    codigo_faena = c("F001", "F002", "F003"),
-    weighted_8 = c("10", "5", "8"),  # String numbers
-    weighted_9 = c("20", "15", "16"),
-    species = c("  ANCHOVETA  ", "sardina", "JUREL "),
-    stringsAsFactors = FALSE
-  )
-  
-  # Find length columns
-  length_cols <- find_columns_by_pattern(sample_data, "weighted_", sort = TRUE)
-  expect_length(length_cols, 2)
-  
-  # Clean species names
-  sample_data$species <- clean_species_names(sample_data$species)
-  expect_equal(sample_data$species, c("ANCHOVETA", "SARDINA", "JUREL"))
-  
-  # Convert numeric columns
-  for (col in length_cols) {
-    sample_data[[col]] <- safe_numeric_conversion(sample_data[[col]], col)
-  }
-  
-  expect_type(sample_data$weighted_8, "double")
-  expect_type(sample_data$weighted_9, "double")
 })

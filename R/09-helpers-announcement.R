@@ -285,7 +285,7 @@ fetch_announcements_batch <- function(
   return(process_json_response(content_text, verbose))
 }
 
-#' Helper function to process PDF text content
+#' Process PDF text content
 #'
 #' @description
 #' Internal function to extract structured data from PDF text content.
@@ -404,7 +404,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
         for (pattern in nautical_patterns) {
           miles_matches <- stringr::str_extract_all(block, pattern)[[1]]
           if (length(miles_matches) > 0) {
-            miles_numbers <- as.numeric(stringr::str_extract_all(miles_matches[1], "\\d+")[[1]])
+            miles_numbers <- safe_numeric_conversion(stringr::str_extract_all(miles_matches[1], "\\d+")[[1]])
             if (length(miles_numbers) >= 2) {
               start_miles <- min(miles_numbers)
               end_miles <- max(miles_numbers)
@@ -473,7 +473,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
 #' @return List with data frame and actual mile value.
 #' @keywords internal
 find_parallel_line <- function(miles, coast_parallels) {
-  available_miles <- as.numeric(gsub("l", "", names(coast_parallels)))
+  available_miles <- safe_numeric_conversion(gsub("l", "", names(coast_parallels)))
   idx_close <- which.min(abs(available_miles - miles))
   close_mile <- available_miles[idx_close]
   
@@ -690,6 +690,8 @@ prepare_polygons <- function(data, coastline, coast_parallels = NULL, column_nam
     }
   }
 
+  validate_polygon_data(data)
+
   prepared_data <- data
 
   if (any(c("StartLatitude", "EndLatitude") %in% names(data))) {
@@ -857,4 +859,78 @@ prepare_polygons <- function(data, coastline, coast_parallels = NULL, column_nam
   }
 
   return(polygons)
+}
+
+#' Validate data for polygon creation
+#'
+#' @description
+#' Validates that a data frame contains the necessary columns for creating 
+#' fishing zone polygons. Checks for either coordinate-based or distance-based 
+#' polygon definition data.
+#'
+#' @param data Data frame to validate. Must contain polygon definition columns.
+#'
+#' @details
+#' The function requires either:
+#' \itemize{
+#'   \item Coordinate-based: StartLatitude, EndLatitude, StartLongitude, EndLongitude
+#'   \item Distance-based: StartLatitude, EndLatitude, StartNauticalMiles, EndNauticalMiles
+#' }
+#'
+#' @return Returns TRUE invisibly if validation passes, otherwise throws an error.
+#'
+#' @examples
+#' # Coordinate-based polygon data
+#' coord_data <- data.frame(
+#'   StartLatitude = "15°30'S",
+#'   EndLatitude = "15°45'S", 
+#'   StartLongitude = "75°30'W",
+#'   EndLongitude = "75°45'W"
+#' )
+#' validate_polygon_data(coord_data)
+#' 
+#' # Distance-based polygon data  
+#' distance_data <- data.frame(
+#'   StartLatitude = "15°30'S",
+#'   EndLatitude = "15°45'S",
+#'   StartNauticalMiles = 5,
+#'   EndNauticalMiles = 15
+#' )
+#' validate_polygon_data(distance_data)
+#'
+#' @export
+validate_polygon_data <- function(data) {
+  
+  # Basic validation
+  if (!is.data.frame(data)) {
+    stop("'data' must be a data.frame")
+  }
+  
+  if (nrow(data) == 0) {
+    stop("'data' contains no rows")
+  }
+  
+  # Define required column sets
+  coordinate_cols <- c("StartLatitude", "EndLatitude", "StartLongitude", "EndLongitude")
+  distance_cols <- c("StartLatitude", "EndLatitude", "StartNauticalMiles", "EndNauticalMiles")
+  
+  # Check if either set is complete
+  has_coordinates <- all(coordinate_cols %in% names(data))
+  has_distances <- all(distance_cols %in% names(data))
+  
+  if (!has_coordinates && !has_distances) {
+    stop("Data must contain either complete coordinate columns (StartLatitude, EndLatitude, StartLongitude, EndLongitude) or complete distance columns (StartLatitude, EndLatitude, StartNauticalMiles, EndNauticalMiles)")
+  }
+  
+  # Validate nautical miles if present
+  if (has_distances) {
+    for (col in c("StartNauticalMiles", "EndNauticalMiles")) {
+      values <- suppressWarnings(as.numeric(data[[col]]))
+      if (any(values < 0, na.rm = TRUE)) {
+        stop("Nautical mile values must be non-negative in column: ", col)
+      }
+    }
+  }
+  
+  return(invisible(TRUE))
 }

@@ -70,7 +70,7 @@ plot_fishing_zones <- function(data,
   if (is.null(parallels)) {
     parallels <- peru_coast_parallels
   }
-  
+    
   polygons <- prepare_polygons(data = data, coastline = coastline, coast_parallels = parallels)
   
   if (type == "static") {
@@ -182,6 +182,10 @@ plot_juvenile_analysis <- function(data,
   
   if (!is.data.frame(data)) {
     stop("Data must be a data.frame")
+  }
+
+  if (nrow(data) == 0) {
+  stop("Cannot plot: 'data' is empty.")
   }
   
   if (!x_var %in% colnames(data)) {
@@ -364,7 +368,7 @@ plot_juvenile_analysis <- function(data,
 #' }
 #'
 #' @export
-#' @importFrom dplyr group_by reframe arrange mutate filter starts_with
+#' @importFrom dplyr group_by reframe arrange mutate filter starts_with all_of
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggplot2 ggplot aes geom_area geom_line geom_point geom_sf labs theme_minimal
 #' @importFrom ggplot2 scale_color_gradient2 scale_size_continuous coord_sf geom_smooth
@@ -405,17 +409,17 @@ create_fishery_dashboard <- function(data,
   }
   
   if (is.null(length_cols)) {
-    length_cols <- find_columns_by_pattern(data, pattern = "weighted_", sort = TRUE)
+    length_cols <- suppressWarnings(find_columns_by_pattern(data, pattern = "weighted_", sort = TRUE))
     if (length(length_cols) == 0) {
-      length_cols <- find_columns_by_pattern(data, pattern = "pond_", sort = TRUE)
+      length_cols <- suppressWarnings(find_columns_by_pattern(data, pattern = "pond_", sort = TRUE))
     }
     if (length(length_cols) == 0) {
-      length_cols <- find_columns_by_pattern(data, pattern = "length_", sort = TRUE)
+      length_cols <- suppressWarnings(find_columns_by_pattern(data, pattern = "length_", sort = TRUE))
     }
     if (length(length_cols) == 0) {
       numeric_cols <- colnames(data)[grep("^[0-9]+(\\.[0-9]+)?$", colnames(data))]
       if (length(numeric_cols) > 0) {
-        length_cols <- numeric_cols[order(as.numeric(numeric_cols))]
+        length_cols <- numeric_cols[order(safe_numeric_conversion(numeric_cols))]
       }
     }
     if (length(length_cols) == 0) {
@@ -506,7 +510,7 @@ create_fishery_dashboard <- function(data,
     )
   
   plot_data <- catch_data_cumulative %>%
-    dplyr::select(.data[[date_col]], .data[["cumulative_total_weight"]], .data[["cumulative_juvenile_weight"]]) %>%
+    dplyr::select(dplyr::all_of(c(date_col, "cumulative_total_weight", "cumulative_juvenile_weight"))) %>%
     tidyr::pivot_longer(
       cols = dplyr::starts_with("cumulative"),
       names_to = "type",
@@ -523,7 +527,7 @@ create_fishery_dashboard <- function(data,
   p2 <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data[[date_col]], y = .data$weight, 
                                                  fill = .data$type, color = .data$type)) +
     ggplot2::geom_area(alpha = 0.3, position = "identity") +
-    ggplot2::geom_line(size = 1.2) +
+    ggplot2::geom_line(linewidth = 1.2) +
     ggplot2::geom_point(size = 2) +
     ggplot2::labs(
       title = catch_title,

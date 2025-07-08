@@ -110,8 +110,8 @@ process_hauls <- function(data_hauls, correct_coordinates = TRUE, verbose = FALS
       start_date_haul = convert_to_date(.data[["start_date"]], output_type = "datetime"),
       end_date_haul = convert_to_date(.data[["end_date"]], output_type = "datetime"),
       registration_date = convert_to_date(.data[["registration_date"]], output_type = "datetime"),
-      catch = as.numeric(.data[["catch"]]),
-      haul_number = as.numeric(.data[["haul_number"]])
+      catch = safe_numeric_conversion(.data[["catch"]]),
+      haul_number = safe_numeric_conversion(.data[["haul_number"]])
     )
   
   selected_data <- selected_data %>%
@@ -225,7 +225,7 @@ process_fishing_trips <- function(data_fishing_trips, verbose = FALSE) {
   column_patterns <- list(
     fishing_trip_code = c("codigo.*faena", "trip.*code", "faena", "codigo_faena", "viaje"),
     vessel = c("embarcacion", "vessel", "barco", "nave", "buque"),
-    id_vessel = c("id.*embarcacion", "vessel.*id", "matricula", "registro", "id_vessel"),
+    id_vessel = c("id.*embarcacion","id_embarcacion", "vessel.*id", "matricula", "registro", "id_vessel"),
     start_date_fishing_trip = c("fecha.*inicio.*viaje", "start.*date.*trip", "inicio.*faena", 
                                "fecha_inicio_faena", "start_trip", "fecha.*salida","start_date",
                                "start_date_fishing_trip", "start_date_fishing"),
@@ -446,9 +446,9 @@ process_length <- function(data_length, verbose = FALSE) {
     dplyr::mutate(
       species = stringi::stri_trim(as.character(.data[["species"]])),
       fishing_trip_code = stringi::stri_trim(as.character(.data[["fishing_trip_code"]])),
-      haul_number = as.numeric(.data[["haul_number"]]),
-      length = suppressWarnings(as.numeric(.data[["length"]])),
-      freq = suppressWarnings(as.numeric(.data[["freq"]]))
+      haul_number = safe_numeric_conversion(.data[["haul_number"]]),
+      length = safe_numeric_conversion(.data[["length"]]),
+      freq = safe_numeric_conversion(.data[["freq"]])
     )
   
   initial_rows <- nrow(selected_data)
@@ -509,7 +509,7 @@ validate_length_data <- function(processed_length) {
   
   fixed_cols <- c("fishing_trip_code", "haul_number", "species")
   length_cols <- setdiff(names(processed_length), fixed_cols)
-  numeric_length_cols <- length_cols[!is.na(suppressWarnings(as.numeric(length_cols)))]
+  numeric_length_cols <- length_cols[!is.na(safe_numeric_conversion(length_cols))]
   
   quality_metrics <- list(
     total_records = nrow(processed_length),
@@ -519,10 +519,10 @@ validate_length_data <- function(processed_length) {
     missing_haul_numbers = sum(is.na(processed_length$haul_number)),
     missing_species = sum(is.na(processed_length$species) | 
                          processed_length$species == ""),
-    min_length_class = min(as.numeric(numeric_length_cols), na.rm = TRUE),
-    max_length_class = max(as.numeric(numeric_length_cols), na.rm = TRUE),
-    length_range = max(as.numeric(numeric_length_cols), na.rm = TRUE) - 
-                   min(as.numeric(numeric_length_cols), na.rm = TRUE),
+    min_length_class = min(safe_numeric_conversion(numeric_length_cols), na.rm = TRUE),
+    max_length_class = max(safe_numeric_conversion(numeric_length_cols), na.rm = TRUE),
+    length_range = max(safe_numeric_conversion(numeric_length_cols), na.rm = TRUE) - 
+                   min(safe_numeric_conversion(numeric_length_cols), na.rm = TRUE),
     duplicate_hauls = sum(duplicated(paste(processed_length$fishing_trip_code, 
                                           processed_length$haul_number, 
                                           processed_length$species))),

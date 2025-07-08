@@ -4,7 +4,7 @@
 \alias{convert_to_date}
 \title{Convert dates to standard format}
 \usage{
-convert_to_date(date_vector, output_type = "datetime")
+convert_to_date(date_vector, output_type = c("date", "datetime"))
 }
 \arguments{
 \item{date_vector}{A character vector containing dates in various formats.}
