@@ -27,17 +27,17 @@ The function requires either:
 \examples{
 # Coordinate-based polygon data
 coord_data <- data.frame(
-  StartLatitude = "15°30'S",
-  EndLatitude = "15°45'S", 
-  StartLongitude = "75°30'W",
-  EndLongitude = "75°45'W"
+  StartLatitude = "15 30 S",
+  EndLatitude = "15 45 S", 
+  StartLongitude = "75 30 W",
+  EndLongitude = "75 45 W"
 )
 validate_polygon_data(coord_data)
 
 # Distance-based polygon data  
 distance_data <- data.frame(
-  StartLatitude = "15°30'S",
-  EndLatitude = "15°45'S",
+  StartLatitude = "15 30 S",
+  EndLatitude = "15 45 S",
   StartNauticalMiles = 5,
   EndNauticalMiles = 15
 )

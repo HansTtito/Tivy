@@ -232,7 +232,7 @@ process_fishing_trips <- function(data_fishing_trips, verbose = FALSE) {
     end_date_fishing_trip = c("fecha.*fin.*viaje", "end.*date.*trip", "fin.*faena", 
                              "fecha_fin_faena", "end_trip", "fecha.*llegada","end_date","end_date_fishing_trip",
                             "end_date_fishing"),
-    owner = c("armador", "owner", "propietario", "dueno", "dueño")
+    owner = c("armador", "owner", "propietario", "dueno")
   )
   
   critical_columns <- c("fishing_trip_code", "vessel", "id_vessel", 

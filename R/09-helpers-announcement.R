@@ -313,14 +313,15 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
   )
   
   clean_text <- stringr::str_squish(text)
+  clean_text <- iconv(clean_text, from = "UTF-8", to = "ASCII//TRANSLIT")
   
-  if (!any(grepl("DISPONER LA SUSPENSIÓN PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA", clean_text))) {
+  if (!any(grepl("DISPONER LA SUSPENSION PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA", clean_text))) {
     if (verbose) warning("File '", file_name, "' doesn't appear to be a valid announcement.")
     return(empty_result)
   }
   
   blocks <- tryCatch({
-    stringr::str_split(clean_text, "DISPONER LA SUSPENSIÓN PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA")[[1]]
+    stringr::str_split(clean_text, "DISPONER LA SUSPENSION PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA")[[1]]
   }, error = function(e) {
     if (verbose) warning("Error splitting text for file '", file_name, "': ", e$message)
     return(character(0))
@@ -331,7 +332,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
     return(empty_result)
   }
   
-  announcement <- stringr::str_extract(clean_text, "COMUNICADO\\s*N[°º]\\s*\\d+(?:\\s*[-–]\\s*\\d+)?(?:-[A-Z]+)?")
+  announcement <- stringr::str_extract(clean_text, "COMUNICADO\\s*N[?]\\s*\\d+(?:\\s*[-]\\s*\\d+)?(?:-[A-Z]+)?")
   
   results <- list()
   
@@ -364,15 +365,17 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
     
     tryCatch({
       lat_patterns <- c(
-        "\\d{1,2}°\\d{1,2}['´’][NS]",
-        "\\d{1,2}°\\d{1,2}['’][NS]",
-        "\\d{1,2}°\\d{1,2}['`][NS]"
+        "(\\d{1,2})\\?(\\d{1,2})'?([NS])",
+        "(\\d{1,2})\\s+(\\d{1,2})\\s*([NS])",
+        "(\\d{1,2})(\\d{2})([NS])",
+        "(\\d{1,2})[^0-9](\\d{1,2})[^0-9]*([NS])"
       )
       
       lon_patterns <- c(
-        "\\d{1,2}°\\d{1,2}['´’][WEO]",
-        "\\d{1,2}°\\d{1,2}['’][WEO]",
-        "\\d{1,2}°\\d{1,2}['`][WEO]"
+        "(\\d{1,2})\\?(\\d{1,2})'?([WEO])",
+        "(\\d{1,2})\\s+(\\d{1,2})\\s*([WEO])",
+        "(\\d{1,2})(\\d{2})([WEO])",
+        "(\\d{1,2})[^0-9](\\d{1,2})[^0-9]*([WEO])"
       )
       
       for (pattern in lat_patterns) {
@@ -395,9 +398,9 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
       
       tryCatch({
         nautical_patterns <- c(
-          "de (\\d+) a (\\d+) millas náuticas",
-          "(?:entre las )?(\\d+) y (\\d+) millas náuticas",
-          "dentro de las (\\d+) millas náuticas",
+          "de (\\d+) a (\\d+) millas nauticas",
+          "(?:entre las )?(\\d+) y (\\d+) millas nauticas",
+          "dentro de las (\\d+) millas nauticas",
           "(\\d+)\\s*a\\s*(\\d+)\\s*mn"
         )
         
@@ -882,17 +885,17 @@ prepare_polygons <- function(data, coastline, coast_parallels = NULL, column_nam
 #' @examples
 #' # Coordinate-based polygon data
 #' coord_data <- data.frame(
-#'   StartLatitude = "15°30'S",
-#'   EndLatitude = "15°45'S", 
-#'   StartLongitude = "75°30'W",
-#'   EndLongitude = "75°45'W"
+#'   StartLatitude = "15 30 S",
+#'   EndLatitude = "15 45 S", 
+#'   StartLongitude = "75 30 W",
+#'   EndLongitude = "75 45 W"
 #' )
 #' validate_polygon_data(coord_data)
 #' 
 #' # Distance-based polygon data  
 #' distance_data <- data.frame(
-#'   StartLatitude = "15°30'S",
-#'   EndLatitude = "15°45'S",
+#'   StartLatitude = "15 30 S",
+#'   EndLatitude = "15 45 S",
 #'   StartNauticalMiles = 5,
 #'   EndNauticalMiles = 15
 #' )

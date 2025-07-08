@@ -360,7 +360,7 @@ format_extracted_data <- function(data, min_date = NULL, max_date = NULL, conver
     coord_cols <- c("StartLatitude", "EndLatitude", "StartLongitude", "EndLongitude")
     for (col in coord_cols) {
       if (col %in% names(fmt_data)) {
-        if (any(grepl("[°'\"]", fmt_data[[col]], ignore.case = TRUE), na.rm = TRUE)) {
+        if (any(grepl("[?'\"]", iconv(fmt_data[[col]], from = "UTF-8", "ASCII//TRANSLIT"), ignore.case = TRUE), na.rm = TRUE)) {
           hemisphere <- ifelse(grepl("Lon", col), "W", "S")
           fmt_data[[paste0(col, "_decimal")]] <- sapply(fmt_data[[col]], function(x) {
             if (is.na(x) || x == "") return(NA)

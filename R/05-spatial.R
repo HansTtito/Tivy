@@ -7,7 +7,7 @@
 #' seconds greater than 60.
 #'
 #' @param coordinates Character vector. Each element should be in formats such as:
-#'   "D° M' S\"", "D° M'", "17°26'S", "D M S", "D M", "17 26 S"
+#'   "D M S", "D M", "17 26 S"
 #' @param hemisphere Character indicating hemisphere when not specified in the coordinate.
 #'   One of "N", "S", "E", "W" or "O". "S" and "W"/"O" generate negative values.
 #' @param correct_errors Logical. If TRUE, automatically corrects out-of-range values.
@@ -15,11 +15,7 @@
 #' @return Numeric vector with coordinates converted to decimal degrees.
 #'
 #' @examples
-#' dms_to_decimal(c("39° 48' 36\""), hemisphere = "S")
 #' dms_to_decimal(c("73 15 0"), hemisphere = "W")
-#' dms_to_decimal(c("39° 48'"), hemisphere = "S")
-#' dms_to_decimal(c("17°26'S"))
-#' dms_to_decimal(c("39° 75' 36\""), correct_errors = TRUE)
 #'
 #' @export
 #' @importFrom stringr str_split str_count str_detect str_extract
@@ -59,6 +55,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
     tryCatch({
       local_hemisphere <- hemisphere
       original_coord <- coord
+      coord <- iconv(coord, from = "UTF-8", "ASCII//TRANSLIT")
 
       hemisphere_pattern <- "[NSEW]|O"
       found_hemisphere <- regmatches(coord, regexpr(hemisphere_pattern, coord))
@@ -70,7 +67,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
 
       sign <- ifelse(local_hemisphere %in% c("S", "W", "O"), -1, 1)
 
-      clean_coord <- gsub("[°'\"]", " ", coord)
+      clean_coord <- gsub("[?'\"]", " ", coord)
       clean_coord <- gsub("\\s+", " ", clean_coord)
       clean_coord <- trimws(clean_coord)
 

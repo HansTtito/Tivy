@@ -8,7 +8,7 @@ dms_to_decimal(coordinates, hemisphere = "S", correct_errors = TRUE)
 }
 \arguments{
 \item{coordinates}{Character vector. Each element should be in formats such as:
-"D° M' S\"", "D° M'", "17°26'S", "D M S", "D M", "17 26 S"}
+"D M S", "D M", "17 26 S"}
 
 \item{hemisphere}{Character indicating hemisphere when not specified in the coordinate.
 One of "N", "S", "E", "W" or "O". "S" and "W"/"O" generate negative values.}
@@ -25,10 +25,6 @@ format to decimal degrees. By default, coordinates are assumed to be in the sout
 seconds greater than 60.
 }
 \examples{
-dms_to_decimal(c("39° 48' 36\""), hemisphere = "S")
 dms_to_decimal(c("73 15 0"), hemisphere = "W")
-dms_to_decimal(c("39° 48'"), hemisphere = "S")
-dms_to_decimal(c("17°26'S"))
-dms_to_decimal(c("39° 75' 36\""), correct_errors = TRUE)
 
 }
