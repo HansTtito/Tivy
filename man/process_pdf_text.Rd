@@ -2,7 +2,7 @@
 % Please edit documentation in R/09-helpers-announcement.R
 \name{process_pdf_text}
 \alias{process_pdf_text}
-\title{Helper function to process PDF text content}
+\title{Process PDF text content}
 \usage{
 process_pdf_text(text, file_name, verbose = TRUE)
 }

@@ -11,8 +11,8 @@ Comprehensive toolkit for processing, analyzing, and visualizing fisheries data 
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/yourusername/Tivy}
-  \item Report bugs at \url{https://github.com/yourusername/Tivy/issues}
+  \item \url{https://github.com/HansTtito/Tivy}
+  \item Report bugs at \url{https://github.com/HansTtito/Tivy/issues}
 }
 
 }
