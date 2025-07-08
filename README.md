@@ -192,6 +192,7 @@ static_plot <- plot_fishing_zones(
 
 print(static_plot)
 ```
+![Visualization of closed areas with ggplot](man/figures/poligonos_ggplot.png)
 
 ```r
 # Interactive visualization with leaflet
@@ -205,6 +206,7 @@ interactive_map <- plot_fishing_zones(
 
 interactive_map
 ```
+![Interactive visualization of closed areas](man/figures/poligonos_leaflet.png)
 
 ## 📊 Recommended Workflow
 
