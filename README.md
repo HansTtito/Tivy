@@ -21,6 +21,12 @@ You can install the development version of `Tivy` from GitHub:
 devtools::install_github("HansTtito/Tivy")
 ```
 
+Once published on CRAN:
+
+```r
+install.packages("Tivy")
+```
+
 ## 🚀 Usage Examples
 
 ### Basic Loading and Processing
@@ -63,14 +69,6 @@ data_total <- merge_length_fishing_trips_hauls(
   data_length_fishing_trips = data_length_fishing_trips
 )
 
-
-# Calculate distances to coast
-distances <- coast_distance(
-  lon = processed_hauls$lon_initial,
-  lat = processed_hauls$lat_initial,
-  unit = "nm"
-)
-
 # Add derived variables (juveniles, distance to coast, etc.)
 final_data <- add_variables(
   data = data_total,
@@ -83,21 +81,21 @@ final_data <- add_variables(
 ### Juvenile Analysis
 
 ```r
-# Define length columns automatically
-length_cols <- find_columns_by_pattern(final_data, pattern = "weighted_")
-
-# Or define manually
+# Define length columns manually
 length_cols <- as.character(seq(from = 8, to = 15, by = 0.5))
 
 # Length-weight relationship parameters (for anchoveta)
 a <- 0.0001
 b <- 2.983
 
+# Create catch column in tons
+final_data$catch_t <- final_data$catch_ANCHOVETA / 1000
+
 # Weight length frequencies according to catch
 final_data_weighted <- apply_catch_weighting(
   data = final_data,
   length_cols = length_cols,
-  catch_col = 'catch',
+  catch_col = 'catch_t',
   a = a,  # Length-weight coefficient
   b = b   # Length-weight exponent
 )
@@ -118,6 +116,9 @@ print(juvenile_results)
 ### Visualization of Results
 
 ```r
+# Create date column for plotting
+final_data_weighted$unique_date <- convert_to_date(final_data_weighted$start_date_haul)
+
 # Basic plot of juveniles by date
 juvenile_plot <- plot_juvenile_analysis(
   data = final_data_weighted,
@@ -136,8 +137,6 @@ print(juvenile_plot)
 
 ```r
 # Complete dashboard of juvenile analysis
-final_data_weighted$catch_t <- final_data_weighted$catch_ANCHOVETA / 1000
-
 dashboard <- create_fishery_dashboard(
   data = final_data_weighted,
   date_col = "unique_date",
@@ -158,7 +157,6 @@ dashboard$catch_trends   # Cumulative catch
 dashboard$spatial_map    # Spatial distribution map
 dashboard$dashboard      # Complete panel with all plots
 ```
-
 ![Juvenile analysis dashboard](man/figures/dashboard_juveniles.png)
 
 ### Analysis of Official Announcements
@@ -195,8 +193,6 @@ static_plot <- plot_fishing_zones(
 print(static_plot)
 ```
 
-![Visualization of closed areas with ggplot](man/figures/poligonos_ggplot.png)
-
 ```r
 # Interactive visualization with leaflet
 interactive_map <- plot_fishing_zones(
@@ -210,26 +206,26 @@ interactive_map <- plot_fishing_zones(
 interactive_map
 ```
 
-![Interactive visualization of closed areas](man/figures/poligonos_leaflet.png)
-
 ## 📊 Recommended Workflow
 
 1. **Load and process** haul, fishing trip, and length data using `process_*()` functions
 2. **Integrate datasets** using `merge_length_fishing_trips_hauls()`
 3. **Add derived variables** with `add_variables()` (distances, juveniles, etc.)
-4. **Apply catch weighting** using `apply_catch_weighting()` for biomass analysis
-5. **Analyze juvenile proportions** by zones or seasons with `summarize_juveniles_by_group()`
-6. **Visualize results** through `plot_juvenile_analysis()` or `create_fishery_dashboard()`
-7. **Integrate regulatory data** using announcement processing functions
+4. **Prepare catch data** by converting to appropriate units (tons)
+5. **Apply catch weighting** using `apply_catch_weighting()` for biomass analysis
+6. **Analyze juvenile proportions** by zones or seasons with `summarize_juveniles_by_group()`
+7. **Create date columns** for temporal analysis using `convert_to_date()`
+8. **Visualize results** through `plot_juvenile_analysis()` or `create_fishery_dashboard()`
+9. **Integrate regulatory data** using announcement processing functions
 
 ## 📄 Supported Data Structure
 
-`Tivy` is designed to work with the data structure of fishery data of Peru. Typical input files include:
+`Tivy` is designed to work with fishery data from Peru. The package includes built-in sample datasets:
 
-- **Haul logbooks** (`calas`): Records of fishing operations with coordinates and catch data
-- **Fishing trip logbooks** (`faenas`): Information on trips, vessels, and dates
-- **Length records** (`tallas`): Biometric measurements and frequency data of captured species
-- **Official announcements**: PDF documents with information on preventive closures
+- **`calas_bitacora`**: Sample haul records with coordinates and catch data
+- **`faenas_bitacora`**: Sample fishing trip information
+- **`tallas_bitacora`**: Sample length frequency data
+- **Official announcements**: PDF documents with closure information from PRODUCE
 
 ## 🔧 Main Functions
 
@@ -241,7 +237,7 @@ interactive_map
 | **Juvenile Analysis** | `apply_catch_weighting()`, `summarize_juveniles_by_group()`, `calculate_fish_weight()` | Population structure and juvenile proportion analysis |
 | **Visualization** | `plot_juvenile_analysis()`, `plot_fishing_zones()`, `create_fishery_dashboard()` | Static and interactive plotting |
 | **Announcements** | `fetch_fishing_announcements()`, `extract_pdf_data()`, `format_extracted_data()` | Processing of official regulatory announcements |
-| **Quality Control** | `validate_haul_data()`, `validate_fishing_trip_data()`, `validate_length_data()` | Data quality assessment and validation |
+| **Utilities** | `convert_to_date()`, `find_columns_by_pattern()`, `validate_*_data()` | Helper functions and data validation |
 
 ## 📚 Documentation
 
@@ -264,7 +260,10 @@ vignette("fish-analysis", package = "Tivy")
 ## Built-in Datasets
 
 - `peru_coastline`: Peruvian coastline coordinates for spatial analysis
-- `peru_coast_parallels`: Parallel lines at different nautical mile distances from shore
+- `peru_coast_parallels`: Parallel lines at different nautical mile distances
+- `calas_bitacora`: Sample haul data
+- `faenas_bitacora`: Sample trip data  
+- `tallas_bitacora`: Sample length data
 
 ## Requirements
 
