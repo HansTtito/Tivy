@@ -1,6 +1,8 @@
 # History files
 .Rhistory
 .Rapp.history
+CRAN-SUBMISSION
+.Rbuildignore
 
 # Session Data files
 .RData
@@ -84,3 +86,5 @@ man/*.Rd~
 config.local.*
 /doc/
 /Meta/
+
+

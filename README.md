@@ -298,7 +298,6 @@ This project is licensed under the GPL-3 License - see the [LICENSE](LICENSE) fi
 
 - 📖 **Documentation**: See package vignettes and function help pages
 - 🐛 **Bug reports**: [GitHub Issues](https://github.com/HansTtito/Tivy/issues)  
-- 💬 **Questions**: [GitHub Discussions](https://github.com/HansTtito/Tivy/discussions)
 - 📧 **Contact**: kvttitos@gmail.com
 
 ## Acknowledgments
