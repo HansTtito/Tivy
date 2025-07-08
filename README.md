@@ -121,14 +121,11 @@ print(juvenile_results)
 # Basic plot of juveniles by date
 juvenile_plot <- plot_juvenile_analysis(
   data = final_data_weighted,
-  x_var = "start_date_haul",
+  x_var = "unique_date",
   fill_var = "dc_cat",
   length_cols = paste0("weighted_", length_cols),
   a = a,
   b = b,
-  x_date_breaks = "1 day",
-  plot_type = "bars",
-  use_facet_wrap = TRUE,
   reference_line = 10
 )
 
@@ -139,11 +136,11 @@ print(juvenile_plot)
 
 ```r
 # Complete dashboard of juvenile analysis
-final_data_weighted$catch_t <- final_data_weighted$catch / 1000
+final_data_weighted$catch_t <- final_data_weighted$catch_ANCHOVETA / 1000
 
 dashboard <- create_fishery_dashboard(
   data = final_data_weighted,
-  date_col = "start_date_haul",
+  date_col = "unique_date",
   length_cols = paste0("weighted_", length_cols),
   a = a,
   b = b,
