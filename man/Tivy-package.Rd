@@ -4,7 +4,7 @@
 \name{Tivy-package}
 \alias{Tivy}
 \alias{Tivy-package}
-\title{Tivy: Processing and Analysis of Peruvian Fishery Logbook Data}
+\title{Tivy: Toolkit for Investigation and Visualization of Young Anchovies}
 \description{
 Specialized toolkit for processing biological and fisheries data from Peru's anchovy (Engraulis ringens) fishery. Provides functions to analyze fishing logbooks, calculate biological indicators (length-weight relationships, juvenile percentages), generate spatial fishing indicators, and visualize regulatory measures from Peru's Ministry of Production. Features automated data processing from multiple file formats, coordinate validation, spatial analysis of fishing zones, and tools for analyzing fishing closure announcements and regulatory compliance. Includes built-in datasets of Peruvian coastal coordinates and parallel lines for analyzing fishing activities within regulatory zones.
 }
