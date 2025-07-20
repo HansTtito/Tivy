@@ -1,6 +1,6 @@
 Package: Tivy
 Type: Package
-Title: Processing and Analysis of Peruvian Fishery Logbook Data
+Title: Toolkit for Investigation and Visualization of Young Anchovies
 Version: 0.1.0
 Authors@R: person("Hans", "Ttito", 
                   email = "kvttitos@gmail.com", 
