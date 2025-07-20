@@ -75,9 +75,9 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
     catch_sps <- data.frame(fishing_trip_code = character(0), haul_number = character(0))
   } else {
 
-    length <- grep(pattern = "^[1-9]", x = names(data_length_fishing_trips), value = TRUE)
-    if (length(length) == 0) {
-      warning("No length columns (numbers) found in 'data_length_fishing_trips'. length processing will be omitted.")
+    length_cols <- grep(pattern = "^[1-9]", x = names(data_length_fishing_trips), value = TRUE)
+    if (length(length_cols) == 0) {
+      warning("No length columns (numbers) found in 'data_length_fishing_trips'. Length processing will be omitted.")
       return(merge(data_hauls, data_length_fishing_trips, by = c("fishing_trip_code", "haul_number", "species"), all = TRUE))
     }
 
@@ -105,7 +105,7 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
 
   tryCatch({
     data_length_numeric <- data_length_fishing_trips
-    for (col in length) {
+    for (col in length_cols) {
       if (!is.numeric(data_length_numeric[[col]])) {
         data_length_numeric[[col]] <- safe_numeric_conversion(data_length_numeric[[col]])
       }
@@ -116,11 +116,11 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
       dplyr::rowwise() %>%
       dplyr::mutate(
         min_range = tryCatch(
-          get_length_range(dplyr::c_across(dplyr::all_of(length)), safe_numeric_conversion(length), "min"),
+          get_length_range(dplyr::c_across(dplyr::all_of(length_cols)), safe_numeric_conversion(length_cols), "min"),
           error = function(e) NA_real_
         ),
         max_range = tryCatch(
-          get_length_range(dplyr::c_across(dplyr::all_of(length)), safe_numeric_conversion(length), "max"),
+          get_length_range(dplyr::c_across(dplyr::all_of(length_cols)), safe_numeric_conversion(length_cols), "max"),
           error = function(e) NA_real_
         )
       ) %>%
@@ -131,11 +131,11 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
       min_max_sps <- data.frame(fishing_trip_code = character(0), haul_number = character(0))
     } else {
       min_sps <- data_length_ranges %>%
-        dplyr::select(.data$fishing_trip_code, .data$haul_number, .data$species, .data$min_range) %>%
+        dplyr::select("fishing_trip_code", "haul_number", "species", "min_range") %>%
         tidyr::pivot_wider(names_from = "species", values_from = "min_range", names_prefix = "min_")
 
       max_sps <- data_length_ranges %>%
-        dplyr::select(.data$fishing_trip_code, .data$haul_number, .data$species, .data$max_range) %>%
+        dplyr::select("fishing_trip_code", "haul_number", "species", "max_range") %>%
         tidyr::pivot_wider(names_from = "species", values_from = "max_range", names_prefix = "max_")
 
       min_max_sps <- merge(min_sps, max_sps, by = c("fishing_trip_code", "haul_number"), all = TRUE)
