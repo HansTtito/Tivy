@@ -26,9 +26,12 @@ Percentage of juveniles in the sample.
 \description{
 Calculates the percentage of individuals considered juveniles based on a length threshold.
 }
-\examples{
-freq <- c(0, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 6, 0)
-lengths <- seq(8, 20, by = 1)
-juv_pct <- calculate_juvenile_percentage(freq, lengths, juvenile_limit = 12)
-
+\details{
+Juvenile percentage calculations are essential for fisheries management decisions,
+particularly in determining fishing quotas and closure periods.
+}
+\references{
+IMARPE (2020). Protocolo Elaboración de la Tabla de Decisión para la determinación del Límite
+Máximo Total Permisible por temporada de pesca en la pesquería del stock norte-centro de la
+anchoveta peruana. IMP-DGIRP/AFDPERP, Edición: 05, Revisión 00, 40p.
 }

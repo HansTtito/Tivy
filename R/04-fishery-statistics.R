@@ -7,25 +7,28 @@
 #' @param a Coefficient of the length-weight relationship.
 #' @param b Exponent of the length-weight relationship.
 #'
+#' @details
+#' The length-weight relationship follows the allometric equation W = a * L^b,
+#' where W is weight, L is length, and a and b are species-specific parameters.
+#'
+#' @references
+#' Froese, R. (2006). Cube law, condition factor and weight–length relationships:
+#' history, meta-analysis and recommendations. Journal of Applied Ichthyology, 22(4), 241-253.
+#'
 #' @return Numeric vector of estimated weights.
-#'
-#' @examples
-#' lengths <- seq(8, 20, by = 0.5)
-#' weights <- calculate_fish_weight(length = lengths, a = 0.0001, b = 2.984)
-#'
 #' @export
 calculate_fish_weight <- function(length, a, b) {
   if (!is.numeric(length)) stop("'length' must be numeric.")
   if (!is.numeric(a)) stop("'a' must be numeric.")
   if (!is.numeric(b)) stop("'b' must be numeric.")
-  
+
   if (any(length <= 0, na.rm = TRUE)) {
     warning("Length values <= 0 detected, which may produce invalid results.")
   }
   if (a <= 0) {
     warning("Value of 'a' <= 0 may produce biologically implausible results.")
   }
-  
+
   return(a * length^b)
 }
 
@@ -41,13 +44,16 @@ calculate_fish_weight <- function(length, a, b) {
 #' @param b Exponent of the length-weight relationship.
 #' @param silence_warnings Logical. Suppress warning messages.
 #'
+#' @details
+#' Catch weighting is used to estimate the size composition of catches when only
+#' sub-samples are measured for length frequency analysis.
+#'
+#' @references
+#' IMARPE (2020). Protocolo Elaboración de la Tabla de Decisión para la determinación del Límite
+#' Máximo Total Permisible por temporada de pesca en la pesquería del stock norte-centro de la
+#' anchoveta peruana. IMP-DGIRP/AFDPERP, Edición: 05, Revisión 00, 40p.
+#'
 #' @return Numeric vector of weighted frequencies.
-#'
-#' @examples
-#' freq <- c(0, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 6, 0)
-#' lengths <- seq(8, 20, by = 1)
-#' weighted_freq <- weight_by_catch(freq, catch = 1000, lengths, a = 0.0001, b = 2.984)
-#'
 #' @export
 weight_by_catch <- function(frequency, catch, length, a, b, silence_warnings = FALSE) {
   if (!is.numeric(frequency)) stop("'frequency' must be numeric.")
@@ -55,24 +61,24 @@ weight_by_catch <- function(frequency, catch, length, a, b, silence_warnings = F
   if (!is.numeric(catch)) stop("'catch' must be numeric.")
   if (!is.numeric(a)) stop("'a' must be numeric.")
   if (!is.numeric(b)) stop("'b' must be numeric.")
-  
+
   if (length(frequency) != length(length)) {
     stop("'frequency' and 'length' vectors must have the same length.")
   }
-  
+
   warning_messages <- character()
-  
+
   if (is.na(catch) || catch <= 0) {
     warning_messages <- c(warning_messages,
                           "Catch value is NA or <= 0, using catch = 1.")
     catch <- 1
   }
-  
+
   if (any(length <= 0, na.rm = TRUE)) {
     warning_messages <- c(warning_messages,
                           "Length values <= 0 detected, may produce invalid results.")
   }
-  
+
   frequency[is.na(frequency)] <- 0
   if (sum(frequency, na.rm = TRUE) == 0) {
     warning_messages <- c(warning_messages,
@@ -82,10 +88,10 @@ weight_by_catch <- function(frequency, catch, length, a, b, silence_warnings = F
     }
     return(rep(0, length(length)))
   }
-  
+
   weight <- calculate_fish_weight(length = length, a = a, b = b) * frequency
   weight_sum <- sum(weight, na.rm = TRUE)
-  
+
   if (weight_sum == 0) {
     warning_messages <- c(warning_messages,
                           "Sum of weights is zero. Returning vector of zeros.")
@@ -94,11 +100,11 @@ weight_by_catch <- function(frequency, catch, length, a, b, silence_warnings = F
     }
     return(rep(0, length(length)))
   }
-  
+
   if (!silence_warnings && length(warning_messages) > 0) {
     warning(paste(warning_messages, collapse = " | "))
   }
-  
+
   weighted_length <- (catch / weight_sum) * frequency
   return(weighted_length)
 }
@@ -135,16 +141,16 @@ weight_by_catch <- function(frequency, catch, length, a, b, silence_warnings = F
 #'
 #' @export
 #' @import parallel
-apply_catch_weighting <- function(data, 
-                                  length_cols, 
-                                  catch_col, 
-                                  a, 
+apply_catch_weighting <- function(data,
+                                  length_cols,
+                                  catch_col,
+                                  a,
                                   b,
-                                  parallel = FALSE, 
-                                  num_cores = NULL, 
+                                  parallel = FALSE,
+                                  num_cores = NULL,
                                   block_size = 10000,
                                   silence_warnings = TRUE) {
-  
+
   if (!is.data.frame(data)) {
     stop("First argument must be a data.frame.")
   }
@@ -154,21 +160,21 @@ apply_catch_weighting <- function(data,
   if (!(catch_col %in% names(data))) {
     stop("Catch column does not exist in the data frame.")
   }
-  
+
   if (parallel) {
     if (!requireNamespace("future", quietly = TRUE) ||
         !requireNamespace("future.apply", quietly = TRUE)) {
       stop("future and future.apply packages needed for parallel processing.")
     }
-    
+
     if (is.null(num_cores)) {
       num_cores <- max(1, parallel::detectCores() / 2)
     }
     future::plan(future::multisession, workers = num_cores)
-    
+
     num_rows <- nrow(data)
     block_indices <- split(1:num_rows, ceiling(seq_along(1:num_rows) / block_size))
-    
+
     results <- future.apply::future_lapply(
       block_indices,
       function(indices) {
@@ -177,14 +183,14 @@ apply_catch_weighting <- function(data,
       },
       future.seed = TRUE
     )
-    
+
     final_result <- do.call(rbind, results)
     future::plan(future::sequential)
-    
+
     if (!silence_warnings) {
       message("Parallel processing completed. Some rows might have NA or zero values for weighted length.")
     }
-    
+
     return(final_result)
   } else {
     return(process_weighting_block(data, length_cols, catch_col, a, b, silence_warnings))
@@ -201,36 +207,39 @@ apply_catch_weighting <- function(data,
 #' @param juvenile_limit Length threshold for juvenile classification.
 #' @param silence_warnings Logical. Suppress warnings.
 #'
+#' @details
+#' Juvenile percentage calculations are essential for fisheries management decisions,
+#' particularly in determining fishing quotas and closure periods.
+#'
+#' @references
+#' IMARPE (2020). Protocolo Elaboración de la Tabla de Decisión para la determinación del Límite
+#' Máximo Total Permisible por temporada de pesca en la pesquería del stock norte-centro de la
+#' anchoveta peruana. IMP-DGIRP/AFDPERP, Edición: 05, Revisión 00, 40p.
+#'
 #' @return Percentage of juveniles in the sample.
-#'
-#' @examples
-#' freq <- c(0, 4, 8, 16, 12, 23, 34, 55, 35, 24, 15, 6, 0)
-#' lengths <- seq(8, 20, by = 1)
-#' juv_pct <- calculate_juvenile_percentage(freq, lengths, juvenile_limit = 12)
-#'
 #' @export
 calculate_juvenile_percentage <- function(frequency, length, juvenile_limit = 12, silence_warnings = FALSE) {
   if (!is.numeric(frequency)) stop("'frequency' must be numeric.")
   if (!is.numeric(length)) stop("'length' must be numeric.")
   if (!is.numeric(juvenile_limit)) stop("'juvenile_limit' must be numeric.")
-  
+
   if (length(frequency) != length(length)) {
     stop("'frequency' and 'length' vectors must have the same length.")
   }
-  
+
   if (juvenile_limit <= 0 && !silence_warnings) {
     warning("juvenile_limit <= 0 may not be biologically plausible.")
   }
-  
+
   total_frequency <- sum(frequency, na.rm = TRUE)
   if (total_frequency == 0) {
     if (!silence_warnings) warning("Sum of frequencies is zero. Returning NA.")
     return(NA_real_)
   }
-  
+
   juvenile_freq <- sum(frequency[length < juvenile_limit], na.rm = TRUE)
   juvenile_pct <- 100 * (juvenile_freq / total_frequency)
-  
+
   return(juvenile_pct)
 }
 
@@ -256,22 +265,22 @@ get_length_range <- function(frequency, length, type = "min") {
   if (!is.numeric(frequency)) stop("'frequency' must be numeric.")
   if (!is.numeric(length)) stop("'length' must be numeric.")
   if (!type %in% c("min", "max")) stop("'type' must be 'min' or 'max'.")
-  
+
   if (length(frequency) != length(length)) {
     stop("'frequency' and 'length' vectors must have the same length.")
   }
-  
+
   if (all(frequency <= 0, na.rm = TRUE) || all(is.na(frequency))) {
     warning("No positive frequencies found. Returning NA.")
     return(NA_real_)
   }
-  
+
   valid_lengths <- length[frequency > 0 & !is.na(frequency)]
-  
+
   if (length(valid_lengths) == 0) {
     return(NA_real_)
   }
-  
+
   if (type == "min") {
     return(min(valid_lengths, na.rm = TRUE))
   } else {
@@ -307,34 +316,34 @@ convert_numbers_to_weight <- function(data, length_cols, a, b) {
   if (!is.data.frame(data)) stop("'data' must be a data.frame.")
   if (!is.numeric(a)) stop("'a' must be numeric.")
   if (!is.numeric(b)) stop("'b' must be numeric.")
-  
+
   if (is.character(length_cols)) {
     length_values <- extract_numeric_values(length_cols, use_fallback = FALSE)
   } else {
     length_values <- safe_numeric_conversion(length_cols)
   }
-  
+
   missing_cols <- setdiff(length_cols, colnames(data))
   if (length(missing_cols) > 0) {
     stop("Missing columns in data: ", paste(missing_cols, collapse = ", "))
   }
-  
+
   for (col in length_cols) {
     if (!is.numeric(data[[col]])) {
       data[[col]] <- safe_numeric_conversion(data[[col]])
       warning("Column '", col, "' converted to numeric.")
     }
   }
-  
+
   tryCatch({
     weights <- as.data.frame(t(apply(data[, length_cols, drop = FALSE], 1, function(x) {
       calculate_fish_weight(length = length_values, a = a, b = b) * x
     })))
-    
+
     colnames(weights) <- paste0("weight_", length_cols)
     result <- cbind(data, weights)
     return(result)
-    
+
   }, error = function(e) {
     stop("Error calculating weights: ", e$message)
   })
@@ -371,63 +380,63 @@ convert_numbers_to_weight <- function(data, length_cols, a, b) {
 #' @importFrom dplyr group_by_at reframe across everything filter pick all_of mutate
 #' @importFrom tidyr unnest
 #' @importFrom utils head tail
-summarize_juveniles_by_group <- function(data, 
-                                         group_cols, 
-                                         length_cols = NULL, 
-                                         juvenile_limit = 12, 
-                                         a = 0.0012, 
+summarize_juveniles_by_group <- function(data,
+                                         group_cols,
+                                         length_cols = NULL,
+                                         juvenile_limit = 12,
+                                         a = 0.0012,
                                          b = 3.1242,
                                          remove_empty = TRUE,
                                          verbose = FALSE) {
-  
+
   if (!is.data.frame(data)) {
     stop("'data' must be a data.frame.")
   }
-  
+
   if (!all(group_cols %in% colnames(data))) {
     stop("Not all grouping columns found in data.")
   }
-  
+
   if (is.null(length_cols)) {
     if (verbose) {
       message("=== Auto-detecting Length Columns ===")
     }
-    
+
     length_cols <- find_columns_by_pattern(data, pattern = "length_", sort = TRUE)
     pattern_used <- "length_"
-    
+
     if (length(length_cols) == 0) {
       length_cols <- find_columns_by_pattern(data, pattern = "weighted_", sort = TRUE)
       pattern_used <- "weighted_"
     }
-    
+
     if (length(length_cols) == 0) {
       numeric_cols <- names(data)[sapply(names(data), function(x) {
-        !is.na(safe_numeric_conversion(x)) && 
+        !is.na(safe_numeric_conversion(x)) &&
         grepl("^[0-9]+(\\.[0-9]+)?$", x)
       })]
-      
+
       if (length(numeric_cols) > 0) {
         numeric_values <- safe_numeric_conversion(numeric_cols)
         length_cols <- numeric_cols[order(numeric_values)]
         pattern_used <- "numeric column names"
       }
     }
-    
+
     if (length(length_cols) == 0) {
       stop("No length columns found. Please specify length_cols manually.\n",
            "Tried patterns: 'length_', 'weighted_', and numeric column names.")
     }
-    
+
     if (verbose) {
-      message(sprintf("Auto-detected %d length columns using pattern '%s'", 
+      message(sprintf("Auto-detected %d length columns using pattern '%s'",
                      length(length_cols), pattern_used))
-      message(sprintf("Length range: %s to %s", 
+      message(sprintf("Length range: %s to %s",
                      head(length_cols, 1), tail(length_cols, 1)))
     }
-    
+
     cols_names <- length_cols
-    
+
   } else {
     if (is.numeric(length_cols)) {
       if (any(length_cols > ncol(data) | length_cols < 1)) {
@@ -437,28 +446,28 @@ summarize_juveniles_by_group <- function(data,
     } else {
       if (!all(length_cols %in% colnames(data))) {
         missing_cols <- length_cols[!length_cols %in% colnames(data)]
-        stop("Not all length columns found in data. Missing: ", 
+        stop("Not all length columns found in data. Missing: ",
              paste(missing_cols, collapse = ", "))
       }
       cols_names <- length_cols
     }
-    
+
     if (verbose) {
       message(sprintf("Using %d manually specified length columns", length(cols_names)))
     }
   }
-  
+
   data <- data %>%
     dplyr::mutate(dplyr::across(dplyr::all_of(cols_names), ~safe_numeric_conversion(.x)))
-  
+
   length_values <- extract_numeric_values(cols_names, use_fallback = FALSE, verbose = verbose)
-  
+
   if (verbose) {
-    message(sprintf("Length values range: %.1f to %.1f", 
+    message(sprintf("Length values range: %.1f to %.1f",
                    min(length_values), max(length_values)))
     message(sprintf("Juvenile limit set to: %.1f", juvenile_limit))
   }
-  
+
   process_group <- function(df) {
     if (nrow(df) == 0) {
       return(data.frame(
@@ -470,9 +479,9 @@ summarize_juveniles_by_group <- function(data,
         juvenil_weight = 0
       ))
     }
-    
+
     frequencies <- colSums(df[, cols_names, drop = FALSE], na.rm = TRUE)
-    
+
     if (all(frequencies == 0)) {
       return(data.frame(
         perc_juv_number = NA_real_,
@@ -483,10 +492,10 @@ summarize_juveniles_by_group <- function(data,
         juvenil_weight = 0
       ))
     }
-    
+
     calculate_juvenile_statistics(frequencies, length_values, juvenile_limit, a, b)
   }
-  
+
   if (length(group_cols) == 0) {
     result <- process_group(data)
   } else {
@@ -499,34 +508,34 @@ summarize_juveniles_by_group <- function(data,
           process_group(df_group)
         })
       ) %>%
-      tidyr::unnest(.data$result)
-    
+      tidyr::unnest("result")
+
     if (remove_empty && any(results$total_number == 0, na.rm = TRUE)) {
       initial_groups <- nrow(results)
       results <- results %>%
         dplyr::filter(.data$total_number > 0)
-      
+
       if (verbose && nrow(results) < initial_groups) {
         message(sprintf("! Removed %d empty groups", initial_groups - nrow(results)))
       }
     }
-    
+
     result <- results
   }
-  
+
   if (verbose) {
     message("\n=== Processing Summary ===")
     if (length(group_cols) > 0) {
       message(sprintf("Groups processed: %d", nrow(result)))
     }
     message(sprintf("Length classes used: %d", length(length_values)))
-    
+
     if (nrow(result) > 0 && !all(is.na(result$perc_juv_number))) {
       avg_juv_perc <- mean(result$perc_juv_number, na.rm = TRUE)
       message(sprintf("Average juvenile percentage: %.1f%%", avg_juv_perc))
     }
   }
-  
+
   return(as.data.frame(result))
 }
 
@@ -550,20 +559,20 @@ summarize_juveniles_by_group <- function(data,
 #' stats <- calculate_juvenile_statistics(frequencies, lengths)
 #'
 #' @export
-calculate_juvenile_statistics <- function(frequencies, 
-                                          length_values, 
-                                          juvenile_limit = 12, 
-                                          a = 0.0012, 
+calculate_juvenile_statistics <- function(frequencies,
+                                          length_values,
+                                          juvenile_limit = 12,
+                                          a = 0.0012,
                                           b = 3.1242) {
-  
+
   if (!is.numeric(frequencies)) stop("'frequencies' must be numeric.")
   if (!is.numeric(length_values)) stop("'length_values' must be numeric.")
   if (length(frequencies) != length(length_values)) {
     stop("'frequencies' and 'length_values' must have same length.")
   }
-  
+
   total_number <- sum(frequencies, na.rm = TRUE)
-  
+
   if (total_number == 0) {
     return(data.frame(
       perc_juv_number = NA_real_,
@@ -574,14 +583,14 @@ calculate_juvenile_statistics <- function(frequencies,
       juvenil_weight = 0
     ))
   }
-  
+
   perc_juv_number <- suppressWarnings(
     calculate_juvenile_percentage(frequencies, length_values, juvenile_limit)
   )
-  
+
   weights <- calculate_fish_weight(length_values, a, b) * frequencies
   total_weight <- sum(weights, na.rm = TRUE) / 1000
-  
+
   if (total_weight == 0) {
     perc_juv_weight <- NA_real_
   } else {
@@ -589,7 +598,7 @@ calculate_juvenile_statistics <- function(frequencies,
       calculate_juvenile_percentage(weights, length_values, juvenile_limit)
     )
   }
-  
+
   return(data.frame(
     perc_juv_number = perc_juv_number,
     perc_juv_weight = perc_juv_weight,

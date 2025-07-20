@@ -152,3 +152,9 @@ weighted_data <- apply_catch_weighting(
 4. **Both metrics**: Consider both number and weight-based percentages
 
 For parameter recommendations and detailed examples, see the function documentation.
+
+## References
+
+- Froese, R. (2006). Cube law, condition factor and weight–length relationships: history, meta-analysis and recommendations. *Journal of Applied Ichthyology*, 22(4), 241-253. <https://doi.org/10.1111/j.1439-0426.2006.00805.x>
+
+- IMARPE (2020). Protocolo Elaboración de la Tabla de Decisión para la determinación del Límite Máximo Total Permisible por temporada de pesca en la pesquería del stock norte-centro de la anchoveta peruana. IMP-DGIRP/AFDPERP, Edición: 05, Revisión 00, 40p.

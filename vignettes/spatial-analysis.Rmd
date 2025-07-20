@@ -148,3 +148,9 @@ plot_fishing_zones(
 4.  **Error correction**: Enable coordinate error correction when data quality is uncertain
 
 For detailed parameter descriptions, see the function documentation.
+
+## References
+
+- Sinnott, R.W. (1984). Virtues of the Haversine. *Sky and Telescope*, 68(2), 159.
+
+- Veness, C. (2002-2022). Calculate distance, bearing and more between Latitude/Longitude points. *Movable Type Scripts*. <https://www.movable-type.co.uk/scripts/latlong.html>

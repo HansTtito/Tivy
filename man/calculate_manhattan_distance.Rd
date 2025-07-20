@@ -21,6 +21,17 @@ calculate_manhattan_distance(lon1, lat1, lon2, lat2, unit)
 List with minimum distance and corresponding index.
 }
 \description{
-Internal function to calculate Manhattan distance (city blocks) between coordinates.
+Internal function to calculate Manhattan distance (L1 norm) between coordinates,
+adapted for geographic coordinate systems.
+}
+\details{
+The Manhattan distance calculates the sum of absolute differences between coordinates,
+adapted for geographic coordinates using spherical projection approximations.
+This implementation accounts for Earth's curvature by applying latitude corrections
+to longitude differences.
+}
+\note{
+This implementation adapts the standard Manhattan distance metric for geographic
+coordinate systems by incorporating Earth's radius and latitude corrections.
 }
 \keyword{internal}

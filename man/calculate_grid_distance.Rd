@@ -23,6 +23,16 @@ calculate_grid_distance(lon1, lat1, lon2, lat2, resolution = 0.25, unit = "km")
 List with minimum distance and index.
 }
 \description{
-Internal function to calculate distance with fixed grid resolution.
+Internal function to calculate distance with fixed grid resolution,
+using coordinate discretization followed by Haversine distance calculation.
+}
+\details{
+This method rounds coordinates to the nearest grid point based on the specified resolution,
+then calculates the Haversine distance between the origin and each grid-aligned destination point.
+This approach is useful for applications requiring consistent spatial discretization.
+}
+\note{
+This implementation combines coordinate discretization with the Haversine formula
+for applications requiring grid-based spatial analysis.
 }
 \keyword{internal}

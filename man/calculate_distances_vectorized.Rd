@@ -11,7 +11,8 @@ calculate_distances_vectorized(
   coast_lat,
   distance_type,
   window,
-  unit
+  unit,
+  resolution = 0.25
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ calculate_distances_vectorized(
 \item{window}{Spatial filter window in degrees.}
 
 \item{unit}{Distance unit.}
+
+\item{resolution}{Grid resolution (only used if distance_type = "grid").}
 }
 \value{
 List with distance vectors and corresponding indices.

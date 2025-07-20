@@ -19,8 +19,11 @@ Numeric vector of estimated weights.
 \description{
 Estimates individual fish weight from length using the length-weight relationship: W = a * L^b
 }
-\examples{
-lengths <- seq(8, 20, by = 0.5)
-weights <- calculate_fish_weight(length = lengths, a = 0.0001, b = 2.984)
-
+\details{
+The length-weight relationship follows the allometric equation W = a * L^b,
+where W is weight, L is length, and a and b are species-specific parameters.
+}
+\references{
+Froese, R. (2006). Cube law, condition factor and weight–length relationships:
+history, meta-analysis and recommendations. Journal of Applied Ichthyology, 22(4), 241-253.
 }

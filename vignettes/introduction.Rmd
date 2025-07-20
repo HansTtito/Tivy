@@ -103,3 +103,13 @@ head(peru_coastline)
 ```
 
 For more detailed examples, see the function documentation.
+
+## References
+
+This package implements standard methods from:
+
+- **Distance calculations**: Haversine formula (Sinnott, 1984; Veness, 2002-2022)
+- **Length-weight relationships**: Allometric equations (Froese, 2006)
+- **Juvenile analysis**: IMARPE protocols (IMARPE, 2020)
+
+For complete citations, see individual function documentation and topic-specific vignettes.

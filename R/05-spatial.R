@@ -1,9 +1,9 @@
 #' Convert latitude or longitude to decimal degrees
 #'
 #' @description
-#' Converts coordinates expressed in degrees, minutes and seconds (DMS) or degrees and minutes (DM) 
-#' format to decimal degrees. By default, coordinates are assumed to be in the southern hemisphere 
-#' (negative latitudes). The function can automatically correct common errors such as minutes or 
+#' Converts coordinates expressed in degrees, minutes and seconds (DMS) or degrees and minutes (DM)
+#' format to decimal degrees. By default, coordinates are assumed to be in the southern hemisphere
+#' (negative latitudes). The function can automatically correct common errors such as minutes or
 #' seconds greater than 60.
 #'
 #' @param coordinates Character vector. Each element should be in formats such as:
@@ -212,7 +212,7 @@ coast_distance <- function(lon,
     warning("Latitude values outside the valid range (-90 to 90) were detected.")
   }
 
-  valid_types <- c("haversine", "euclidean", "grid")
+  valid_types <- c("haversine", "euclidean", "manhattan", "grid")
   if (!distance_type %in% valid_types) {
     stop("The 'distance_type' parameter must be one of: ", paste(valid_types, collapse = ", "))
   }
@@ -303,8 +303,8 @@ coast_distance <- function(lon,
 #' Points on land
 #'
 #' @description
-#' Classifies a set of geographic coordinates (longitude and latitude) as "land" or "sea" 
-#' according to their relative position to a coastline. A point is considered to be on land 
+#' Classifies a set of geographic coordinates (longitude and latitude) as "land" or "sea"
+#' according to their relative position to a coastline. A point is considered to be on land
 #' if its longitude is greater than that of its nearest point on the coastline.
 #'
 #' @param x_point Numeric vector of longitudes (in decimal degrees).
@@ -317,7 +317,7 @@ coast_distance <- function(lon,
 #' @param window Geographic window in degrees to reduce the number of coastline points to consider.
 #' @param unit Unit of measurement for distance: "km" or "nm".
 #'
-#' @return Text vector of the same length as `x_point`, indicating whether each point 
+#' @return Text vector of the same length as `x_point`, indicating whether each point
 #'   is on "land" or "sea". NA values are maintained as NA.
 #'
 #' @examples

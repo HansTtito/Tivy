@@ -22,6 +22,16 @@ List with minimum distance and corresponding index.
 }
 \description{
 Internal function to calculate distances using the Haversine formula with WGS84 ellipsoid.
-Used by spatial analysis functions.
+Implements the algorithm described in Sinnott (1984) for computing great circle distances.
+}
+\details{
+The Haversine formula calculates the shortest distance between two points on a sphere
+given their latitude and longitude.
+}
+\references{
+Sinnott, R.W. (1984). Virtues of the Haversine. Sky and Telescope, 68(2), 159.
+
+Veness, C. (2002-2022). Calculate distance, bearing and more between Latitude/Longitude points.
+Movable Type Scripts. \url{https://www.movable-type.co.uk/scripts/latlong.html}
 }
 \keyword{internal}

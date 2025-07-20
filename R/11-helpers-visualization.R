@@ -29,23 +29,23 @@ plot_zones_static <- function(polygons, coastline, title, colors, show_legend = 
   unique_groups <- character()
   for (i in seq_along(polygons)) {
     polygon <- polygons[[i]]
-    
+
     group_label <- if (!is.null(labels) && length(labels) >= i) {
       labels[i]
     } else {
       polygon$announcement
     }
-    
+
     unique_groups <- c(unique_groups, group_label)
   }
-  
+
   unique_groups <- unique(unique_groups)
   n_groups <- length(unique_groups)
 
   if(is.null(colors)){
     colors <- generate_robust_colors(n_groups)
   }
-  
+
   if (length(colors) < n_groups) {
     warning("Not enough colors provided. Expanding color palette.")
     colors <- generate_robust_colors(n_groups)
@@ -131,37 +131,37 @@ plot_zones_static <- function(polygons, coastline, title, colors, show_legend = 
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom grDevices hsv
 generate_robust_colors <- function(n_groups) {
-  
+
   if (n_groups == 0) {
     return(character(0))
   }
-  
+
   if (n_groups == 1) {
     return("#1f77b4")
   }
-  
+
   if (n_groups <= 12) {
     n_brewer <- max(3, n_groups)
     colors <- RColorBrewer::brewer.pal(n_brewer, "Set3")[1:n_groups]
     return(colors)
   }
-  
+
   if (n_groups <= 29) {
     pal1 <- RColorBrewer::brewer.pal(12, "Set3")
-    pal2 <- RColorBrewer::brewer.pal(8, "Dark2") 
+    pal2 <- RColorBrewer::brewer.pal(8, "Dark2")
     pal3 <- RColorBrewer::brewer.pal(9, "Pastel1")
-    
+
     all_colors <- c(pal1, pal2, pal3)
     return(all_colors[1:n_groups])
   }
-  
+
   if (n_groups > 29) {
     warning(sprintf("Large number of groups (%d). Using algorithmic color generation. Consider grouping categories.", n_groups))
-    
+
     hues <- seq(0, 1, length.out = n_groups + 1)[1:n_groups]
     sats <- rep(c(0.7, 0.9, 0.5), length.out = n_groups)
     vals <- rep(c(0.8, 0.6, 0.9), length.out = n_groups)
-    
+
     colors <- grDevices::hsv(h = hues, s = sats, v = vals)
     return(colors)
   }
@@ -409,18 +409,18 @@ add_juvenile_geoms <- function(p, plot_type, bar_position, fill_var, use_facet_w
     } else {
       p <- p + ggplot2::aes(group = .data[[fill_var]], color = .data[[fill_var]])
     }
-    
+
     position_func <- if (bar_position == "dodge") {
       ggplot2::position_dodge(width = 0.9)
     } else {
       bar_position
     }
-    
-    p <- p + 
+
+    p <- p +
       ggplot2::geom_bar(stat = "identity", alpha = 0.7, position = position_func) +
       ggplot2::geom_point(size = 2, position = position_func)
   }
-  
+
   return(p)
 }
 
@@ -440,7 +440,7 @@ add_juvenile_faceting <- function(p, facet_var, use_facet_wrap, facet_cols, fill
   } else if (use_facet_wrap && !is.null(fill_var)) {
     p <- p + ggplot2::facet_wrap(~ type, ncol = facet_cols)
   }
-  
+
   return(p)
 }
 
@@ -461,11 +461,11 @@ customize_juvenile_axes <- function(p, data_long, x_var, x_date_breaks, y_limits
       p <- p + ggplot2::scale_x_continuous(breaks = unique(data_long[[x_var]]))
     }
   }
-  
+
   if (!is.null(y_limits)) {
     p <- p + ggplot2::ylim(y_limits)
   }
-  
+
   return(p)
 }
 
@@ -481,18 +481,18 @@ apply_juvenile_theme <- function(p, theme_style, legend_position, rotate_x_label
   } else if (theme_style == "dark") {
     p <- p + ggplot2::theme_dark()
   }
-  
+
   p <- p + ggplot2::theme(
     legend.position = legend_position,
     panel.grid.minor = ggplot2::element_blank(),
     strip.background = ggplot2::element_rect(fill = "lightgray", color = NA),
     strip.text = ggplot2::element_text(face = "bold")
   )
-  
+
   if (rotate_x_labels) {
     p <- p + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
   }
-  
+
   return(p)
 }
 
@@ -505,13 +505,13 @@ add_juvenile_reference_line <- function(p, reference_line, data_long, x_var) {
     unique_levels <- unique(as.character(data_long[[x_var]]))
     x_point <- unique_levels[ceiling(length(unique_levels) / 2)]
   }
-  
-  p <- p + 
+
+  p <- p +
     ggplot2::geom_hline(
       yintercept = reference_line,
       linetype = "dashed",
       color = "red",
-      size = 1
+      linewidth = 1
     ) +
     ggplot2::annotate(
       "text",
@@ -522,6 +522,6 @@ add_juvenile_reference_line <- function(p, reference_line, data_long, x_var) {
       color = "red",
       fontface = "bold"
     )
-  
+
   return(p)
 }

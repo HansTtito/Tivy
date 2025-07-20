@@ -18,9 +18,19 @@ calculate_euclidean_distance(lon1, lat1, lon2, lat2, unit)
 \item{unit}{Distance unit.}
 }
 \value{
-List with minimum distance and index.
+List with minimum distance and corresponding index.
 }
 \description{
-Internal function to calculate Euclidean distance between coordinates.
+Internal function to calculate Euclidean distance between coordinates,
+adapted for geographic coordinate systems.
+}
+\details{
+The Euclidean distance calculates the straight-line distance between two points,
+adapted for geographic coordinates using spherical projection approximations.
+This implementation accounts for Earth's curvature by applying latitude corrections.
+}
+\note{
+This implementation adapts the standard Euclidean distance metric for geographic
+coordinate systems by incorporating Earth's radius and latitude corrections.
 }
 \keyword{internal}
