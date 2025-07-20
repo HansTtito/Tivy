@@ -83,10 +83,10 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
 
     tryCatch({
       catch_sps <- data_hauls %>%
-        dplyr::filter(!is.na(species), species != "") %>%
-        dplyr::mutate(catch = safe_numeric_conversion(catch)) %>%
-        dplyr::group_by(fishing_trip_code, haul_number, species) %>%
-        dplyr::reframe(catch = sum(catch, na.rm = TRUE))
+        dplyr::filter(!is.na(.data$species), .data$species != "") %>%
+        dplyr::mutate(catch = safe_numeric_conversion(.data$catch)) %>%
+        dplyr::group_by(.data$fishing_trip_code, .data$haul_number, .data$species) %>%
+        dplyr::reframe(catch = sum(.data$catch, na.rm = TRUE))
 
       if (nrow(catch_sps) == 0) {
         warning("No valid catch data after filtering. Check the values of 'species' and 'catch'.")
@@ -112,7 +112,7 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
     }
 
     data_length_ranges <- data_length_numeric %>%
-      dplyr::filter(!is.na(species), species != "") %>%
+      dplyr::filter(!is.na(.data$species), .data$species != "") %>%
       dplyr::rowwise() %>%
       dplyr::mutate(
         min_range = tryCatch(
@@ -131,11 +131,11 @@ merge_length_fishing_trips_hauls <- function(data_hauls, data_length_fishing_tri
       min_max_sps <- data.frame(fishing_trip_code = character(0), haul_number = character(0))
     } else {
       min_sps <- data_length_ranges %>%
-        dplyr::select(fishing_trip_code, haul_number, species, min_range) %>%
+        dplyr::select(.data$fishing_trip_code, .data$haul_number, .data$species, .data$min_range) %>%
         tidyr::pivot_wider(names_from = "species", values_from = "min_range", names_prefix = "min_")
 
       max_sps <- data_length_ranges %>%
-        dplyr::select(fishing_trip_code, haul_number, species, max_range) %>%
+        dplyr::select(.data$fishing_trip_code, .data$haul_number, .data$species, .data$max_range) %>%
         tidyr::pivot_wider(names_from = "species", values_from = "max_range", names_prefix = "max_")
 
       min_max_sps <- merge(min_sps, max_sps, by = c("fishing_trip_code", "haul_number"), all = TRUE)
