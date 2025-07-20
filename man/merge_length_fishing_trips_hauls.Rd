@@ -26,13 +26,13 @@ data_length <- process_length(data_length = tallas_bitacora)
 
 data_length_fishing_trips <- merge(
    x = data_length,
-   y = data_fishing_trips, 
-   by = "fishing_trip_code", 
+   y = data_fishing_trips,
+   by = "fishing_trip_code",
    all = TRUE
 )
 
 data_total <- merge_length_fishing_trips_hauls(
-   data_hauls = data_hauls, 
+   data_hauls = data_hauls,
    data_length_fishing_trips = data_length_fishing_trips
 )
 }
