@@ -55,7 +55,10 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
     tryCatch({
       local_hemisphere <- hemisphere
       original_coord <- coord
-      coord <- iconv(coord, from = "UTF-8", "ASCII//TRANSLIT")
+
+      # Replace common DMS symbols with spaces
+      coord <- gsub("\u00B0|\u2032|\u2033", " ", coord)  # ° ′ ″ → space
+      coord <- iconv(coord, from = "UTF-8", to = "ASCII//TRANSLIT")
 
       hemisphere_pattern <- "[NSEW]|O"
       found_hemisphere <- regmatches(coord, regexpr(hemisphere_pattern, coord))
@@ -100,15 +103,13 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
         }
       } else {
         if (length(parts) >= 1 && (is.na(parts[1]) || parts[1] < 0 || parts[1] > 180)) {
-          warning(paste("Degrees out of range (0-180) in the coordinate:", original_coord))
+          warning(paste("Degrees out of range (0–180) in the coordinate:", original_coord))
         }
-
         if (length(parts) >= 2 && (is.na(parts[2]) || parts[2] < 0 || parts[2] >= 60)) {
-          warning(paste("Minutes out of range (0-59) in the coordinate:", original_coord))
+          warning(paste("Minutes out of range (0–59) in the coordinate:", original_coord))
         }
-
         if (length(parts) >= 3 && (is.na(parts[3]) || parts[3] < 0 || parts[3] >= 60)) {
-          warning(paste("Seconds out of range (0-59) in the coordinate:", original_coord))
+          warning(paste("Seconds out of range (0–59) in the coordinate:", original_coord))
         }
       }
 
@@ -137,6 +138,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
   names(results) <- NULL
   return(results)
 }
+#
 
 #' Vectorized distance to coast
 #'

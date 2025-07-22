@@ -11,7 +11,7 @@
 #' @importFrom httr GET add_headers
 get_main_page <- function(url, verbose = TRUE) {
   if (verbose) message("Fetching main page to extract token...")
-  
+
   httr::GET(
     url,
     httr::add_headers(
@@ -54,21 +54,21 @@ extract_cookies <- function(response, verbose = TRUE) {
 #' @importFrom rvest read_html html_node html_attr
 extract_token <- function(html_content, verbose = TRUE) {
   html_doc <- rvest::read_html(html_content)
-  
+
   token_input <- rvest::html_node(html_doc, "input#token")
-  
+
   if(is.na(token_input)) {
     stop("Could not find token input field in the web page. The site structure may have changed.")
   }
-  
+
   token <- rvest::html_attr(token_input, "value")
-  
+
   if(is.na(token) || token == "") {
     stop("Found token input field but couldn't extract the token value.")
   }
-  
+
   if(verbose) message("Successfully extracted token: ", substr(token, 1, 20), "...")
-  
+
   return(token)
 }
 
@@ -107,15 +107,15 @@ build_request_params <- function(start_index, batch_size, token, tipo = 2, start
     fec_ini = "",
     fec_fin = ""
   )
-  
+
   if(!is.na(start_date) && start_date != "") {
     params$fec_ini <- start_date
   }
-  
+
   if(!is.na(end_date) && end_date != "") {
     params$fec_fin <- end_date
   }
-  
+
   return(params)
 }
 
@@ -168,16 +168,16 @@ make_api_request <- function(url, params, cookies, main_url) {
 process_json_response <- function(content_text, verbose = TRUE) {
   tryCatch({
     data <- jsonlite::fromJSON(content_text)
-    
+
     announcements <- data$aaData
-    
+
     if(length(announcements) > 0) {
       df <- as.data.frame(announcements)
-      
+
       if(ncol(df) >= 6) {
         colnames(df) <- c("ID", "Title", "Date", "FileName", "InternalFile", "Status")
       }
-      
+
       return(df)
     } else {
       if(verbose) message("No announcements found in this batch.")
@@ -219,7 +219,7 @@ generate_download_url <- function(file_name, base_url = "https://consultasenline
 #' @importFrom utils download.file
 download_file <- function(url, file_name, download_dir, verbose = TRUE) {
   dest_file <- file.path(download_dir, file_name)
-  
+
   result <- tryCatch({
     utils::download.file(url, destfile = dest_file, mode = "wb", quiet = !verbose)
     return(TRUE)
@@ -227,7 +227,7 @@ download_file <- function(url, file_name, download_dir, verbose = TRUE) {
     message("Error downloading ", file_name, ": ", e$message)
     return(FALSE)
   })
-  
+
   return(result)
 }
 
@@ -250,38 +250,38 @@ download_file <- function(url, file_name, download_dir, verbose = TRUE) {
 #' @keywords internal
 #' @importFrom httr status_code content
 fetch_announcements_batch <- function(
-  start_index, 
-  batch_size, 
-  token, 
-  cookies, 
+  start_index,
+  batch_size,
+  token,
+  cookies,
   main_url,
   tipo = 2,
-  start_date = "", 
-  end_date = "", 
+  start_date = "",
+  end_date = "",
   verbose = TRUE
 ) {
   if(verbose) message("Fetching records ", start_index + 1, " to ", start_index + batch_size)
-  
+
   url <- "https://consultasenlinea.produce.gob.pe/ConsultasEnLinea/consultas.web/ajax/listado.comunicados.ajax.php"
-  
+
   params <- build_request_params(start_index, batch_size, token, tipo, start_date, end_date)
   response <- make_api_request(url, params, cookies, main_url)
-  
+
   if(is.null(response)) return(NULL)
-  
+
   status <- httr::status_code(response)
   if(status != 200) {
     message("Request failed with status code: ", status)
     return(NULL)
   }
-  
+
   content_text <- httr::content(response, "text", encoding = "UTF-8")
-  
+
   if(verbose && nchar(content_text) < 50) {
     message("Warning: Short response received: ", content_text)
     return(NULL)
   }
-  
+
   return(process_json_response(content_text, verbose))
 }
 
@@ -311,46 +311,46 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
     announcement = character(),
     stringsAsFactors = FALSE
   )
-  
+
   clean_text <- stringr::str_squish(text)
   clean_text <- iconv(clean_text, from = "UTF-8", to = "ASCII//TRANSLIT")
-  
+
   if (!any(grepl("DISPONER LA SUSPENSION PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA", clean_text))) {
     if (verbose) warning("File '", file_name, "' doesn't appear to be a valid announcement.")
     return(empty_result)
   }
-  
+
   blocks <- tryCatch({
     stringr::str_split(clean_text, "DISPONER LA SUSPENSION PREVENTIVA DE LA ACTIVIDAD EXTRACTIVA")[[1]]
   }, error = function(e) {
     if (verbose) warning("Error splitting text for file '", file_name, "': ", e$message)
     return(character(0))
   })
-  
+
   if (length(blocks) <= 1) {
     if (verbose) warning("No valid information blocks found in file '", file_name, "'.")
     return(empty_result)
   }
-  
+
   announcement <- stringr::str_extract(clean_text, "COMUNICADO\\s*N[?]\\s*\\d+(?:\\s*[-]\\s*\\d+)?(?:-[A-Z]+)?")
-  
+
   results <- list()
-  
+
   for (i in 2:length(blocks)) {
     block <- blocks[i]
-    
+
     tryCatch({
       pattern_dates <- "(\\d{2}:\\d{2} horas del \\d{2} de \\w+ de \\d{4})"
       dates_text <- stringr::str_extract_all(block, pattern_dates)[[1]]
-      
+
       if (length(dates_text) < 2) {
         if (verbose) warning("Not enough dates found in block ", i, " of file '", file_name, "'.")
         next
       }
-      
+
       dates <- gsub("horas del ", "", dates_text)
       final_dates <- as.POSIXct(dates, format = "%H:%M %d de %B de %Y", tz = "America/Lima")
-      
+
       if (any(is.na(final_dates))) {
         if (verbose) warning("Error converting dates in block ", i, " of file '", file_name, "'.")
         next
@@ -359,10 +359,10 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
       if (verbose) warning("Error processing dates in block ", i, " of file '", file_name, "': ", e$message)
       final_dates <- rep(as.POSIXct(NA), 2)
     })
-    
+
     data_positions_lat <- character(0)
     data_positions_lon <- character(0)
-    
+
     tryCatch({
       lat_patterns <- c(
         "(\\d{1,2})\\?(\\d{1,2})'?([NS])",
@@ -370,32 +370,32 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
         "(\\d{1,2})(\\d{2})([NS])",
         "(\\d{1,2})[^0-9](\\d{1,2})[^0-9]*([NS])"
       )
-      
+
       lon_patterns <- c(
         "(\\d{1,2})\\?(\\d{1,2})'?([WEO])",
         "(\\d{1,2})\\s+(\\d{1,2})\\s*([WEO])",
         "(\\d{1,2})(\\d{2})([WEO])",
         "(\\d{1,2})[^0-9](\\d{1,2})[^0-9]*([WEO])"
       )
-      
+
       for (pattern in lat_patterns) {
         data_positions_lat <- stringr::str_extract_all(block, pattern)[[1]]
         if (length(data_positions_lat) > 0) break
       }
-      
+
       for (pattern in lon_patterns) {
         data_positions_lon <- stringr::str_extract_all(block, pattern)[[1]]
         if (length(data_positions_lon) > 0) break
       }
-      
+
     }, error = function(e) {
       if (verbose) warning("Error extracting coordinates in block ", i, " of file '", file_name, "': ", e$message)
     })
-    
+
     if (length(data_positions_lon) == 0) {
       start_miles <- NA_real_
       end_miles <- NA_real_
-      
+
       tryCatch({
         nautical_patterns <- c(
           "de (\\d+) a (\\d+) millas nauticas",
@@ -403,7 +403,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
           "dentro de las (\\d+) millas nauticas",
           "(\\d+)\\s*a\\s*(\\d+)\\s*mn"
         )
-        
+
         for (pattern in nautical_patterns) {
           miles_matches <- stringr::str_extract_all(block, pattern)[[1]]
           if (length(miles_matches) > 0) {
@@ -420,7 +420,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
       }, error = function(e) {
         if (verbose) warning("Error processing nautical miles in block ", i, " of file '", file_name, "': ", e$message)
       })
-      
+
       if (length(data_positions_lat) >= 2) {
         df <- data.frame(
           StartDateTime = final_dates[1],
@@ -456,7 +456,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
       }
     }
   }
-  
+
   if (length(results) > 0) {
     return(do.call(rbind, results))
   } else {
@@ -479,7 +479,7 @@ find_parallel_line <- function(miles, coast_parallels) {
   available_miles <- safe_numeric_conversion(gsub("l", "", names(coast_parallels)))
   idx_close <- which.min(abs(available_miles - miles))
   close_mile <- available_miles[idx_close]
-  
+
   return(list(
     df = coast_parallels[[paste0("l", close_mile)]],
     actual_mile = close_mile
@@ -500,10 +500,10 @@ find_parallel_line <- function(miles, coast_parallels) {
 #' @keywords internal
 interpolate_point <- function(line, latitude, lat_name, lon_name) {
   line <- line[order(line[[lat_name]]), ]
-  
+
   idx_inf <- max(which(line[[lat_name]] <= latitude), na.rm = TRUE)
   idx_sup <- min(which(line[[lat_name]] >= latitude), na.rm = TRUE)
-  
+
   if (length(idx_inf) == 0 || is.infinite(idx_inf)) {
     idx_close <- which.min(abs(line[[lat_name]] - latitude))
     return(c(
@@ -511,7 +511,7 @@ interpolate_point <- function(line, latitude, lat_name, lon_name) {
       lat = line[[lat_name]][idx_close]
     ))
   }
-  
+
   if (length(idx_sup) == 0 || is.infinite(idx_sup)) {
     idx_close <- which.min(abs(line[[lat_name]] - latitude))
     return(c(
@@ -519,22 +519,22 @@ interpolate_point <- function(line, latitude, lat_name, lon_name) {
       lat = line[[lat_name]][idx_close]
     ))
   }
-  
+
   if (idx_inf == idx_sup) {
     return(c(
       lon = line[[lon_name]][idx_inf],
       lat = line[[lat_name]][idx_inf]
     ))
   }
-  
+
   lat_inf <- line[[lat_name]][idx_inf]
   lat_sup <- line[[lat_name]][idx_sup]
   lon_inf <- line[[lon_name]][idx_inf]
   lon_sup <- line[[lon_name]][idx_sup]
-  
+
   prop <- (latitude - lat_inf) / (lat_sup - lat_inf)
   longitude <- lon_inf + prop * (lon_sup - lon_inf)
-  
+
   return(c(
     lon = longitude,
     lat = latitude
@@ -555,17 +555,17 @@ calculate_coast_longitude <- function(coastline, latitude) {
   if (!all(c("Lat", "Long") %in% names(coastline))) {
     stop("Coastline must contain 'Lat' and 'Long' columns")
   }
-  
+
   if (!is.numeric(latitude)) {
     stop("Latitude must be numeric")
   }
-  
+
   nearby_idx <- which(abs(coastline$Lat - latitude) < 0.1)
   if (length(nearby_idx) == 0) {
     warning("No coastal points found near latitude ", latitude, ". Using approximation.")
     return(-75)
   }
-  
+
   coast_longitude <- mean(coastline$Long[nearby_idx])
   return(coast_longitude)
 }
@@ -606,14 +606,14 @@ extract_points_between_latitudes <- function(line, lat_min, lat_max, lat_name, l
 
   limit_points <- NULL
 
-  if (abs(first_point[[lat_name]] - lat_min) > 0.0001) {
+  if (!is.na(first_point[[lat_name]]) && abs(first_point[[lat_name]] - lat_min) > 0.0001) {
     min_point <- interpolate_point(line, lat_min, lat_name, lon_name)
     limit_points <- rbind(limit_points, min_point)
   }
 
   middle_points <- as.matrix(filtered_points[, c(lon_name, lat_name)])
 
-  if (abs(last_point[[lat_name]] - lat_max) > 0.0001) {
+  if (!is.na(last_point[[lat_name]]) && abs(last_point[[lat_name]] - lat_max) > 0.0001) {
     max_point <- interpolate_point(line, lat_max, lat_name, lon_name)
     limit_points <- rbind(limit_points, max_point)
   }
@@ -867,8 +867,8 @@ prepare_polygons <- function(data, coastline, coast_parallels = NULL, column_nam
 #' Validate data for polygon creation
 #'
 #' @description
-#' Validates that a data frame contains the necessary columns for creating 
-#' fishing zone polygons. Checks for either coordinate-based or distance-based 
+#' Validates that a data frame contains the necessary columns for creating
+#' fishing zone polygons. Checks for either coordinate-based or distance-based
 #' polygon definition data.
 #'
 #' @param data Data frame to validate. Must contain polygon definition columns.
@@ -886,13 +886,13 @@ prepare_polygons <- function(data, coastline, coast_parallels = NULL, column_nam
 #' # Coordinate-based polygon data
 #' coord_data <- data.frame(
 #'   StartLatitude = "15 30 S",
-#'   EndLatitude = "15 45 S", 
+#'   EndLatitude = "15 45 S",
 #'   StartLongitude = "75 30 W",
 #'   EndLongitude = "75 45 W"
 #' )
 #' validate_polygon_data(coord_data)
-#' 
-#' # Distance-based polygon data  
+#'
+#' # Distance-based polygon data
 #' distance_data <- data.frame(
 #'   StartLatitude = "15 30 S",
 #'   EndLatitude = "15 45 S",
@@ -903,28 +903,28 @@ prepare_polygons <- function(data, coastline, coast_parallels = NULL, column_nam
 #'
 #' @export
 validate_polygon_data <- function(data) {
-  
+
   # Basic validation
   if (!is.data.frame(data)) {
     stop("'data' must be a data.frame")
   }
-  
+
   if (nrow(data) == 0) {
     stop("'data' contains no rows")
   }
-  
+
   # Define required column sets
   coordinate_cols <- c("StartLatitude", "EndLatitude", "StartLongitude", "EndLongitude")
   distance_cols <- c("StartLatitude", "EndLatitude", "StartNauticalMiles", "EndNauticalMiles")
-  
+
   # Check if either set is complete
   has_coordinates <- all(coordinate_cols %in% names(data))
   has_distances <- all(distance_cols %in% names(data))
-  
+
   if (!has_coordinates && !has_distances) {
     stop("Data must contain either complete coordinate columns (StartLatitude, EndLatitude, StartLongitude, EndLongitude) or complete distance columns (StartLatitude, EndLatitude, StartNauticalMiles, EndNauticalMiles)")
   }
-  
+
   # Validate nautical miles if present
   if (has_distances) {
     for (col in c("StartNauticalMiles", "EndNauticalMiles")) {
@@ -934,6 +934,6 @@ validate_polygon_data <- function(data) {
       }
     }
   }
-  
+
   return(invisible(TRUE))
 }
