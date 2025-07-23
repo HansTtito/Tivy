@@ -339,3 +339,4 @@ test_that("announcement data validation works", {
   expect_type(sample_data$StartLatitude, "character")
   expect_type(sample_data$EndLatitude, "character")
 })
+
