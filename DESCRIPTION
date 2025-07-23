@@ -1,7 +1,7 @@
 Package: Tivy
 Type: Package
 Title: Toolkit for Investigation and Visualization of Young Anchovies
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: person("Hans", "Ttito", 
                   email = "kvttitos@gmail.com", 
                   role = c("aut", "cre"),

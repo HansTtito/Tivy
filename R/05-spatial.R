@@ -137,7 +137,7 @@ dms_to_decimal <- function(coordinates, hemisphere = "S", correct_errors = TRUE)
   names(results) <- NULL
   return(results)
 }
-#
+
 
 #' Vectorized distance to coast
 #'
