@@ -21,7 +21,7 @@ You can install the development version of `Tivy` from GitHub:
 devtools::install_github("HansTtito/Tivy")
 ```
 
-Once published on CRAN:
+Install CRAN release:
 
 ```r
 install.packages("Tivy")
