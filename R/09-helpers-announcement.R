@@ -647,7 +647,7 @@ extract_points_between_latitudes <- function(line, lat_min, lat_max, lat_name, l
 #' @param column_names Vector with column names in coast_parallels data frames.
 #'
 #' @return List of polygons for visualization.
-#' @keywords internal
+#' @export
 prepare_polygons <- function(data, coastline, coast_parallels = NULL, column_names = c("lat", "lon", "dc")) {
   if (missing(data)) {
     stop("The 'data' parameter is required.")

@@ -15,7 +15,7 @@
 #' @param theme ggplot2 theme to use.
 #'
 #' @return A ggplot object ready to be plotted.
-#' @keywords internal
+#' @export
 #' @importFrom RColorBrewer brewer.pal
 #' @import ggplot2
 plot_zones_static <- function(polygons, coastline, title, colors, show_legend = TRUE, name_legend = NULL,
@@ -182,7 +182,7 @@ generate_robust_colors <- function(n_groups) {
 #' @param minimap Logical. If TRUE, displays a minimap in the lower right corner.
 #'
 #' @return A leaflet object with the interactive map.
-#' @keywords internal
+#' @export
 #' @importFrom RColorBrewer brewer.pal
 #' @import leaflet
 plot_zones_interactive <- function(polygons, coastline, title, colors, show_legend = TRUE,

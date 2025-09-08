@@ -287,7 +287,7 @@ Contributions are welcome! Please consider:
 If you use `Tivy` in your research, please cite it as:
 
 ```
-Ttito, H. (2025). Tivy: Tools for Fisheries Data Analysis in Peru. 
+Ttito, H. (2025). Tivy: Toolkit for Investigation and Visualization of Young Anchovies. 
 R package version 0.1.1. https://github.com/HansTtito/Tivy
 ```
 

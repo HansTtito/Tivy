@@ -38,4 +38,3 @@ A leaflet object with the interactive map.
 \description{
 Creates an interactive map using leaflet, showing polygons with popup information.
 }
-\keyword{internal}

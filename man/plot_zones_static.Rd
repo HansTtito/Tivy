@@ -42,4 +42,3 @@ A ggplot object ready to be plotted.
 Creates a static plot using ggplot2 that displays geographic polygons on a coastline base.
 Colors are assigned by groups (announcements/labels), not individual polygons.
 }
-\keyword{internal}

@@ -26,4 +26,3 @@ List of polygons for visualization.
 \description{
 Helper function to process data and prepare polygons using preexisting parallel lines.
 }
-\keyword{internal}
