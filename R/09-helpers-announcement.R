@@ -394,7 +394,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
 
     if (length(data_positions_lon) == 0) {
       start_miles <- NA_real_
-      end_miles <- NA_real_
+      end_miles   <- NA_real_
 
       tryCatch({
         nautical_patterns <- c(
@@ -410,7 +410,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
             miles_numbers <- safe_numeric_conversion(stringr::str_extract_all(miles_matches[1], "\\d+")[[1]])
             if (length(miles_numbers) >= 2) {
               start_miles <- min(miles_numbers)
-              end_miles <- max(miles_numbers)
+              end_miles   <- max(miles_numbers)
             } else if (length(miles_numbers) == 1) {
               end_miles <- miles_numbers[1]
             }
@@ -421,36 +421,55 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
         if (verbose) warning("Error processing nautical miles in block ", i, " of file '", file_name, "': ", e$message)
       })
 
-      if (length(data_positions_lat) >= 2) {
+      # ── Caso sin longitudes: iterar sobre pares de latitudes ──────────────
+      n_pairs <- length(data_positions_lat) %/% 2
+
+      if (n_pairs == 0 && length(data_positions_lat) >= 2) n_pairs <- 1
+
+      for (j in seq_len(n_pairs)) {
+        idx_start <- (j - 1) * 2 + 1
+        idx_end   <- (j - 1) * 2 + 2
+
         df <- data.frame(
-          StartDateTime = final_dates[1],
-          EndDateTime = final_dates[2],
-          StartLatitude = data_positions_lat[1],
-          EndLatitude = data_positions_lat[2],
-          StartLongitude = NA_character_,
-          EndLongitude = NA_character_,
+          StartDateTime      = final_dates[1],
+          EndDateTime        = final_dates[2],
+          StartLatitude      = data_positions_lat[idx_start],
+          EndLatitude        = data_positions_lat[idx_end],
+          StartLongitude     = NA_character_,
+          EndLongitude       = NA_character_,
           StartNauticalMiles = start_miles,
-          EndNauticalMiles = end_miles,
-          file_name = file_name,
-          announcement = announcement,
-          stringsAsFactors = FALSE
+          EndNauticalMiles   = end_miles,
+          file_name          = file_name,
+          announcement       = announcement,
+          stringsAsFactors   = FALSE
         )
         results <- append(results, list(df))
       }
+
     } else {
-      if (length(data_positions_lat) >= 2 && length(data_positions_lon) >= 2) {
+      # ── Caso con longitudes: iterar sobre pares de lat/lon ────────────────
+      n_pairs <- min(length(data_positions_lat), length(data_positions_lon)) %/% 2
+
+      if (n_pairs == 0 &&
+          length(data_positions_lat) >= 2 &&
+          length(data_positions_lon) >= 2) n_pairs <- 1
+
+      for (j in seq_len(n_pairs)) {
+        idx_start <- (j - 1) * 2 + 1
+        idx_end   <- (j - 1) * 2 + 2
+
         df <- data.frame(
-          StartDateTime = final_dates[1],
-          EndDateTime = final_dates[2],
-          StartLatitude = data_positions_lat[1],
-          EndLatitude = data_positions_lat[2],
-          StartLongitude = data_positions_lon[1],
-          EndLongitude = data_positions_lon[2],
+          StartDateTime      = final_dates[1],
+          EndDateTime        = final_dates[2],
+          StartLatitude      = data_positions_lat[idx_start],
+          EndLatitude        = data_positions_lat[idx_end],
+          StartLongitude     = data_positions_lon[idx_start],
+          EndLongitude       = data_positions_lon[idx_end],
           StartNauticalMiles = NA_real_,
-          EndNauticalMiles = NA_real_,
-          file_name = file_name,
-          announcement = announcement,
-          stringsAsFactors = FALSE
+          EndNauticalMiles   = NA_real_,
+          file_name          = file_name,
+          announcement       = announcement,
+          stringsAsFactors   = FALSE
         )
         results <- append(results, list(df))
       }
@@ -464,6 +483,7 @@ process_pdf_text <- function(text, file_name, verbose = TRUE) {
     return(empty_result)
   }
 }
+
 
 #' Find parallel line by distance
 #'
