@@ -8,6 +8,9 @@
   - Enhanced validation and numeric component parsing
   - More informative warnings for malformed coordinates
   
+* Fixed `process_pdf_text()` silently dropping coordinate pairs beyond
+  the first in a block. Now iterates over all pairs, generating one
+  row per zone.
 
 # Tivy 0.1.0
 
